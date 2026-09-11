@@ -1,7 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import type { WooProduct } from '@/lib/woocommerce/types'
-import { formatMoney } from '@/lib/woocommerce/client'
+import { formatMoney } from '@/lib/woocommerce/money'
 
 export function ProductCard({ product }: { product: WooProduct }) {
   const image = product.images?.[0]
