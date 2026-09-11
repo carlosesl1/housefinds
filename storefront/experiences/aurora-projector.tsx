@@ -1,7 +1,7 @@
 import Image from 'next/image'
 import type { WooProduct } from '@/lib/woocommerce/types'
 import { AddToCart } from '@/components/cart/add-to-cart'
-import { formatMoney } from '@/lib/woocommerce/client'
+import { formatMoney } from '@/lib/woocommerce/money'
 
 export function AuroraProjectorExperience({ product }: { product: WooProduct }) {
   const image = product.images?.[0]
