@@ -5,4 +5,63 @@ import { formatMoney } from '@/lib/woocommerce/money'
 
 export function AuroraProjectorExperience({ product }: { product: WooProduct }) {
   const image = product.images?.[0]
-  return <main className="bg-[#080a12] text-white"><section className="relative min-h-[86vh] overflow-hidden"><div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_30%,rgba(89,77,255,.34),transparent_28%),radial-gradient(circle_at_88%_55%,rgba(45,191,186,.22),transparent_30%),radial-gradient(circle_at_58%_80%,rgba(255,72,157,.16),transparent_28%)]"/><div className="relative mx-auto grid min-h-[86vh] max-w-[1480px] items-center gap-10 px-5 py-16 lg:grid-cols-2 lg:px-8"><div><p className="text-xs uppercase tracking-[.32em] text-white/50">Housefinds · Ambient light</p><h1 className="mt-7 text-6xl font-semibold leading-[.88] tracking-[-.065em] md:text-8xl">Change the room<br/><span className="text-[#9ca9ff]">without changing the room.</span></h1><p className="mt-7 max-w-xl text-xl leading-8 text-white/60">A compact RGB projector made for atmosphere, late nights and spaces that deserve a different mood.</p><div className="mt-9 flex items-center gap-4"><AddToCart productId={product.id} disabled={!product.is_in_stock}/><span className="text-xl font-semibold">{formatMoney(product.prices.price, product.prices.currency_minor_unit, product.prices.currency_symbol)}</span></div></div><div className="relative min-h-[560px]">{image && <Image src={image.src} alt={image.alt || product.name} fill priority className="object-contain drop-shadow-[0_40px_90px_rgba(73,86,255,.25)]"/>}</div></div></section><section className="border-t border-white/10"><div className="mx-auto max-w-[1480px] px-5 py-28 lg:px-8"><p className="text-xs uppercase tracking-[.32em] text-white/40">One light. Many moods.</p><h2 className="mt-5 max-w-5xl text-5xl font-semibold leading-[.95] tracking-[-.055em] md:text-7xl">Turn blank walls into part of the experience.</h2><div className="mt-14 grid gap-4 md:grid-cols-3">{[['16 colours','Pick the atmosphere that fits the moment.'],['Remote control','Change the mood without leaving the sofa.'],['Rechargeable','Move the light wherever the room needs it.']].map(([t,c]) => <div key={t} className="rounded-[28px] border border-white/10 bg-white/[.04] p-7"><h3 className="text-2xl font-semibold">{t}</h3><p className="mt-3 text-white/50">{c}</p></div>)}</div></div></section></main>
+
+  return (
+    <main className="bg-[#080a12] text-white">
+      <section className="relative min-h-[86vh] overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_30%,rgba(89,77,255,.34),transparent_28%),radial-gradient(circle_at_88%_55%,rgba(45,191,186,.22),transparent_30%),radial-gradient(circle_at_58%_80%,rgba(255,72,157,.16),transparent_28%)]" />
+        <div className="relative mx-auto grid min-h-[86vh] max-w-[1480px] items-center gap-10 px-5 py-16 lg:grid-cols-2 lg:px-8">
+          <div>
+            <p className="text-xs uppercase tracking-[.32em] text-white/50">Housefinds · Ambient light</p>
+            <h1 className="mt-7 text-6xl font-semibold leading-[.88] tracking-[-.065em] md:text-8xl">
+              Change the room<br />
+              <span className="text-[#9ca9ff]">without changing the room.</span>
+            </h1>
+            <p className="mt-7 max-w-xl text-xl leading-8 text-white/60">
+              A compact RGB projector made for atmosphere, late nights and spaces that deserve a different mood.
+            </p>
+            <div className="mt-9 flex items-center gap-4">
+              <AddToCart productId={product.id} disabled={!product.is_in_stock} />
+              <span className="text-xl font-semibold">
+                {formatMoney(product.prices.price, product.prices.currency_minor_unit, product.prices.currency_symbol)}
+              </span>
+            </div>
+          </div>
+
+          <div className="relative min-h-[560px]">
+            {image && (
+              <Image
+                src={image.src}
+                alt={image.alt || product.name}
+                fill
+                priority
+                className="object-contain drop-shadow-[0_40px_90px_rgba(73,86,255,.25)]"
+              />
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-white/10">
+        <div className="mx-auto max-w-[1480px] px-5 py-28 lg:px-8">
+          <p className="text-xs uppercase tracking-[.32em] text-white/40">One light. Many moods.</p>
+          <h2 className="mt-5 max-w-5xl text-5xl font-semibold leading-[.95] tracking-[-.055em] md:text-7xl">
+            Turn blank walls into part of the experience.
+          </h2>
+          <div className="mt-14 grid gap-4 md:grid-cols-3">
+            {[
+              ['16 colours', 'Pick the atmosphere that fits the moment.'],
+              ['Remote control', 'Change the mood without leaving the sofa.'],
+              ['Rechargeable', 'Move the light wherever the room needs it.'],
+            ].map(([title, copy]) => (
+              <div key={title} className="rounded-[28px] border border-white/10 bg-white/[.04] p-7">
+                <h3 className="text-2xl font-semibold">{title}</h3>
+                <p className="mt-3 text-white/50">{copy}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    </main>
+  )
+}
