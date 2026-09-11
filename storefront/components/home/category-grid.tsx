@@ -1,43 +1,98 @@
+import Link from 'next/link'
+import {
+  HomeModernIcon,
+  Squares2X2Icon,
+  ArchiveBoxIcon,
+  SparklesIcon,
+  ArrowUpRightIcon,
+} from '@heroicons/react/24/outline'
+
 const categories = [
-  { title: 'Smart Entry', copy: 'Smarter, safer entry with clever door solutions.', tone: 'bg-[#e9eee8]' },
-  { title: 'Kitchen Tools', copy: 'Prep smarter. Cook happier with useful kitchen gadgets.', tone: 'bg-[#efe9df]' },
-  { title: 'Space Saving', copy: 'Clever storage solutions for a more organized home.', tone: 'bg-[#e8e7de]' },
-  { title: 'Daily Helpers', copy: 'Everyday solutions for a cleaner, easier home.', tone: 'bg-[#e7ece7]' },
+  {
+    title: 'Smart Entry',
+    copy: 'Small upgrades for doors, entryways and everyday peace of mind.',
+    icon: HomeModernIcon,
+    tone: 'from-[#dce7df] to-[#eef2ed]',
+    accent: '#3f6652',
+  },
+  {
+    title: 'Kitchen Tools',
+    copy: 'Clever prep tools that save time, space and unnecessary effort.',
+    icon: Squares2X2Icon,
+    tone: 'from-[#eee3d4] to-[#f6f1e8]',
+    accent: '#8b6643',
+  },
+  {
+    title: 'Space Saving',
+    copy: 'Useful organization ideas for making more from the space you have.',
+    icon: ArchiveBoxIcon,
+    tone: 'from-[#dde1d9] to-[#f1f1ec]',
+    accent: '#68725d',
+  },
+  {
+    title: 'Daily Helpers',
+    copy: 'Those little products you did not know you needed until you use them.',
+    icon: SparklesIcon,
+    tone: 'from-[#e2e7e4] to-[#f3f5f3]',
+    accent: '#507561',
+  },
 ]
 
 export function CategoryGrid() {
   return (
-    <section className="mx-auto max-w-[1480px] px-5 py-24 lg:px-8">
-      <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
-        <div>
-          <p className="text-xs uppercase tracking-[.28em] text-black/45">Shop by category</p>
-          <h2 className="mt-4 text-5xl font-semibold tracking-[-.055em] md:text-7xl">
-            Shop by <span className="text-[#507561]">category</span>
-          </h2>
-          <p className="mt-4 text-lg text-black/50">Clever products for every corner of the home.</p>
-        </div>
-        <p className="max-w-xs text-right text-sm italic text-[#507561]">Small changes. Happier homes.</p>
-      </div>
-
-      <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {categories.map((category, i) => (
-          <a
-            href="/shop"
-            key={category.title}
-            className={`group min-h-80 rounded-[30px] p-6 ${category.tone} transition hover:-translate-y-1`}
-          >
-            <div className="flex h-full flex-col justify-between">
-              <span className="text-sm text-black/40">0{i + 1}</span>
-              <div>
-                <h3 className="text-3xl font-semibold tracking-[-.04em]">{category.title}</h3>
-                <p className="mt-3 max-w-xs text-black/55">{category.copy}</p>
-                <span className="mt-6 inline-flex rounded-full border border-black/15 bg-white/60 px-4 py-2 text-sm font-medium">
-                  Explore →
-                </span>
-              </div>
+    <section className="bg-[#fbfaf7] px-6 py-28 lg:px-10 lg:py-36">
+      <div className="mx-auto max-w-[1600px]">
+        <div className="flex flex-col justify-between gap-7 lg:flex-row lg:items-end">
+          <div>
+            <div className="flex items-center gap-4 text-[11px] font-semibold uppercase tracking-[.3em] text-black/42">
+              Shop by category <span className="h-px w-16 bg-black/15" />
             </div>
-          </a>
-        ))}
+            <h2 className="mt-5 text-[clamp(3.5rem,5.7vw,6.7rem)] font-semibold leading-[.9] tracking-[-.065em] text-[#0e1420]">
+              Find the fix.<br />
+              <span className="text-[#557562]">Keep the good part.</span>
+            </h2>
+          </div>
+          <p className="max-w-md pb-2 text-lg leading-8 text-black/48">
+            Housefinds is built around practical products that solve a small problem without making your home feel complicated.
+          </p>
+        </div>
+
+        <div className="mt-14 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {categories.map((category, index) => {
+            const Icon = category.icon
+            return (
+              <Link
+                href="/shop"
+                key={category.title}
+                className={`group relative min-h-[410px] overflow-hidden rounded-[34px] bg-gradient-to-br ${category.tone} p-7 transition duration-500 hover:-translate-y-1.5 hover:shadow-[0_28px_70px_rgba(30,45,35,.10)]`}
+              >
+                <div className="absolute -right-16 -top-16 size-56 rounded-full border border-white/60 bg-white/25 transition duration-700 group-hover:scale-110" />
+                <div className="absolute bottom-20 right-5 text-[8rem] font-semibold leading-none tracking-[-.08em] text-white/55 select-none">
+                  0{index + 1}
+                </div>
+
+                <div className="relative flex h-full flex-col justify-between">
+                  <div className="flex items-center justify-between">
+                    <span className="grid size-14 place-items-center rounded-2xl bg-white/70 shadow-sm backdrop-blur">
+                      <Icon className="size-7" style={{ color: category.accent }} />
+                    </span>
+                    <span className="grid size-11 place-items-center rounded-full border border-black/10 bg-white/50 transition group-hover:bg-white">
+                      <ArrowUpRightIcon className="size-4" />
+                    </span>
+                  </div>
+
+                  <div>
+                    <h3 className="text-3xl font-semibold tracking-[-.045em] text-[#111720]">{category.title}</h3>
+                    <p className="mt-3 max-w-[280px] text-[15px] leading-6 text-black/52">{category.copy}</p>
+                    <span className="mt-7 inline-flex items-center gap-2 text-sm font-semibold text-[#294c3b]">
+                      Explore category <ArrowUpRightIcon className="size-3.5" />
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            )
+          })}
+        </div>
       </div>
     </section>
   )
