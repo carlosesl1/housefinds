@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import { XMarkIcon, MinusIcon, PlusIcon } from '@heroicons/react/24/outline'
 import { useCart } from '@/store/cart'
-import { formatMoney } from '@/lib/woocommerce/client'
+import { formatMoney } from '@/lib/woocommerce/money'
 
 export function CartDrawer() {
   const { cart, open, loading, setOpen, update, remove } = useCart()
