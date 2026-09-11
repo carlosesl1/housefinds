@@ -34,8 +34,3 @@ export async function getProductBySlug(slug: string) {
   const products = await wooFetch<WooProduct[]>(`/products?slug=${encodeURIComponent(slug)}`)
   return products[0] || null
 }
-
-export function formatMoney(amount: string | number, minorUnit = 2, symbol = '£') {
-  const value = typeof amount === 'string' ? Number(amount) : amount
-  return `${symbol}${(value / Math.pow(10, minorUnit)).toFixed(minorUnit)}`
-}
