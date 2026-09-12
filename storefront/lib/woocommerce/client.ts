@@ -5,12 +5,16 @@ const WC_URL = (process.env.WOOCOMMERCE_URL || 'https://housefindsstore.com').re
 const API = `${WC_URL}/wp-json/wc/store/v1`
 
 async function wooFetch<T>(path: string, init?: RequestInit & { revalidate?: number }): Promise<T> {
-  const { revalidate = 60, ...request } = init || {}
+  const defaultRevalidate = process.env.NODE_ENV === 'development' ? 0 : 60
+  const { revalidate = defaultRevalidate, ...request } = init || {}
+  const isMutation = Boolean(request.method && request.method !== 'GET')
+  const noCache = isMutation || revalidate === 0
+
   const response = await fetch(`${API}${path}`, {
     ...request,
     headers: { Accept: 'application/json', ...(request.headers || {}) },
-    next: request.method && request.method !== 'GET' ? undefined : { revalidate },
-    cache: request.method && request.method !== 'GET' ? 'no-store' : undefined,
+    next: noCache ? undefined : { revalidate },
+    cache: noCache ? 'no-store' : undefined,
   })
 
   if (!response.ok) {
