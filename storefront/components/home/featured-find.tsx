@@ -3,16 +3,14 @@ import Link from 'next/link'
 import { ArrowRightIcon, CheckIcon } from '@heroicons/react/24/outline'
 import type { WooProduct } from '@/lib/woocommerce/types'
 import { formatMoney } from '@/lib/woocommerce/money'
-
-function plainText(html: string) {
-  return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
-}
+import { displayProductName, displayProductTagline } from '@/lib/woocommerce/presentation'
 
 export function FeaturedFind({ product }: { product?: WooProduct }) {
   if (!product) return null
 
   const image = product.images?.[0]
-  const copy = plainText(product.short_description || product.description)
+  const name = displayProductName(product.name)
+  const copy = displayProductTagline(product)
 
   return (
     <section id="featured-find" className="bg-[#101511] px-6 py-6 text-white lg:px-10 lg:py-10">
@@ -21,10 +19,10 @@ export function FeaturedFind({ product }: { product?: WooProduct }) {
           {image ? (
             <Image
               src={image.src}
-              alt={image.alt || product.name}
+              alt={image.alt || name}
               fill
               sizes="(max-width: 1024px) 100vw, 54vw"
-              className="object-cover"
+              className="object-cover transition duration-700 hover:scale-[1.02]"
             />
           ) : (
             <div className="absolute inset-0 bg-[#26352c]" />
@@ -47,21 +45,13 @@ export function FeaturedFind({ product }: { product?: WooProduct }) {
           </h2>
 
           <h3 className="mt-8 max-w-xl text-2xl font-semibold leading-tight tracking-[-.035em] text-white/92">
-            {product.name}
+            {name}
           </h3>
 
-          {copy && (
-            <p className="mt-4 max-w-xl text-base leading-7 text-white/52">
-              {copy.slice(0, 220)}{copy.length > 220 ? '…' : ''}
-            </p>
-          )}
+          <p className="mt-4 max-w-xl text-base leading-7 text-white/52">{copy}</p>
 
           <div className="mt-9 grid gap-4 sm:grid-cols-3">
-            {[
-              'Useful by design',
-              'Easy to understand',
-              'Made for everyday life',
-            ].map((item) => (
+            {['Useful by design', 'Easy to understand', 'Made for everyday life'].map((item) => (
               <div key={item} className="border-t border-white/12 pt-4">
                 <CheckIcon className="size-5 text-[#9bb6a3]" />
                 <p className="mt-3 text-sm font-medium text-white/75">{item}</p>
