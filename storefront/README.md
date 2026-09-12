@@ -27,7 +27,10 @@ Default backend: `https://housefindsstore.com`.
 
 ## Deployment transition
 
-Keep the current WordPress storefront live while developing this app on a preview subdomain or Node hosting. Do not point the existing Hostinger Git deployment for the WordPress theme at this `storefront` directory.
+Production branch: `headless-storefront`.
+Vercel project: `housefinds-storefront`.
+
+Keep the current WordPress storefront live while developing this app on a preview subdomain. Do not point the existing Hostinger Git deployment for the WordPress theme at this `storefront` directory.
 
 Later target architecture:
 
