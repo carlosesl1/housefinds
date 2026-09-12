@@ -6,45 +6,59 @@ import {
   RectangleGroupIcon,
 } from '@heroicons/react/24/outline'
 import { getProducts } from '@/lib/woocommerce/client'
+import { findProductByKeywords } from '@/lib/woocommerce/presentation'
 import { Hero } from '@/components/home/hero'
 import { CategoryGrid } from '@/components/home/category-grid'
 import { FeaturedFind } from '@/components/home/featured-find'
+import { ProblemSolvingPicks } from '@/components/home/problem-solving-picks'
 import { ProductCard } from '@/components/product/product-card'
 
 export default async function HomePage() {
-  const products = await getProducts({ per_page: 12 })
-  const additionalProducts = products.slice(1)
+  const products = await getProducts({ per_page: 16 })
+  const featuredProduct =
+    findProductByKeywords(products, ['spoon scale']) ||
+    findProductByKeywords(products, ['motion sensor led']) ||
+    products[0]
+
+  const showcaseProducts = products
+    .filter((product) => product.id !== featuredProduct?.id)
+    .slice(0, 8)
 
   return (
     <main className="overflow-hidden">
       <Hero products={products} />
-      <CategoryGrid />
-      <FeaturedFind product={products[0]} />
+      <CategoryGrid products={products} />
 
-      {additionalProducts.length > 0 && (
+      {showcaseProducts.length > 0 && (
         <section className="bg-[#fbfaf7] px-6 py-28 lg:px-10 lg:py-36">
           <div className="mx-auto max-w-[1600px]">
             <div className="flex flex-col justify-between gap-7 lg:flex-row lg:items-end">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[.3em] text-black/42">More clever finds</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[.3em] text-black/42">New arrivals</p>
                 <h2 className="mt-5 text-[clamp(3.5rem,5.6vw,6.5rem)] font-semibold leading-[.9] tracking-[-.065em]">
-                  Useful enough to keep.<br />
-                  <span className="text-[#557562]">Different enough to notice.</span>
+                  Fresh finds for<br />
+                  <span className="text-[#557562]">a brighter home.</span>
                 </h2>
               </div>
-              <Link href="/shop" className="inline-flex items-center gap-2 pb-2 font-semibold text-[#355f4a]">
-                View all products <ArrowRightIcon className="size-4" />
-              </Link>
+              <div className="max-w-md">
+                <p className="text-lg leading-8 text-black/48">The latest useful products added to Housefinds — chosen for practical everyday living.</p>
+                <Link href="/shop" className="mt-5 inline-flex items-center gap-2 font-semibold text-[#355f4a]">
+                  View all new arrivals <ArrowRightIcon className="size-4" />
+                </Link>
+              </div>
             </div>
 
             <div className="mt-14 grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 xl:grid-cols-4">
-              {additionalProducts.slice(0, 8).map((product) => (
+              {showcaseProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>
           </div>
         </section>
       )}
+
+      <ProblemSolvingPicks products={products} />
+      <FeaturedFind product={featuredProduct} />
 
       <section className="bg-[#f0f1eb] px-6 py-28 lg:px-10 lg:py-36">
         <div className="mx-auto max-w-[1600px]">
