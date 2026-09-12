@@ -1,7 +1,6 @@
 import Image from 'next/image'
 import type { WooProduct } from '@/lib/woocommerce/types'
-import { AddToCart } from '@/components/cart/add-to-cart'
-import { formatMoney } from '@/lib/woocommerce/money'
+import { ProductPurchasePanel } from '@/components/product/product-purchase-panel'
 
 export function AuroraProjectorExperience({ product }: { product: WooProduct }) {
   const image = product.images?.[0]
@@ -10,7 +9,7 @@ export function AuroraProjectorExperience({ product }: { product: WooProduct }) 
     <main className="bg-[#080a12] text-white">
       <section className="relative min-h-[86vh] overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_30%,rgba(89,77,255,.34),transparent_28%),radial-gradient(circle_at_88%_55%,rgba(45,191,186,.22),transparent_30%),radial-gradient(circle_at_58%_80%,rgba(255,72,157,.16),transparent_28%)]" />
-        <div className="relative mx-auto grid min-h-[86vh] max-w-[1480px] items-center gap-10 px-5 py-16 lg:grid-cols-2 lg:px-8">
+        <div className="relative mx-auto grid min-h-[86vh] max-w-[1480px] items-center gap-10 px-5 py-16 lg:grid-cols-[.95fr_1.05fr] lg:px-8">
           <div>
             <p className="text-xs uppercase tracking-[.32em] text-white/50">Housefinds · Ambient light</p>
             <h1 className="mt-7 text-6xl font-semibold leading-[.88] tracking-[-.065em] md:text-8xl">
@@ -20,11 +19,8 @@ export function AuroraProjectorExperience({ product }: { product: WooProduct }) 
             <p className="mt-7 max-w-xl text-xl leading-8 text-white/60">
               A compact RGB projector made for atmosphere, late nights and spaces that deserve a different mood.
             </p>
-            <div className="mt-9 flex items-center gap-4">
-              <AddToCart productId={product.id} disabled={!product.is_in_stock} />
-              <span className="text-xl font-semibold">
-                {formatMoney(product.prices.price, product.prices.currency_minor_unit, product.prices.currency_symbol)}
-              </span>
+            <div className="mt-9 max-w-xl rounded-[30px] border border-white/10 bg-white/[.045] p-6 backdrop-blur-xl">
+              <ProductPurchasePanel product={product} dark />
             </div>
           </div>
 
@@ -35,6 +31,7 @@ export function AuroraProjectorExperience({ product }: { product: WooProduct }) 
                 alt={image.alt || product.name}
                 fill
                 priority
+                sizes="(max-width: 1024px) 100vw, 52vw"
                 className="object-contain drop-shadow-[0_40px_90px_rgba(73,86,255,.25)]"
               />
             )}
