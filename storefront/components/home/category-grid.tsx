@@ -1,44 +1,37 @@
+import Image from 'next/image'
 import Link from 'next/link'
-import {
-  HomeModernIcon,
-  Squares2X2Icon,
-  ArchiveBoxIcon,
-  SparklesIcon,
-  ArrowUpRightIcon,
-} from '@heroicons/react/24/outline'
+import { ArrowUpRightIcon } from '@heroicons/react/24/outline'
+import type { WooProduct } from '@/lib/woocommerce/types'
+import { displayProductName, findProductByKeywords } from '@/lib/woocommerce/presentation'
 
-const categories = [
+const categoryConfig = [
   {
     title: 'Smart Entry',
-    copy: 'Small upgrades for doors, entryways and everyday peace of mind.',
-    icon: HomeModernIcon,
-    tone: 'from-[#dce7df] to-[#eef2ed]',
-    accent: '#3f6652',
+    copy: 'Smarter door and entry solutions for a quieter, easier home.',
+    keywords: ['door closer', 'door stop'],
+    tone: 'bg-[#e7eee9]',
   },
   {
     title: 'Kitchen Tools',
     copy: 'Clever prep tools that save time, space and unnecessary effort.',
-    icon: Squares2X2Icon,
-    tone: 'from-[#eee3d4] to-[#f6f1e8]',
-    accent: '#8b6643',
+    keywords: ['oil spray', 'cutting board', 'spoon scale'],
+    tone: 'bg-[#efe7db]',
   },
   {
     title: 'Space Saving',
     copy: 'Useful organization ideas for making more from the space you have.',
-    icon: ArchiveBoxIcon,
-    tone: 'from-[#dde1d9] to-[#f1f1ec]',
-    accent: '#68725d',
+    keywords: ['shoe storage', 'shoe rack', 'toothbrush holder'],
+    tone: 'bg-[#e8e9e2]',
   },
   {
     title: 'Daily Helpers',
     copy: 'Those little products you did not know you needed until you use them.',
-    icon: SparklesIcon,
-    tone: 'from-[#e2e7e4] to-[#f3f5f3]',
-    accent: '#507561',
+    keywords: ['motion sensor led', 'mosquito', 'bath mat', 'shoe washing'],
+    tone: 'bg-[#e5ebe7]',
   },
 ]
 
-export function CategoryGrid() {
+export function CategoryGrid({ products }: { products: WooProduct[] }) {
   return (
     <section className="bg-[#fbfaf7] px-6 py-28 lg:px-10 lg:py-36">
       <div className="mx-auto max-w-[1600px]">
@@ -53,41 +46,52 @@ export function CategoryGrid() {
             </h2>
           </div>
           <p className="max-w-md pb-2 text-lg leading-8 text-black/48">
-            Housefinds is built around practical products that solve a small problem without making your home feel complicated.
+            Shop useful products by the kind of everyday problem they help solve.
           </p>
         </div>
 
         <div className="mt-14 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {categories.map((category, index) => {
-            const Icon = category.icon
+          {categoryConfig.map((category, index) => {
+            const product = findProductByKeywords(products, category.keywords) || products[index % Math.max(products.length, 1)]
+            const image = product?.images?.[0]
+            const productName = product ? displayProductName(product.name) : ''
+
             return (
               <Link
-                href="/shop"
+                href={product ? `/produto/${product.slug}` : '/shop'}
                 key={category.title}
-                className={`group relative min-h-[410px] overflow-hidden rounded-[34px] bg-gradient-to-br ${category.tone} p-7 transition duration-500 hover:-translate-y-1.5 hover:shadow-[0_28px_70px_rgba(30,45,35,.10)]`}
+                className={`group overflow-hidden rounded-[34px] ${category.tone} transition duration-500 hover:-translate-y-1.5 hover:shadow-[0_28px_70px_rgba(30,45,35,.10)]`}
               >
-                <div className="absolute -right-16 -top-16 size-56 rounded-full border border-white/60 bg-white/25 transition duration-700 group-hover:scale-110" />
-                <div className="absolute bottom-20 right-5 text-[8rem] font-semibold leading-none tracking-[-.08em] text-white/55 select-none">
-                  0{index + 1}
+                <div className="relative aspect-[5/4] overflow-hidden bg-black/[.035]">
+                  {image ? (
+                    <Image
+                      src={image.src}
+                      alt={image.alt || productName}
+                      fill
+                      sizes="(max-width: 768px) 100vw, 25vw"
+                      className="object-cover transition duration-700 group-hover:scale-[1.045]"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_60%_35%,rgba(255,255,255,.75),transparent_32%)]" />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/18 via-transparent to-white/5" />
+                  <span className="absolute left-5 top-5 rounded-full border border-white/50 bg-white/84 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[.2em] backdrop-blur">
+                    0{index + 1}
+                  </span>
+                  <span className="absolute right-5 top-5 grid size-11 place-items-center rounded-full border border-white/50 bg-white/84 backdrop-blur transition group-hover:bg-white">
+                    <ArrowUpRightIcon className="size-4" />
+                  </span>
                 </div>
 
-                <div className="relative flex h-full flex-col justify-between">
-                  <div className="flex items-center justify-between">
-                    <span className="grid size-14 place-items-center rounded-2xl bg-white/70 shadow-sm backdrop-blur">
-                      <Icon className="size-7" style={{ color: category.accent }} />
-                    </span>
-                    <span className="grid size-11 place-items-center rounded-full border border-black/10 bg-white/50 transition group-hover:bg-white">
-                      <ArrowUpRightIcon className="size-4" />
-                    </span>
-                  </div>
-
-                  <div>
-                    <h3 className="text-3xl font-semibold tracking-[-.045em] text-[#111720]">{category.title}</h3>
-                    <p className="mt-3 max-w-[280px] text-[15px] leading-6 text-black/52">{category.copy}</p>
-                    <span className="mt-7 inline-flex items-center gap-2 text-sm font-semibold text-[#294c3b]">
-                      Explore category <ArrowUpRightIcon className="size-3.5" />
-                    </span>
-                  </div>
+                <div className="p-6 lg:p-7">
+                  <h3 className="text-3xl font-semibold tracking-[-.045em] text-[#111720]">{category.title}</h3>
+                  <p className="mt-3 min-h-12 text-[15px] leading-6 text-black/52">{category.copy}</p>
+                  {product && (
+                    <p className="mt-5 line-clamp-1 text-xs font-medium uppercase tracking-[.12em] text-black/38">Featuring {productName}</p>
+                  )}
+                  <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-[#294c3b]">
+                    Explore <ArrowUpRightIcon className="size-3.5" />
+                  </span>
                 </div>
               </Link>
             )
