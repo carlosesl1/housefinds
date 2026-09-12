@@ -31,13 +31,14 @@ declare global {
 }
 
 type PaymentDetail = { key?: string; value?: string }
+type PaymentDetails = PaymentDetail[] | Record<string, unknown> | undefined
 type CheckoutResponse = {
   order_id?: number
   order_number?: string
   status?: string
   payment_result?: {
     payment_status?: string
-    payment_details?: PaymentDetail[] | Record<string, unknown>
+    payment_details?: PaymentDetails
     redirect_url?: string
   }
 }
@@ -68,7 +69,7 @@ function loadStripeScript() {
   return stripeScriptPromise
 }
 
-function paymentDetailsToRecord(details: CheckoutResponse['payment_result'] extends infer T ? T extends { payment_details?: infer D } ? D : never : never) {
+function paymentDetailsToRecord(details: PaymentDetails) {
   if (Array.isArray(details)) {
     return details.reduce<Record<string, string>>((record, entry) => {
       if (entry?.key) record[entry.key] = String(entry.value ?? '')
@@ -251,8 +252,6 @@ export function StripeCardForm({
         const confirmation = await stripe.confirmCardPayment(intentSecret)
         if (confirmation.error) throw new Error(confirmation.error.message || 'Card authentication failed.')
 
-        // WooCommerce Stripe generates a signed endpoint that verifies the
-        // confirmed intent, finalises the order and redirects to order-received.
         if (details.verification_endpoint) {
           window.location.assign(details.verification_endpoint)
           return
