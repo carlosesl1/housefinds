@@ -1,10 +1,18 @@
-export type WooImage = { id: number; src: string; thumbnail?: string; srcset?: string; sizes?: string; name?: string; alt?: string }
+export type WooImage = {
+  id: number
+  src: string
+  thumbnail?: string
+  srcset?: string
+  sizes?: string
+  name?: string
+  alt?: string
+}
 
 export type WooPrice = {
   price: string
   regular_price: string
   sale_price: string
-  price_range?: { min_amount: string; max_amount: string }
+  price_range?: { min_amount: string; max_amount: string } | null
   currency_code: string
   currency_symbol: string
   currency_minor_unit: number
@@ -12,6 +20,26 @@ export type WooPrice = {
   currency_thousand_separator: string
   currency_prefix: string
   currency_suffix: string
+}
+
+export type WooAttributeTerm = {
+  id: number
+  name: string
+  slug: string
+  default?: boolean
+}
+
+export type WooProductAttribute = {
+  id: number
+  name: string
+  taxonomy?: string | null
+  has_variations: boolean
+  terms: WooAttributeTerm[]
+}
+
+export type WooVariationSummary = {
+  id: number
+  attributes: Array<{ name: string; value: string | null }>
 }
 
 export type WooProduct = {
@@ -32,11 +60,21 @@ export type WooProduct = {
   review_count: number
   images: WooImage[]
   categories: Array<{ id: number; name: string; slug: string; link?: string }>
-  attributes: Array<{ id: number; name: string; taxonomy?: string; has_variations: boolean; terms: Array<{ id: number; name: string; slug: string }> }>
-  variations?: Array<{ id: number; attributes: Array<{ name: string; value: string }> }>
+  attributes: WooProductAttribute[]
+  variations?: WooVariationSummary[]
+  has_options?: boolean
   is_purchasable: boolean
   is_in_stock: boolean
-  add_to_cart?: { text?: string; description?: string; url?: string; minimum?: number; maximum?: number; multiple_of?: number }
+  is_on_backorder?: boolean
+  stock_availability?: { text?: string; class?: string }
+  add_to_cart?: {
+    text?: string
+    description?: string
+    url?: string
+    minimum?: number
+    maximum?: number
+    multiple_of?: number
+  }
 }
 
 export type WooCartItem = {
@@ -46,7 +84,13 @@ export type WooCartItem = {
   name: string
   short_description: string
   prices: WooPrice
-  totals: { line_subtotal: string; line_total: string; currency_code: string; currency_symbol: string; currency_minor_unit: number }
+  totals: {
+    line_subtotal: string
+    line_total: string
+    currency_code: string
+    currency_symbol: string
+    currency_minor_unit: number
+  }
   images: WooImage[]
   variation: Array<{ attribute: string; value: string }>
 }
@@ -72,6 +116,18 @@ export type WooCart = {
   needs_payment: boolean
   needs_shipping: boolean
   has_calculated_shipping: boolean
-  shipping_rates: Array<{ package_id: number; name: string; destination: Record<string, string>; shipping_rates: Array<{ rate_id: string; name: string; description: string; delivery_time: string; price: string; selected: boolean }> }>
+  shipping_rates: Array<{
+    package_id: number
+    name: string
+    destination: Record<string, string>
+    shipping_rates: Array<{
+      rate_id: string
+      name: string
+      description: string
+      delivery_time: string
+      price: string
+      selected: boolean
+    }>
+  }>
   items_count: number
 }
