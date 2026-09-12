@@ -2,7 +2,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowUpRightIcon } from '@heroicons/react/24/outline'
 import type { WooProduct } from '@/lib/woocommerce/types'
-import { formatMoney } from '@/lib/woocommerce/money'
+import { formatProductPrice } from '@/lib/woocommerce/money'
 import { displayProductName, displayProductTagline } from '@/lib/woocommerce/presentation'
 
 export function ProductCard({ product }: { product: WooProduct }) {
@@ -36,9 +36,7 @@ export function ProductCard({ product }: { product: WooProduct }) {
           <h3 className="line-clamp-2 text-[17px] font-semibold tracking-[-.025em]">{name}</h3>
           <p className="mt-1.5 line-clamp-2 text-sm leading-5 text-black/45">{tagline}</p>
           <div className="mt-3 flex items-end justify-between gap-2">
-            <p className="text-lg font-semibold">
-              {formatMoney(product.prices.price, product.prices.currency_minor_unit, product.prices.currency_symbol)}
-            </p>
+            <p className="text-lg font-semibold">{formatProductPrice(product)}</p>
             {product.review_count > 0 && (
               <span className="text-xs text-black/45">★ {product.average_rating} ({product.review_count})</span>
             )}
