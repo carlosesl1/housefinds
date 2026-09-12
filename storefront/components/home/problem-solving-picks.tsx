@@ -26,9 +26,10 @@ const picks = [
 ]
 
 export function ProblemSolvingPicks({ products }: { products: WooProduct[] }) {
-  const resolved = picks
-    .map((pick, index) => ({ ...pick, product: findProductByKeywords(products, pick.keywords) || products[index] }))
-    .filter((pick) => pick.product)
+  const resolved = picks.flatMap((pick, index) => {
+    const product = findProductByKeywords(products, pick.keywords) || products[index]
+    return product ? [{ ...pick, product }] : []
+  })
 
   if (!resolved.length) return null
 
