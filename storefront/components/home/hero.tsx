@@ -2,7 +2,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowRightIcon, SparklesIcon } from '@heroicons/react/24/outline'
 import type { WooProduct } from '@/lib/woocommerce/types'
-import { formatMoney } from '@/lib/woocommerce/money'
+import { formatProductPrice } from '@/lib/woocommerce/money'
 import { displayProductName, pickHeroProduct } from '@/lib/woocommerce/presentation'
 
 export function Hero({ products }: { products: WooProduct[] }) {
@@ -72,7 +72,7 @@ export function Hero({ products }: { products: WooProduct[] }) {
                 <p className="text-[10px] font-semibold uppercase tracking-[.24em] text-[#557562]">Featured find</p>
                 <h2 className="mt-2 text-xl font-semibold leading-tight tracking-[-.03em] text-[#111720]">{featuredName}</h2>
                 <div className="mt-4 flex items-center justify-between gap-4">
-                  <span className="text-lg font-semibold">{formatMoney(featured.prices.price, featured.prices.currency_minor_unit, featured.prices.currency_symbol)}</span>
+                  <span className="text-lg font-semibold">{formatProductPrice(featured)}</span>
                   <Link href={`/produto/${featured.slug}`} className="inline-flex items-center gap-2 rounded-full bg-[#355f4a] px-4 py-2 text-sm font-semibold text-white">
                     View find <ArrowRightIcon className="size-3.5" />
                   </Link>
@@ -91,7 +91,7 @@ export function Hero({ products }: { products: WooProduct[] }) {
       <div className="border-t border-black/[.06] bg-white/65">
         <div className="mx-auto grid max-w-[1600px] divide-y divide-black/[.06] px-6 md:grid-cols-4 md:divide-x md:divide-y-0 lg:px-10">
           {[
-            ['Fast dispatch', 'Simple, clear order updates.'],
+            ['Delivery updates', 'Clear order progress after checkout.'],
             ['Curated finds', 'Products picked for usefulness.'],
             ['Secure checkout', 'Protected WooCommerce payments.'],
             ['Tracked orders', 'Know where your order is.'],
