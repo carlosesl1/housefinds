@@ -4,12 +4,13 @@ import { getProducts } from '@/lib/woocommerce/client'
 import { ProductCard } from '@/components/product/product-card'
 import { searchStoreProducts } from '@/lib/storefront/search'
 import { STORE_CATEGORIES } from '@/lib/storefront/categories'
+import { dedupeStoreProducts } from '@/lib/storefront/catalog'
 
 export const metadata = { title: 'Search' }
 
 export default async function SearchPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const { q = '' } = await searchParams
-  const products = await getProducts({ per_page: 100 })
+  const products = dedupeStoreProducts(await getProducts({ per_page: 100 }))
   const results = q.trim() ? searchStoreProducts(products, q) : []
 
   return (
