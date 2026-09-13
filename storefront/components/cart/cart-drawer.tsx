@@ -8,6 +8,8 @@ import { useCart } from '@/store/cart'
 import { formatMoney } from '@/lib/woocommerce/money'
 import { displayProductName } from '@/lib/woocommerce/presentation'
 
+const UK_LAUNCH_ORDER_LIMIT = 135
+
 export function CartDrawer() {
   const { cart, open, loading, error, clearError, setOpen, update, remove } = useCart()
 
@@ -28,6 +30,10 @@ export function CartDrawer() {
   if (!open) return null
 
   const subtotal = cart ? formatMoney(cart.totals.total_items, cart.totals.currency_minor_unit, cart.totals.currency_symbol) : '£0.00'
+  const subtotalValue = cart
+    ? Number(cart.totals.total_items || 0) / Math.pow(10, cart.totals.currency_minor_unit || 2)
+    : 0
+  const exceedsLaunchLimit = subtotalValue >= UK_LAUNCH_ORDER_LIMIT
   const discount = cart && Number(cart.totals.total_discount) > 0
     ? formatMoney(cart.totals.total_discount, cart.totals.currency_minor_unit, cart.totals.currency_symbol)
     : null
@@ -79,7 +85,14 @@ export function CartDrawer() {
             <div className="flex items-center justify-between"><span className="text-black/55">Standard UK delivery</span><strong className="text-[#355f4a]">FREE</strong></div>
           </div>
           <p className="mt-2 text-xs leading-5 text-black/38">Current UK delivery estimate: around 14 days. Any applicable tax will be shown in the final checkout total.</p>
-          <Link href="/checkout" onClick={() => setOpen(false)} className={`mt-5 flex h-14 items-center justify-center gap-2 rounded-full bg-[#355f4a] font-semibold text-white transition hover:bg-[#294b3a] ${!cart?.items?.length || loading ? 'pointer-events-none opacity-50' : ''}`}><LockClosedIcon className="size-4" /> Continue to checkout</Link>
+
+          {exceedsLaunchLimit && (
+            <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-950">
+              <strong>Launch order limit: below £135.</strong> Remove an item or reduce quantity to continue to checkout.
+            </div>
+          )}
+
+          <Link href="/checkout" onClick={() => setOpen(false)} className={`mt-5 flex h-14 items-center justify-center gap-2 rounded-full bg-[#355f4a] font-semibold text-white transition hover:bg-[#294b3a] ${!cart?.items?.length || loading || exceedsLaunchLimit ? 'pointer-events-none opacity-50' : ''}`}><LockClosedIcon className="size-4" /> Continue to checkout</Link>
           <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-[11px] font-medium text-black/42">
             <span className="inline-flex items-center gap-1.5"><TruckIcon className="size-3.5" /> Free UK delivery</span>
             <span className="inline-flex items-center gap-1.5"><LockClosedIcon className="size-3.5" /> Secure payment</span>
