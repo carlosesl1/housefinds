@@ -4,7 +4,7 @@ import { ArrowRightIcon, MagnifyingGlassIcon, EnvelopeIcon } from '@heroicons/re
 const shopLinks = [
   ['All products', '/shop'],
   ['New in', '/shop?sort=new'],
-  ['Best sellers', '/shop?sort=popular'],
+  ['Popular finds', '/shop?sort=popular'],
   ['Kitchen tools', '/shop?category=kitchen-tools'],
   ['Smart entry', '/shop?category=smart-entry'],
   ['Space saving', '/shop?category=space-saving'],
