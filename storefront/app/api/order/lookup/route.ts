@@ -18,9 +18,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: 'Enter your order number and the email used at checkout.' }, { status: 400 })
   }
 
+  const forwarded = req.headers.get('x-forwarded-for') || ''
+  const clientIp = forwarded.split(',')[0]?.trim() || req.headers.get('x-real-ip') || 'unknown'
+
   const upstream = await fetch(LOOKUP_URL, {
     method: 'POST',
-    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      'X-Housefinds-Client-IP': clientIp.slice(0, 80),
+    },
     body: JSON.stringify({ order_number: orderNumber, email }),
     cache: 'no-store',
   })
