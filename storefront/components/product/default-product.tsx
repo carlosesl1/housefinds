@@ -10,10 +10,12 @@ import { isOperationalAttribute, storefrontAttributeName, storefrontTermName } f
 
 export function DefaultProduct({
   product,
+  variations = [],
   reviews = [],
   relatedProducts = [],
 }: {
   product: WooProduct
+  variations?: WooProduct[]
   reviews?: WooProductReview[]
   relatedProducts?: WooProduct[]
 }) {
@@ -54,7 +56,7 @@ export function DefaultProduct({
             )}
 
             <div className="mt-8 rounded-[30px] border border-black/[.07] bg-white p-6 shadow-[0_18px_70px_rgba(34,45,37,.045)] sm:p-7">
-              <ProductPurchasePanel product={product} />
+              <ProductPurchasePanel product={product} variations={variations} />
             </div>
 
             <div className="mt-5 grid gap-3 sm:grid-cols-3 xl:grid-cols-1 2xl:grid-cols-3">
