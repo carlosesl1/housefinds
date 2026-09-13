@@ -8,8 +8,11 @@ const CHECKOUT_URL = `${WC_URL}/wp-json/wc/store/v1/checkout`
 const UK_LAUNCH_ORDER_LIMIT_GBP = 135
 export const LAST_ORDER_COOKIE = 'hf_last_order'
 
+type CheckoutAddress = { email?: string; country?: string; [key: string]: unknown }
 type CheckoutRequestBody = {
-  billing_address?: { email?: string }
+  billing_address?: CheckoutAddress
+  shipping_address?: CheckoutAddress
+  expected_total?: unknown
   [key: string]: unknown
 }
 
@@ -47,7 +50,6 @@ async function bootstrapCartToken() {
     headers: { Accept: 'application/json' },
     cache: 'no-store',
   })
-
   if (!response.ok) return ''
   return getCartToken(response.headers)
 }
@@ -74,7 +76,6 @@ function exceedsLaunchLimit(cart: CartSnapshot | null) {
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies()
   let token = cookieStore.get(CART_COOKIE)?.value || ''
-
   if (!token) token = await bootstrapCartToken()
 
   if (!token) {
@@ -84,9 +85,6 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // Never trust the browser-provided expected total. Re-read the live Woo cart
-  // server-side immediately before checkout so the launch basket cap cannot be
-  // bypassed by calling this route directly.
   const liveCart = await getServerCart(token)
   if (!liveCart) {
     return NextResponse.json(
@@ -102,11 +100,26 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const rawBody = await req.text()
-  let requestBody: CheckoutRequestBody = {}
+  let requestBody: CheckoutRequestBody
   try {
-    requestBody = JSON.parse(rawBody) as CheckoutRequestBody
-  } catch {}
+    requestBody = await req.json() as CheckoutRequestBody
+  } catch {
+    return NextResponse.json({ code: 'housefinds_invalid_checkout', message: 'Checkout details could not be read. Refresh and try again.' }, { status: 400 })
+  }
+
+  const billingCountry = String(requestBody.billing_address?.country || 'GB').toUpperCase()
+  const shippingCountry = String(requestBody.shipping_address?.country || 'GB').toUpperCase()
+  if (billingCountry !== 'GB' || shippingCountry !== 'GB') {
+    return NextResponse.json(
+      { code: 'housefinds_uk_only', message: 'Housefinds currently delivers to United Kingdom addresses only.' },
+      { status: 422 },
+    )
+  }
+
+  // `expected_total` is a client-side consistency hint only. WooCommerce must
+  // receive only fields that belong to its Checkout Store API schema.
+  delete requestBody.expected_total
+  const upstreamBody = JSON.stringify(requestBody)
 
   const upstream = await fetch(CHECKOUT_URL, {
     method: 'POST',
@@ -115,7 +128,7 @@ export async function POST(req: NextRequest) {
       'Content-Type': 'application/json',
       'Cart-Token': token,
     },
-    body: rawBody,
+    body: upstreamBody,
     cache: 'no-store',
     redirect: 'manual',
   })
@@ -123,8 +136,6 @@ export async function POST(req: NextRequest) {
   const text = await upstream.text()
 
   if (!upstream.ok) {
-    // Never log payment_data / Stripe PaymentMethod IDs. Status and a short
-    // WooCommerce response are enough for operational debugging.
     let safeMessage = `WooCommerce checkout failed (${upstream.status})`
     try {
       const parsed = JSON.parse(text) as { code?: string; message?: string }
@@ -152,9 +163,6 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  // The Store API order key is designed to authorize access to this specific
-  // guest order. Keep it server-only so the customer can revisit their receipt
-  // without exposing WooCommerce credentials or order keys to client JavaScript.
   if (upstream.ok) {
     try {
       const checkout = JSON.parse(text) as CheckoutResponseBody
