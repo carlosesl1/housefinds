@@ -32,6 +32,8 @@ export async function getProducts(params: {
   order?: 'asc' | 'desc'
   related?: number
   on_sale?: boolean
+  parent?: number
+  type?: string
 } = {}) {
   const qs = new URLSearchParams()
   qs.set('per_page', String(params.per_page || 12))
@@ -41,12 +43,18 @@ export async function getProducts(params: {
   if (params.order) qs.set('order', params.order)
   if (params.related) qs.set('related', String(params.related))
   if (params.on_sale !== undefined) qs.set('on_sale', String(params.on_sale))
+  if (params.parent) qs.set('parent', String(params.parent))
+  if (params.type) qs.set('type', params.type)
   return wooFetch<WooProduct[]>(`/products?${qs.toString()}`)
 }
 
 export async function getProductBySlug(slug: string) {
   const products = await wooFetch<WooProduct[]>(`/products?slug=${encodeURIComponent(slug)}`)
   return products[0] || null
+}
+
+export async function getProductVariations(productId: number) {
+  return getProducts({ per_page: 100, parent: productId, type: 'variation' })
 }
 
 export async function getProductReviews(productId?: number, perPage = 12) {
