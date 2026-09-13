@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { getProductBySlug, getProductReviews, getProductVariations, getRelatedProducts } from '@/lib/woocommerce/client'
 import { DefaultProduct } from '@/components/product/default-product'
+import { ProductFAQ } from '@/components/product/product-faq'
 import { ProductReviews } from '@/components/product/product-reviews'
 import { RelatedProducts } from '@/components/product/related-products'
 import { RecentlyViewed } from '@/components/product/recently-viewed'
@@ -99,6 +100,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       {experience === 'aurora-projector' ? (
         <>
           <AuroraProjectorExperience product={product} variations={variations} />
+          <ProductFAQ product={product} />
           <ProductReviews product={product} reviews={reviews} />
           <RelatedProducts products={relatedProducts} />
         </>
