@@ -6,7 +6,7 @@ import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { Bars3Icon, MagnifyingGlassIcon, XMarkIcon, ArrowRightIcon } from '@heroicons/react/24/outline'
 import { CartButton } from '@/components/cart/cart-button'
-import { searchHelp } from '@/lib/storefront/help'
+import { isSupportIntent, searchHelp } from '@/lib/storefront/help'
 
 const navItems = [
   { href: '/', label: 'Home', exact: true },
@@ -35,11 +35,12 @@ export function SiteHeader() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
   const [suggestionLoading, setSuggestionLoading] = useState(false)
+  const supportIntent = useMemo(() => isSupportIntent(query), [query])
   const helpSuggestions = useMemo(() => query.trim().length >= 2 ? searchHelp(query).slice(0, 3) : [], [query])
 
   useEffect(() => {
     const q = query.trim()
-    if (q.length < 2) {
+    if (q.length < 2 || supportIntent) {
       setSuggestions([])
       setSuggestionLoading(false)
       return
@@ -62,7 +63,7 @@ export function SiteHeader() {
       controller.abort()
       window.clearTimeout(timer)
     }
-  }, [query])
+  }, [query, supportIntent])
 
   const submitSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -118,15 +119,7 @@ export function SiteHeader() {
             <label className="flex h-11 min-w-[350px] items-center gap-3 rounded-full border border-black/[.05] bg-black/[.035] px-4 transition focus-within:border-[#557562]/40 focus-within:bg-white focus-within:ring-4 focus-within:ring-[#557562]/10">
               <MagnifyingGlassIcon className="size-[18px] shrink-0 text-black/45" />
               <span className="sr-only">Search Housefinds</span>
-              <input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                onFocus={() => setSearchOpen(true)}
-                onBlur={() => window.setTimeout(() => setSearchOpen(false), 120)}
-                autoComplete="off"
-                placeholder="Search products, orders or help…"
-                className="min-w-0 flex-1 bg-transparent text-sm text-black outline-none placeholder:text-black/38"
-              />
+              <input value={query} onChange={(event) => setQuery(event.target.value)} onFocus={() => setSearchOpen(true)} onBlur={() => window.setTimeout(() => setSearchOpen(false), 120)} autoComplete="off" placeholder="Search products, orders or help…" className="min-w-0 flex-1 bg-transparent text-sm text-black outline-none placeholder:text-black/38" />
             </label>
 
             {searchOpen && (
@@ -135,9 +128,7 @@ export function SiteHeader() {
                   <div className="p-5">
                     <p className="text-[10px] font-semibold uppercase tracking-[.22em] text-black/35">Popular product searches</p>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      {popularSearches.map((value) => (
-                        <button key={value} type="button" onClick={() => choosePopularSearch(value)} className="rounded-full border border-black/[.08] bg-[#f7f7f3] px-3 py-2 text-xs font-semibold text-black/58 transition hover:border-[#557562]/35 hover:bg-[#edf3ee]">{value}</button>
-                      ))}
+                      {popularSearches.map((value) => <button key={value} type="button" onClick={() => choosePopularSearch(value)} className="rounded-full border border-black/[.08] bg-[#f7f7f3] px-3 py-2 text-xs font-semibold text-black/58 transition hover:border-[#557562]/35 hover:bg-[#edf3ee]">{value}</button>)}
                     </div>
                     <div className="mt-5 grid grid-cols-3 gap-2">
                       <Link href="/track-order" onClick={closeSearch} className="rounded-2xl bg-[#f1f3ee] px-3 py-3 text-center text-xs font-semibold text-[#355f4a]">Track order</Link>
@@ -151,15 +142,11 @@ export function SiteHeader() {
                     {helpSuggestions.length > 0 && (
                       <div className="border-b border-black/[.06]">
                         <div className="px-5 pb-2 pt-4 text-[10px] font-semibold uppercase tracking-[.22em] text-black/35">Help & order information</div>
-                        {helpSuggestions.map((item) => item.href.startsWith('mailto:') ? (
-                          <a key={item.href} href={item.href} onClick={closeSearch} className="flex items-center justify-between gap-4 px-5 py-3 transition hover:bg-[#f5f6f2]"><div><p className="text-sm font-semibold text-[#172018]">{item.title}</p><p className="mt-0.5 line-clamp-1 text-xs text-black/40">{item.description}</p></div><ArrowRightIcon className="size-4 shrink-0 text-[#557562]" /></a>
-                        ) : (
-                          <Link key={item.href} href={item.href} onClick={closeSearch} className="flex items-center justify-between gap-4 px-5 py-3 transition hover:bg-[#f5f6f2]"><div><p className="text-sm font-semibold text-[#172018]">{item.title}</p><p className="mt-0.5 line-clamp-1 text-xs text-black/40">{item.description}</p></div><ArrowRightIcon className="size-4 shrink-0 text-[#557562]" /></Link>
-                        ))}
+                        {helpSuggestions.map((item) => <Link key={item.href} href={item.href} onClick={closeSearch} className="flex items-center justify-between gap-4 px-5 py-3 transition hover:bg-[#f5f6f2]"><div><p className="text-sm font-semibold text-[#172018]">{item.title}</p><p className="mt-0.5 line-clamp-1 text-xs text-black/40">{item.description}</p></div><ArrowRightIcon className="size-4 shrink-0 text-[#557562]" /></Link>)}
                       </div>
                     )}
 
-                    {suggestionLoading ? (
+                    {!supportIntent && (suggestionLoading ? (
                       <div className="p-6 text-sm text-black/42">Searching useful finds…</div>
                     ) : suggestions.length > 0 ? (
                       <>
@@ -176,8 +163,9 @@ export function SiteHeader() {
                       </>
                     ) : helpSuggestions.length === 0 ? (
                       <div className="p-5"><p className="text-sm font-semibold text-[#172018]">No quick match yet.</p><p className="mt-1 text-xs leading-5 text-black/42">Try a broader term or search all products and help information.</p></div>
-                    ) : null}
+                    ) : null)}
 
+                    {supportIntent && helpSuggestions.length > 0 && <div className="px-5 py-3 text-xs leading-5 text-black/42">Showing customer-care results instead of unrelated products.</div>}
                     <button type="submit" className="flex w-full items-center justify-between border-t border-black/[.06] bg-[#f7f7f3] px-5 py-3 text-sm font-semibold text-[#355f4a]">See all results for “{query.trim()}” <ArrowRightIcon className="size-4" /></button>
                   </div>
                 )}
@@ -187,30 +175,22 @@ export function SiteHeader() {
 
           <Link href="/search" className="grid size-10 place-items-center rounded-full transition hover:bg-black/5 xl:hidden" aria-label="Search"><MagnifyingGlassIcon className="size-5" /></Link>
           <CartButton />
-          <button type="button" onClick={() => setMenuOpen((value) => !value)} className="grid size-10 place-items-center rounded-full border border-black/10 bg-white transition hover:bg-stone-50 lg:hidden" aria-expanded={menuOpen} aria-label={menuOpen ? 'Close menu' : 'Open menu'}>
-            {menuOpen ? <XMarkIcon className="size-5" /> : <Bars3Icon className="size-5" />}
-          </button>
+          <button type="button" onClick={() => setMenuOpen((value) => !value)} className="grid size-10 place-items-center rounded-full border border-black/10 bg-white transition hover:bg-stone-50 lg:hidden" aria-expanded={menuOpen} aria-label={menuOpen ? 'Close menu' : 'Open menu'}>{menuOpen ? <XMarkIcon className="size-5" /> : <Bars3Icon className="size-5" />}</button>
         </div>
       </div>
 
       {menuOpen && (
         <div className="border-t border-black/[.06] bg-[#fbfaf7] px-5 pb-6 pt-4 lg:hidden">
           <form onSubmit={submitSearch} role="search">
-            <label className="flex h-12 items-center gap-3 rounded-2xl border border-black/10 bg-white px-4 focus-within:border-[#557562]/45 focus-within:ring-4 focus-within:ring-[#557562]/10">
-              <MagnifyingGlassIcon className="size-[18px] text-black/45" /><span className="sr-only">Search Housefinds</span>
-              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Products, orders, returns, delivery…" className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-black/35" />
-            </label>
+            <label className="flex h-12 items-center gap-3 rounded-2xl border border-black/10 bg-white px-4 focus-within:border-[#557562]/45 focus-within:ring-4 focus-within:ring-[#557562]/10"><MagnifyingGlassIcon className="size-[18px] text-black/45" /><span className="sr-only">Search Housefinds</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Products, orders, returns, delivery…" className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-black/35" /></label>
           </form>
-          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
-            {popularSearches.slice(0, 4).map((value) => <button key={value} type="button" onClick={() => { setMenuOpen(false); choosePopularSearch(value) }} className="shrink-0 rounded-full border border-black/[.08] bg-white px-3 py-2 text-xs font-semibold text-black/52">{value}</button>)}
-          </div>
+          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">{popularSearches.slice(0, 4).map((value) => <button key={value} type="button" onClick={() => { setMenuOpen(false); choosePopularSearch(value) }} className="shrink-0 rounded-full border border-black/[.08] bg-white px-3 py-2 text-xs font-semibold text-black/52">{value}</button>)}</div>
           <nav className="mt-4 grid" aria-label="Mobile navigation">
-            {navItems.map((item) => (
-              <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)} className={`border-b border-black/[.05] py-4 text-base font-semibold ${isActive(item.href, item.exact) ? 'text-[#355f4a]' : 'text-[#172018]'}`}>{item.label}</Link>
-            ))}
+            {navItems.map((item) => <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)} className={`border-b border-black/[.05] py-4 text-base font-semibold ${isActive(item.href, item.exact) ? 'text-[#355f4a]' : 'text-[#172018]'}`}>{item.label}</Link>)}
             <Link href="/track-order" onClick={() => setMenuOpen(false)} className="border-b border-black/[.05] py-4 text-base font-semibold text-[#172018]">Track an order</Link>
             <Link href="/shipping" onClick={() => setMenuOpen(false)} className="border-b border-black/[.05] py-4 text-base font-semibold text-[#172018]">Shipping & delivery</Link>
             <Link href="/returns" onClick={() => setMenuOpen(false)} className="border-b border-black/[.05] py-4 text-base font-semibold text-[#172018]">Returns</Link>
+            <Link href="/contact" onClick={() => setMenuOpen(false)} className="border-b border-black/[.05] py-4 text-base font-semibold text-[#172018]">Contact</Link>
           </nav>
         </div>
       )}
