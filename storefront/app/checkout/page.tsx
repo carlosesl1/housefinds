@@ -24,7 +24,7 @@ const emptyAddress: CheckoutAddress = {
   phone: '',
 }
 
-function Field({ label, value, onChange, placeholder, type = 'text', autoComplete, hint }: {
+function Field({ label, value, onChange, placeholder, type = 'text', autoComplete, hint, error }: {
   label: string
   value: string
   onChange: (value: string) => void
@@ -32,13 +32,32 @@ function Field({ label, value, onChange, placeholder, type = 'text', autoComplet
   type?: string
   autoComplete?: string
   hint?: string
+  error?: string
 }) {
   return (
     <label className="block">
       <span className="mb-2 flex items-baseline justify-between gap-3 text-sm font-semibold text-[#172018]">{label}{hint && <span className="text-[11px] font-normal text-black/35">{hint}</span>}</span>
-      <input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} type={type} autoComplete={autoComplete} className="h-13 w-full rounded-2xl border border-black/10 bg-white px-4 text-[15px] outline-none transition placeholder:text-black/28 focus:border-[#557562] focus:ring-4 focus:ring-[#557562]/10" />
+      <input
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        type={type}
+        autoComplete={autoComplete}
+        aria-invalid={Boolean(error)}
+        aria-describedby={error ? `${label.replace(/\s+/g, '-').toLowerCase()}-error` : undefined}
+        className={`h-13 w-full rounded-2xl border bg-white px-4 text-[15px] outline-none transition placeholder:text-black/28 focus:ring-4 ${error ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-100' : 'border-black/10 focus:border-[#557562] focus:ring-[#557562]/10'}`}
+      />
+      {error && <span id={`${label.replace(/\s+/g, '-').toLowerCase()}-error`} className="mt-2 block text-xs font-medium leading-5 text-rose-700">{error}</span>}
     </label>
   )
+}
+
+function validEmail(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
+}
+
+function validUKPostcode(value: string) {
+  return /^(GIR\s?0AA|[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2})$/i.test(value.trim())
 }
 
 function estimateLabel() {
@@ -63,7 +82,22 @@ export default function CheckoutPage() {
 
   const shippingRates = useMemo(() => cart?.shipping_rates.flatMap((pkg) => pkg.shipping_rates.map((rate) => ({ ...rate, packageId: pkg.package_id }))) || [], [cart])
   const selectedShipping = shippingRates.some((rate) => rate.selected)
-  const addressReady = Boolean(address.email?.trim() && address.first_name.trim() && address.last_name.trim() && address.address_1.trim() && address.city.trim() && address.postcode.trim())
+
+  const addressErrors = useMemo(() => {
+    const errors: Partial<Record<keyof CheckoutAddress, string>> = {}
+    const email = address.email?.trim() || ''
+    if (!email) errors.email = 'Enter the email address you want order updates sent to.'
+    else if (!validEmail(email)) errors.email = 'Enter a valid email address, for example name@example.com.'
+    if (!address.first_name.trim()) errors.first_name = 'Enter your first name.'
+    if (!address.last_name.trim()) errors.last_name = 'Enter your last name.'
+    if (!address.address_1.trim()) errors.address_1 = 'Enter the house number and street for delivery.'
+    if (!address.city.trim()) errors.city = 'Enter the town or city for this address.'
+    if (!address.postcode.trim()) errors.postcode = 'Enter a UK postcode.'
+    else if (!validUKPostcode(address.postcode)) errors.postcode = 'Enter a UK postcode, for example SW1A 1AA.'
+    return errors
+  }, [address])
+
+  const addressReady = Object.keys(addressErrors).length === 0
   const exceedsLaunchLimit = Number(cart?.totals.total_price || 0) >= UK_LAUNCH_ORDER_LIMIT_MINOR
   const paymentReady = Boolean(addressReady && !exceedsLaunchLimit && (!cart?.needs_shipping || (cart.has_calculated_shipping && selectedShipping)))
   const deliveryEstimate = estimateLabel()
@@ -114,21 +148,21 @@ export default function CheckoutPage() {
               </div>
 
               <div className="mt-8 max-w-[680px] space-y-4">
-                <Field label="Email" type="email" autoComplete="email" value={address.email || ''} onChange={(value) => setField('email', value)} placeholder="you@example.com" hint="Order updates" />
-                <Field label="First name" autoComplete="given-name" value={address.first_name} onChange={(value) => setField('first_name', value)} />
-                <Field label="Last name" autoComplete="family-name" value={address.last_name} onChange={(value) => setField('last_name', value)} />
-                <Field label="Address" autoComplete="address-line1" value={address.address_1} onChange={(value) => setField('address_1', value)} placeholder="House number and street" />
+                <Field label="Email" type="email" autoComplete="email" value={address.email || ''} onChange={(value) => setField('email', value)} placeholder="you@example.com" hint="Order updates" error={deliveryAttempted ? addressErrors.email : undefined} />
+                <Field label="First name" autoComplete="given-name" value={address.first_name} onChange={(value) => setField('first_name', value)} error={deliveryAttempted ? addressErrors.first_name : undefined} />
+                <Field label="Last name" autoComplete="family-name" value={address.last_name} onChange={(value) => setField('last_name', value)} error={deliveryAttempted ? addressErrors.last_name : undefined} />
+                <Field label="Address" autoComplete="address-line1" value={address.address_1} onChange={(value) => setField('address_1', value)} placeholder="House number and street" error={deliveryAttempted ? addressErrors.address_1 : undefined} />
                 <details className="group rounded-2xl border border-black/[.07] bg-[#faf9f6] px-4 py-3">
                   <summary className="cursor-pointer list-none text-sm font-semibold text-black/48">+ Add flat, apartment, suite or county</summary>
                   <div className="mt-4 space-y-4 border-t border-black/[.06] pt-4"><Field label="Flat, apartment or suite" autoComplete="address-line2" value={address.address_2 || ''} onChange={(value) => setField('address_2', value)} /><Field label="County" autoComplete="address-level1" value={address.state || ''} onChange={(value) => setField('state', value)} /></div>
                 </details>
-                <Field label="Town / City" autoComplete="address-level2" value={address.city} onChange={(value) => setField('city', value)} />
-                <Field label="Postcode" autoComplete="postal-code" value={address.postcode} onChange={(value) => setField('postcode', value.toUpperCase())} placeholder="SW1A 1AA" />
+                <Field label="Town / City" autoComplete="address-level2" value={address.city} onChange={(value) => setField('city', value)} error={deliveryAttempted ? addressErrors.city : undefined} />
+                <Field label="Postcode" autoComplete="postal-code" value={address.postcode} onChange={(value) => setField('postcode', value.toUpperCase())} placeholder="SW1A 1AA" error={deliveryAttempted ? addressErrors.postcode : undefined} />
                 <div><span className="mb-2 block text-sm font-semibold text-[#172018]">Country</span><div className="flex h-13 items-center rounded-2xl border border-black/10 bg-[#f7f7f4] px-4 text-[15px] text-black/65">United Kingdom</div></div>
                 <Field label="Phone" type="tel" autoComplete="tel" value={address.phone || ''} onChange={(value) => setField('phone', value)} hint="Optional · delivery issues only" />
               </div>
 
-              {deliveryAttempted && !addressReady && <p className="mt-4 max-w-[680px] rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-900">Complete email, name, address, town/city and postcode before continuing.</p>}
+              {deliveryAttempted && !addressReady && <p className="mt-4 max-w-[680px] rounded-2xl bg-rose-50 px-4 py-3 text-sm leading-6 text-rose-800">Check the highlighted delivery details above, then continue again.</p>}
               <button type="button" disabled={loading || exceedsLaunchLimit} onClick={() => void calculateDelivery()} className="mt-7 inline-flex h-13 items-center justify-center rounded-full bg-[#355f4a] px-7 font-semibold text-white transition hover:bg-[#294b3a] disabled:opacity-50">{loading ? 'Checking…' : cart.has_calculated_shipping ? 'Update delivery details' : 'Continue to delivery'}</button>
             </div>
 
