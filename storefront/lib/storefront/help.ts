@@ -42,6 +42,33 @@ function normalize(value: string) {
   return value.toLowerCase().trim().replace(/[^a-z0-9£]+/g, ' ').replace(/\s+/g, ' ')
 }
 
+const SUPPORT_INTENT_PATTERNS = [
+  /\btrack(?:ing)?\b/,
+  /\border status\b/,
+  /\bwhere(?: is|'s)? my order\b/,
+  /\bparcel\b/,
+  /\bshipment\b/,
+  /\breturn(?:s|ed|ing)?\b/,
+  /\brefund(?:s|ed|ing)?\b/,
+  /\bmoney back\b/,
+  /\bdamaged\b/,
+  /\bfaulty\b/,
+  /\bbroken\b/,
+  /\bwrong item\b/,
+  /\breplacement\b/,
+  /\bcustomer service\b/,
+  /\bsupport\b/,
+  /\bcontact housefinds\b/,
+  /\bdelivery update\b/,
+  /\bhow long (?:does|will)? ?delivery\b/,
+]
+
+export function isSupportIntent(query: string) {
+  const q = normalize(query)
+  if (!q) return false
+  return SUPPORT_INTENT_PATTERNS.some((pattern) => pattern.test(q))
+}
+
 export function searchHelp(query: string) {
   const q = normalize(query)
   if (!q) return []
