@@ -2,10 +2,11 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { FormEvent, useEffect, useState } from 'react'
+import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { Bars3Icon, MagnifyingGlassIcon, XMarkIcon, ArrowRightIcon } from '@heroicons/react/24/outline'
 import { CartButton } from '@/components/cart/cart-button'
+import { searchHelp } from '@/lib/storefront/help'
 
 const navItems = [
   { href: '/', label: 'Home', exact: true },
@@ -34,6 +35,7 @@ export function SiteHeader() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
   const [suggestionLoading, setSuggestionLoading] = useState(false)
+  const helpSuggestions = useMemo(() => query.trim().length >= 2 ? searchHelp(query).slice(0, 3) : [], [query])
 
   useEffect(() => {
     const q = query.trim()
@@ -77,6 +79,11 @@ export function SiteHeader() {
     router.push(`/search?q=${encodeURIComponent(value)}`)
   }
 
+  const closeSearch = () => {
+    setSearchOpen(false)
+    setQuery('')
+  }
+
   const isActive = (href: string, exact?: boolean) => {
     const base = href.split('?')[0]
     if (href.includes('?')) return false
@@ -98,11 +105,7 @@ export function SiteHeader() {
           {navItems.map((item) => {
             const active = isActive(item.href, item.exact)
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`relative py-2 transition ${active ? 'text-[#294b3a]' : 'text-black/55 hover:text-black'}`}
-              >
+              <Link key={item.href} href={item.href} className={`relative py-2 transition ${active ? 'text-[#294b3a]' : 'text-black/55 hover:text-black'}`}>
                 {item.label}
                 {active && <span className="absolute inset-x-0 -bottom-1 mx-auto h-0.5 w-5 rounded-full bg-[#557562]" />}
               </Link>
@@ -121,69 +124,70 @@ export function SiteHeader() {
                 onFocus={() => setSearchOpen(true)}
                 onBlur={() => window.setTimeout(() => setSearchOpen(false), 120)}
                 autoComplete="off"
-                placeholder="Search products, uses or problems…"
+                placeholder="Search products, orders or help…"
                 className="min-w-0 flex-1 bg-transparent text-sm text-black outline-none placeholder:text-black/38"
               />
             </label>
 
             {searchOpen && (
-              <div
-                className="absolute right-0 top-[52px] w-[430px] overflow-hidden rounded-[26px] border border-black/[.07] bg-white shadow-[0_24px_80px_rgba(26,36,30,.14)]"
-                onMouseDown={(event) => event.preventDefault()}
-              >
+              <div className="absolute right-0 top-[52px] w-[440px] overflow-hidden rounded-[26px] border border-black/[.07] bg-white shadow-[0_24px_80px_rgba(26,36,30,.14)]" onMouseDown={(event) => event.preventDefault()}>
                 {query.trim().length < 2 ? (
                   <div className="p-5">
-                    <p className="text-[10px] font-semibold uppercase tracking-[.22em] text-black/35">Popular searches</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-[.22em] text-black/35">Popular product searches</p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       {popularSearches.map((value) => (
                         <button key={value} type="button" onClick={() => choosePopularSearch(value)} className="rounded-full border border-black/[.08] bg-[#f7f7f3] px-3 py-2 text-xs font-semibold text-black/58 transition hover:border-[#557562]/35 hover:bg-[#edf3ee]">{value}</button>
                       ))}
                     </div>
-                    <Link href="/shop" onClick={() => setSearchOpen(false)} className="mt-5 flex items-center justify-between rounded-2xl bg-[#e7eee9] px-4 py-3 text-sm font-semibold text-[#355f4a]">Browse the full collection <ArrowRightIcon className="size-4" /></Link>
-                  </div>
-                ) : suggestionLoading ? (
-                  <div className="p-6 text-sm text-black/42">Searching useful finds…</div>
-                ) : suggestions.length > 0 ? (
-                  <div>
-                    <div className="px-5 pb-2 pt-4 text-[10px] font-semibold uppercase tracking-[.22em] text-black/35">Suggested products</div>
-                    <div className="divide-y divide-black/[.05]">
-                      {suggestions.map((suggestion) => (
-                        <Link key={suggestion.id} href={`/produto/${suggestion.slug}`} onClick={() => { setSearchOpen(false); setQuery('') }} className="grid grid-cols-[58px_1fr_auto] items-center gap-3 px-4 py-3 transition hover:bg-[#f5f6f2]">
-                          <div className="relative aspect-square overflow-hidden rounded-xl bg-[#efeee8]">
-                            {suggestion.image && <Image src={suggestion.image} alt="" fill sizes="58px" className="object-cover" />}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-[#172018]">{suggestion.name}</p>
-                            <p className="mt-0.5 truncate text-xs text-black/40">{suggestion.tagline}</p>
-                          </div>
-                          <span className="text-sm font-semibold text-[#172018]">{suggestion.price}</span>
-                        </Link>
-                      ))}
+                    <div className="mt-5 grid grid-cols-3 gap-2">
+                      <Link href="/track-order" onClick={closeSearch} className="rounded-2xl bg-[#f1f3ee] px-3 py-3 text-center text-xs font-semibold text-[#355f4a]">Track order</Link>
+                      <Link href="/returns" onClick={closeSearch} className="rounded-2xl bg-[#f1f3ee] px-3 py-3 text-center text-xs font-semibold text-[#355f4a]">Returns</Link>
+                      <Link href="/shipping" onClick={closeSearch} className="rounded-2xl bg-[#f1f3ee] px-3 py-3 text-center text-xs font-semibold text-[#355f4a]">Delivery</Link>
                     </div>
-                    <button type="submit" className="flex w-full items-center justify-between border-t border-black/[.06] bg-[#f7f7f3] px-5 py-3 text-sm font-semibold text-[#355f4a]">See all results for “{query.trim()}” <ArrowRightIcon className="size-4" /></button>
+                    <Link href="/shop" onClick={closeSearch} className="mt-4 flex items-center justify-between rounded-2xl bg-[#e7eee9] px-4 py-3 text-sm font-semibold text-[#355f4a]">Browse the full collection <ArrowRightIcon className="size-4" /></Link>
                   </div>
                 ) : (
-                  <div className="p-5">
-                    <p className="text-sm font-semibold text-[#172018]">No quick match yet.</p>
-                    <p className="mt-1 text-xs leading-5 text-black/42">Try a broader term or search all product details.</p>
-                    <button type="submit" className="mt-4 flex w-full items-center justify-between rounded-2xl bg-[#e7eee9] px-4 py-3 text-sm font-semibold text-[#355f4a]">Search for “{query.trim()}” <ArrowRightIcon className="size-4" /></button>
+                  <div>
+                    {helpSuggestions.length > 0 && (
+                      <div className="border-b border-black/[.06]">
+                        <div className="px-5 pb-2 pt-4 text-[10px] font-semibold uppercase tracking-[.22em] text-black/35">Help & order information</div>
+                        {helpSuggestions.map((item) => item.href.startsWith('mailto:') ? (
+                          <a key={item.href} href={item.href} onClick={closeSearch} className="flex items-center justify-between gap-4 px-5 py-3 transition hover:bg-[#f5f6f2]"><div><p className="text-sm font-semibold text-[#172018]">{item.title}</p><p className="mt-0.5 line-clamp-1 text-xs text-black/40">{item.description}</p></div><ArrowRightIcon className="size-4 shrink-0 text-[#557562]" /></a>
+                        ) : (
+                          <Link key={item.href} href={item.href} onClick={closeSearch} className="flex items-center justify-between gap-4 px-5 py-3 transition hover:bg-[#f5f6f2]"><div><p className="text-sm font-semibold text-[#172018]">{item.title}</p><p className="mt-0.5 line-clamp-1 text-xs text-black/40">{item.description}</p></div><ArrowRightIcon className="size-4 shrink-0 text-[#557562]" /></Link>
+                        ))}
+                      </div>
+                    )}
+
+                    {suggestionLoading ? (
+                      <div className="p-6 text-sm text-black/42">Searching useful finds…</div>
+                    ) : suggestions.length > 0 ? (
+                      <>
+                        <div className="px-5 pb-2 pt-4 text-[10px] font-semibold uppercase tracking-[.22em] text-black/35">Suggested products</div>
+                        <div className="divide-y divide-black/[.05]">
+                          {suggestions.map((suggestion) => (
+                            <Link key={suggestion.id} href={`/produto/${suggestion.slug}`} onClick={closeSearch} className="grid grid-cols-[58px_1fr_auto] items-center gap-3 px-4 py-3 transition hover:bg-[#f5f6f2]">
+                              <div className="relative aspect-square overflow-hidden rounded-xl bg-[#efeee8]">{suggestion.image && <Image src={suggestion.image} alt="" fill sizes="58px" className="object-cover" />}</div>
+                              <div className="min-w-0"><p className="truncate text-sm font-semibold text-[#172018]">{suggestion.name}</p><p className="mt-0.5 truncate text-xs text-black/40">{suggestion.tagline}</p></div>
+                              <span className="text-sm font-semibold text-[#172018]">{suggestion.price}</span>
+                            </Link>
+                          ))}
+                        </div>
+                      </>
+                    ) : helpSuggestions.length === 0 ? (
+                      <div className="p-5"><p className="text-sm font-semibold text-[#172018]">No quick match yet.</p><p className="mt-1 text-xs leading-5 text-black/42">Try a broader term or search all products and help information.</p></div>
+                    ) : null}
+
+                    <button type="submit" className="flex w-full items-center justify-between border-t border-black/[.06] bg-[#f7f7f3] px-5 py-3 text-sm font-semibold text-[#355f4a]">See all results for “{query.trim()}” <ArrowRightIcon className="size-4" /></button>
                   </div>
                 )}
               </div>
             )}
           </form>
 
-          <Link href="/search" className="grid size-10 place-items-center rounded-full transition hover:bg-black/5 xl:hidden" aria-label="Search">
-            <MagnifyingGlassIcon className="size-5" />
-          </Link>
+          <Link href="/search" className="grid size-10 place-items-center rounded-full transition hover:bg-black/5 xl:hidden" aria-label="Search"><MagnifyingGlassIcon className="size-5" /></Link>
           <CartButton />
-          <button
-            type="button"
-            onClick={() => setMenuOpen((value) => !value)}
-            className="grid size-10 place-items-center rounded-full border border-black/10 bg-white transition hover:bg-stone-50 lg:hidden"
-            aria-expanded={menuOpen}
-            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-          >
+          <button type="button" onClick={() => setMenuOpen((value) => !value)} className="grid size-10 place-items-center rounded-full border border-black/10 bg-white transition hover:bg-stone-50 lg:hidden" aria-expanded={menuOpen} aria-label={menuOpen ? 'Close menu' : 'Open menu'}>
             {menuOpen ? <XMarkIcon className="size-5" /> : <Bars3Icon className="size-5" />}
           </button>
         </div>
@@ -193,14 +197,8 @@ export function SiteHeader() {
         <div className="border-t border-black/[.06] bg-[#fbfaf7] px-5 pb-6 pt-4 lg:hidden">
           <form onSubmit={submitSearch} role="search">
             <label className="flex h-12 items-center gap-3 rounded-2xl border border-black/10 bg-white px-4 focus-within:border-[#557562]/45 focus-within:ring-4 focus-within:ring-[#557562]/10">
-              <MagnifyingGlassIcon className="size-[18px] text-black/45" />
-              <span className="sr-only">Search Housefinds</span>
-              <input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="What are you trying to solve?"
-                className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-black/35"
-              />
+              <MagnifyingGlassIcon className="size-[18px] text-black/45" /><span className="sr-only">Search Housefinds</span>
+              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Products, orders, returns, delivery…" className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-black/35" />
             </label>
           </form>
           <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
@@ -208,15 +206,9 @@ export function SiteHeader() {
           </div>
           <nav className="mt-4 grid" aria-label="Mobile navigation">
             {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setMenuOpen(false)}
-                className={`border-b border-black/[.05] py-4 text-base font-semibold ${isActive(item.href, item.exact) ? 'text-[#355f4a]' : 'text-[#172018]'}`}
-              >
-                {item.label}
-              </Link>
+              <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)} className={`border-b border-black/[.05] py-4 text-base font-semibold ${isActive(item.href, item.exact) ? 'text-[#355f4a]' : 'text-[#172018]'}`}>{item.label}</Link>
             ))}
+            <Link href="/track-order" onClick={() => setMenuOpen(false)} className="border-b border-black/[.05] py-4 text-base font-semibold text-[#172018]">Track an order</Link>
             <Link href="/shipping" onClick={() => setMenuOpen(false)} className="border-b border-black/[.05] py-4 text-base font-semibold text-[#172018]">Shipping & delivery</Link>
             <Link href="/returns" onClick={() => setMenuOpen(false)} className="border-b border-black/[.05] py-4 text-base font-semibold text-[#172018]">Returns</Link>
           </nav>
