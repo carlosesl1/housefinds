@@ -9,6 +9,7 @@ import {
 import { getProductReviews, getProducts } from '@/lib/woocommerce/client'
 import { findProductByKeywords } from '@/lib/woocommerce/presentation'
 import { STORE_CATEGORIES } from '@/lib/storefront/categories'
+import { dedupeStoreProducts } from '@/lib/storefront/catalog'
 import { Hero } from '@/components/home/hero'
 import { CategoryGrid } from '@/components/home/category-grid'
 import { FeaturedFind } from '@/components/home/featured-find'
@@ -17,10 +18,11 @@ import { ProductReviewHighlights } from '@/components/home/product-review-highli
 import { ProductCard } from '@/components/product/product-card'
 
 export default async function HomePage() {
-  const [products, reviews] = await Promise.all([
+  const [rawProducts, reviews] = await Promise.all([
     getProducts({ per_page: 16 }),
     getProductReviews(undefined, 8).catch(() => []),
   ])
+  const products = dedupeStoreProducts(rawProducts)
 
   const featuredProduct =
     findProductByKeywords(products, ['spoon scale']) ||
