@@ -43,6 +43,8 @@ type CheckoutResponse = {
   }
 }
 
+const UK_LAUNCH_ORDER_LIMIT_MINOR = 13_500
+
 let stripeScriptPromise: Promise<void> | null = null
 
 function loadStripeScript() {
@@ -115,6 +117,8 @@ export function StripeCardForm({
   const [processing, setProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const exceedsLaunchLimit = Number(expectedTotal || 0) >= UK_LAUNCH_ORDER_LIMIT_MINOR
+
   useEffect(() => {
     if (!publishableKey || !mountRef.current) return
     let disposed = false
@@ -161,7 +165,7 @@ export function StripeCardForm({
   const submitPayment = async () => {
     const stripe = stripeRef.current
     const card = cardRef.current
-    if (!stripe || !card || processing || disabled) return
+    if (!stripe || !card || processing || disabled || exceedsLaunchLimit) return
 
     setProcessing(true)
     setError(null)
@@ -295,6 +299,13 @@ export function StripeCardForm({
         <div className="flex gap-1 text-[10px] font-bold tracking-wide text-black/40"><span className="rounded bg-[#f1f1ed] px-2 py-1">VISA</span><span className="rounded bg-[#f1f1ed] px-2 py-1">MC</span></div>
       </div>
 
+      {exceedsLaunchLimit && (
+        <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
+          <strong>This order is above the Housefinds launch limit.</strong>
+          <p className="mt-1">Please keep the basket below £135 by removing an item or reducing quantity before paying.</p>
+        </div>
+      )}
+
       <div className="mt-5 rounded-2xl border border-black/10 bg-white px-4 py-[15px] shadow-inner">
         <div ref={mountRef} className="min-h-6" />
       </div>
@@ -304,7 +315,7 @@ export function StripeCardForm({
 
       <button
         type="button"
-        disabled={disabled || processing || !ready || !complete}
+        disabled={disabled || processing || !ready || !complete || exceedsLaunchLimit}
         onClick={() => void submitPayment()}
         className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[#355f4a] px-7 font-semibold text-white transition hover:bg-[#294b3a] disabled:cursor-not-allowed disabled:opacity-45"
       >
