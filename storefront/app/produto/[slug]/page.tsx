@@ -3,6 +3,7 @@ import { getProductBySlug, getProductReviews, getRelatedProducts } from '@/lib/w
 import { DefaultProduct } from '@/components/product/default-product'
 import { ProductReviews } from '@/components/product/product-reviews'
 import { RelatedProducts } from '@/components/product/related-products'
+import { RecentlyViewed } from '@/components/product/recently-viewed'
 import { AuroraProjectorExperience } from '@/experiences/aurora-projector'
 import { experienceRegistry } from '@/experiences/registry'
 import { displayProductName, displayProductTagline } from '@/lib/woocommerce/presentation'
@@ -101,6 +102,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       ) : (
         <DefaultProduct product={product} reviews={reviews} relatedProducts={relatedProducts} />
       )}
+      <RecentlyViewed product={product} />
     </>
   )
 }
