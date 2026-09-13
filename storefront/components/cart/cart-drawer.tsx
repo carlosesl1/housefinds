@@ -117,7 +117,8 @@ export function CartDrawer() {
           )}
 
           <Link href="/checkout" onClick={() => setOpen(false)} aria-disabled={!cart?.items?.length || loading || exceedsLaunchLimit} className={`mt-5 flex h-14 items-center justify-center gap-2 rounded-full bg-[#355f4a] font-semibold text-white transition hover:bg-[#294b3a] ${!cart?.items?.length || loading || exceedsLaunchLimit ? 'pointer-events-none opacity-50' : ''}`}><LockClosedIcon className="size-4" /> Continue to checkout</Link>
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-[11px] font-medium text-black/42">
+          {cart?.items?.length ? <Link href="/cart" onClick={() => setOpen(false)} className="mt-2 flex h-11 items-center justify-center rounded-full text-sm font-semibold text-black/48 transition hover:bg-black/[.035] hover:text-black">View full cart</Link> : null}
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-4 text-[11px] font-medium text-black/42">
             <span className="inline-flex items-center gap-1.5"><TruckIcon className="size-3.5" /> Free UK delivery</span>
             <span className="inline-flex items-center gap-1.5"><LockClosedIcon className="size-3.5" /> Secure payment</span>
             <Link href="/returns" onClick={() => setOpen(false)} className="inline-flex items-center gap-1.5 hover:text-black"><ArrowPathIcon className="size-3.5" /> Free 14-day returns</Link>
