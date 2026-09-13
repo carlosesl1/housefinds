@@ -8,7 +8,7 @@ import type { WooProduct } from '@/lib/woocommerce/types'
 
 export const metadata = { title: 'Shop' }
 
-type ShopSearchParams = { category?: string; sort?: string; price?: string; sale?: string }
+type ShopSearchParams = { category?: string; sort?: string; price?: string }
 
 const sorts = [
   { value: 'recommended', label: 'Recommended' },
@@ -59,20 +59,17 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
   const allProducts = dedupeStoreProducts(await getProducts({ per_page: 100, ...query }))
   let products = filterProductsByStoreCategory(allProducts, params.category)
   products = filterByPrice(products, activePrice)
-  if (params.sale === '1') products = products.filter((product) => product.on_sale)
   const activeCategory = getStoreCategory(params.category)
-  const hasFilters = Boolean(activeCategory || activePrice || params.sale === '1' || activeSort !== 'recommended')
+  const hasFilters = Boolean(activeCategory || activePrice || activeSort !== 'recommended')
 
-  const makeHref = (next: { category?: string; sort?: string; price?: string; sale?: string }) => {
+  const makeHref = (next: { category?: string; sort?: string; price?: string }) => {
     const url = new URLSearchParams()
     const category = next.category === undefined ? params.category : next.category
     const sort = next.sort === undefined ? activeSort : next.sort
     const price = next.price === undefined ? activePrice : next.price
-    const sale = next.sale === undefined ? params.sale : next.sale
     if (category) url.set('category', category)
     if (sort && sort !== 'recommended') url.set('sort', sort)
     if (price) url.set('price', price)
-    if (sale === '1') url.set('sale', '1')
     const queryString = url.toString()
     return `/shop${queryString ? `?${queryString}` : ''}`
   }
@@ -126,7 +123,6 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
               {priceFilters.map((item) => (
                 <Link key={item.value} href={makeHref({ price: activePrice === item.value ? '' : item.value })} className={`rounded-full border px-3.5 py-2 text-xs font-semibold transition ${activePrice === item.value ? 'border-[#557562] bg-[#e4ede7] text-[#294b3a]' : 'border-black/10 bg-white text-black/55 hover:border-black/20'}`}>{item.label}</Link>
               ))}
-              <Link href={makeHref({ sale: params.sale === '1' ? '' : '1' })} className={`rounded-full border px-3.5 py-2 text-xs font-semibold transition ${params.sale === '1' ? 'border-[#557562] bg-[#e4ede7] text-[#294b3a]' : 'border-black/10 bg-white text-black/55 hover:border-black/20'}`}>On sale</Link>
               {hasFilters && <Link href="/shop" className="ml-auto inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold text-black/45 transition hover:bg-black/5 hover:text-black"><XMarkIcon className="size-3.5" /> Clear filters</Link>}
             </div>
           </div>
