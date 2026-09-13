@@ -10,37 +10,50 @@ const shopLinks = [
   ['Space saving', '/shop?category=space-saving'],
 ]
 
-const exploreLinks = [
-  ['Search', '/search'],
-  ['Daily helpers', '/shop?category=daily-helpers'],
+const customerLinks = [
+  ['Shipping & delivery', '/shipping'],
+  ['Returns', '/returns'],
+  ['FAQ', '/faq'],
   ['About Housefinds', '/about'],
 ]
 
 export function SiteFooter() {
   return (
     <footer className="border-t border-black/5 bg-[#f7f6f2]">
-      <div className="mx-auto grid max-w-[1480px] gap-12 px-5 py-16 lg:grid-cols-[1.2fr_1.45fr_1fr] lg:px-8">
+      <div className="mx-auto grid max-w-[1480px] gap-12 px-5 py-16 lg:grid-cols-[1.05fr_1.55fr_1fr] lg:px-8">
         <div>
           <Link href="/" className="text-3xl font-bold tracking-[-.05em]">Housefinds</Link>
           <p className="mt-4 max-w-sm text-lg text-black/55">Clever, useful products for a happier home.</p>
           <p className="mt-5 max-w-sm text-sm leading-6 text-black/45">
             A curated store for practical home gadgets, organisation tools and small everyday upgrades.
           </p>
+          <div className="mt-6 flex flex-wrap gap-2 text-xs font-semibold text-black/48">
+            <span className="rounded-full border border-black/[.07] bg-white px-3 py-2">GBP pricing</span>
+            <span className="rounded-full border border-black/[.07] bg-white px-3 py-2">14-day return request</span>
+            <span className="rounded-full border border-black/[.07] bg-white px-3 py-2">Stripe checkout</span>
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-8">
+        <div className="grid grid-cols-2 gap-8 sm:grid-cols-3">
           <div>
             <h3 className="font-semibold">Shop</h3>
             <ul className="mt-5 space-y-3 text-sm text-black/50">
-              {shopLinks.map(([label, href]) => <li key={href}><Link className="transition hover:text-black" href={href}>{label}</Link></li>)}
+              {shopLinks.slice(0, 3).map(([label, href]) => <li key={href}><Link className="transition hover:text-black" href={href}>{label}</Link></li>)}
             </ul>
           </div>
           <div>
-            <h3 className="font-semibold">Explore</h3>
+            <h3 className="font-semibold">Categories</h3>
             <ul className="mt-5 space-y-3 text-sm text-black/50">
-              {exploreLinks.map(([label, href]) => <li key={href}><Link className="transition hover:text-black" href={href}>{label}</Link></li>)}
+              {shopLinks.slice(3).map(([label, href]) => <li key={href}><Link className="transition hover:text-black" href={href}>{label}</Link></li>)}
+              <li><Link className="transition hover:text-black" href="/shop?category=daily-helpers">Daily helpers</Link></li>
             </ul>
-            <p className="mt-6 max-w-xs text-xs leading-5 text-black/38">Delivery options and totals are shown before payment during checkout.</p>
+          </div>
+          <div className="col-span-2 sm:col-span-1">
+            <h3 className="font-semibold">Customer care</h3>
+            <ul className="mt-5 space-y-3 text-sm text-black/50">
+              {customerLinks.map(([label, href]) => <li key={href}><Link className="transition hover:text-black" href={href}>{label}</Link></li>)}
+            </ul>
+            <p className="mt-5 max-w-xs text-xs leading-5 text-black/38">Delivery methods and totals are shown before payment during checkout.</p>
           </div>
         </div>
 
@@ -55,9 +68,9 @@ export function SiteFooter() {
       </div>
 
       <div className="border-t border-black/5">
-        <div className="mx-auto flex max-w-[1480px] flex-col gap-3 px-5 py-6 text-xs text-black/45 sm:flex-row sm:justify-between lg:px-8">
+        <div className="mx-auto flex max-w-[1480px] flex-col gap-3 px-5 py-6 text-xs text-black/45 sm:flex-row sm:items-center sm:justify-between lg:px-8">
           <span>© 2026 Housefinds. All rights reserved.</span>
-          <span>Small changes. Bigger living.</span>
+          <div className="flex flex-wrap gap-x-4 gap-y-2"><Link href="/shipping" className="hover:text-black">Shipping</Link><Link href="/returns" className="hover:text-black">Returns</Link><Link href="/faq" className="hover:text-black">FAQ</Link><span>Small changes. Bigger living.</span></div>
         </div>
       </div>
     </footer>
