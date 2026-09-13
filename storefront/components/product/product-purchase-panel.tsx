@@ -168,6 +168,7 @@ export function ProductPurchasePanel({ product, variations = [], dark = false }:
       <div className={`grid gap-2.5 border-t pt-5 text-sm ${dark ? 'border-white/10' : 'border-black/[.07]'} ${labelClass}`}>
         <span>✓ Free standard UK delivery</span>
         <Link href="/returns" className="transition hover:underline">✓ Free 14-day returns on eligible online orders</Link>
+        <Link href="/returns" className="transition hover:underline">✓ Damaged or faulty? Refund or replacement where appropriate</Link>
         <span>✓ Secure Stripe checkout — cards, Apple Pay, Google Pay and Link</span>
       </div>
 
