@@ -6,17 +6,22 @@ import {
   MagnifyingGlassIcon,
   RectangleGroupIcon,
 } from '@heroicons/react/24/outline'
-import { getProducts } from '@/lib/woocommerce/client'
+import { getProductReviews, getProducts } from '@/lib/woocommerce/client'
 import { findProductByKeywords } from '@/lib/woocommerce/presentation'
 import { STORE_CATEGORIES } from '@/lib/storefront/categories'
 import { Hero } from '@/components/home/hero'
 import { CategoryGrid } from '@/components/home/category-grid'
 import { FeaturedFind } from '@/components/home/featured-find'
 import { ProblemSolvingPicks } from '@/components/home/problem-solving-picks'
+import { ProductReviewHighlights } from '@/components/home/product-review-highlights'
 import { ProductCard } from '@/components/product/product-card'
 
 export default async function HomePage() {
-  const products = await getProducts({ per_page: 16 })
+  const [products, reviews] = await Promise.all([
+    getProducts({ per_page: 16 }),
+    getProductReviews(undefined, 8).catch(() => []),
+  ])
+
   const featuredProduct =
     findProductByKeywords(products, ['spoon scale']) ||
     findProductByKeywords(products, ['motion sensor led']) ||
@@ -52,6 +57,7 @@ export default async function HomePage() {
 
       <ProblemSolvingPicks products={products} />
       <FeaturedFind product={featuredProduct} />
+      <ProductReviewHighlights products={products} reviews={reviews} />
 
       <section className="bg-[#f0f1eb] px-6 py-24 lg:px-10 lg:py-32">
         <div className="mx-auto max-w-[1600px]">
