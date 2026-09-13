@@ -3,7 +3,7 @@ import { ArrowLeftIcon, ArrowRightIcon } from '@heroicons/react/24/outline'
 
 export const metadata = {
   title: 'FAQ',
-  description: 'Common Housefinds questions about UK delivery, returns, damaged products, reviews and payments.',
+  description: 'Common Housefinds questions about UK delivery, returns, damaged products, reviews, order tracking and payments.',
 }
 
 const faqs = [
@@ -13,11 +13,15 @@ const faqs = [
   },
   {
     q: 'How much is delivery?',
-    a: 'Standard UK delivery is free. Housefinds absorbs the supplier shipping cost rather than adding a delivery charge to your order.',
+    a: 'Standard UK delivery is free. Housefinds absorbs the supplier shipping cost rather than adding a standard delivery charge to your order.',
   },
   {
     q: 'How long does delivery take?',
     a: 'Our current standard delivery estimate is around 14 days. This is an estimate rather than a guaranteed arrival date, and tracking updates are shown when available.',
+  },
+  {
+    q: 'How do I track my order?',
+    a: 'Open the Housefinds Track Order page. The same browser used at checkout can remember the most recent order securely. Once the full order lookup bridge is enabled, you can also use the order number and checkout email. Carrier details appear when shipment information is linked to the order.',
   },
   {
     q: 'Can different items arrive separately?',
@@ -29,7 +33,7 @@ const faqs = [
   },
   {
     q: 'What if the product arrives damaged, faulty or incorrect?',
-    a: 'Contact Housefinds as soon as possible at contact@housefindsstore.com with your order number and details of the problem. For the fastest resolution, contact us within 14 days and include clear photos or a short video showing the issue. Where appropriate, we can arrange a replacement or refund. This support process does not limit your statutory consumer rights.',
+    a: 'Contact Housefinds as soon as possible at contact@housefindsstore.com with your order number and details of the problem. For the fastest resolution, contact us within 14 days and include clear photos or a short video showing the issue where reasonably practical. Where appropriate, we can arrange a replacement or refund. This support process does not limit statutory consumer rights.',
   },
   {
     q: 'Do I have to send a video?',
@@ -41,7 +45,7 @@ const faqs = [
   },
   {
     q: 'How are payments handled?',
-    a: 'The checkout uses WooCommerce for the order and Stripe for payment processing. Supported methods are planned to include Visa, Mastercard, American Express, Apple Pay, Google Pay and Link where available on the customer’s device.',
+    a: 'The checkout uses WooCommerce for the order and Stripe for secure payment processing. The current Housefinds headless checkout accepts card payment through Stripe. Additional Stripe wallets will only be displayed once they are enabled and validated in this checkout.',
   },
   {
     q: 'Why do some products have several prices?',
@@ -57,7 +61,7 @@ export default function FAQPage() {
 
         <div className="mt-10 max-w-3xl">
           <p className="text-[11px] font-semibold uppercase tracking-[.28em] text-[#557562]">Help centre</p>
-          <h1 className="mt-4 text-[clamp(3.8rem,6vw,6.8rem)] font-semibold leading-[.88] tracking-[-.065em]">Questions before<br /><span className="text-[#557562]">you order.</span></h1>
+          <h1 className="mt-4 text-[clamp(3.8rem,6vw,6.8rem)] font-semibold leading-[.88] tracking-[-.065em]">Questions before<br /><span className="text-[#557562]">or after you order.</span></h1>
           <p className="mt-6 max-w-2xl text-lg leading-8 text-black/50">The useful details without making you hunt through fine print.</p>
         </div>
 
@@ -73,9 +77,11 @@ export default function FAQPage() {
           ))}
         </div>
 
-        <div className="mt-12 grid gap-4 sm:grid-cols-2">
-          <Link href="/shipping" className="group rounded-[28px] bg-[#e5ece6] p-6 transition hover:-translate-y-1"><p className="text-xs font-semibold uppercase tracking-[.18em] text-black/38">Delivery</p><h2 className="mt-3 text-2xl font-semibold tracking-[-.04em]">Shipping & delivery</h2><span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#355f4a]">Read delivery information <ArrowRightIcon className="size-4 transition group-hover:translate-x-1" /></span></Link>
-          <Link href="/returns" className="group rounded-[28px] bg-[#eee9df] p-6 transition hover:-translate-y-1"><p className="text-xs font-semibold uppercase tracking-[.18em] text-black/38">After purchase</p><h2 className="mt-3 text-2xl font-semibold tracking-[-.04em]">Returns & problems</h2><span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#355f4a]">Read the return guidance <ArrowRightIcon className="size-4 transition group-hover:translate-x-1" /></span></Link>
+        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Link href="/track-order" className="group rounded-[28px] bg-[#e5ece6] p-6 transition hover:-translate-y-1"><p className="text-xs font-semibold uppercase tracking-[.18em] text-black/38">Orders</p><h2 className="mt-3 text-2xl font-semibold tracking-[-.04em]">Track order</h2><span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#355f4a]">Check status <ArrowRightIcon className="size-4 transition group-hover:translate-x-1" /></span></Link>
+          <Link href="/shipping" className="group rounded-[28px] bg-[#eef1ec] p-6 transition hover:-translate-y-1"><p className="text-xs font-semibold uppercase tracking-[.18em] text-black/38">Delivery</p><h2 className="mt-3 text-2xl font-semibold tracking-[-.04em]">Shipping</h2><span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#355f4a]">Delivery information <ArrowRightIcon className="size-4 transition group-hover:translate-x-1" /></span></Link>
+          <Link href="/returns" className="group rounded-[28px] bg-[#eee9df] p-6 transition hover:-translate-y-1"><p className="text-xs font-semibold uppercase tracking-[.18em] text-black/38">After purchase</p><h2 className="mt-3 text-2xl font-semibold tracking-[-.04em]">Returns</h2><span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#355f4a]">Returns & problems <ArrowRightIcon className="size-4 transition group-hover:translate-x-1" /></span></Link>
+          <Link href="/contact" className="group rounded-[28px] bg-[#f0f1eb] p-6 transition hover:-translate-y-1"><p className="text-xs font-semibold uppercase tracking-[.18em] text-black/38">Support</p><h2 className="mt-3 text-2xl font-semibold tracking-[-.04em]">Contact</h2><span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#355f4a]">Get help <ArrowRightIcon className="size-4 transition group-hover:translate-x-1" /></span></Link>
         </div>
       </div>
     </main>
