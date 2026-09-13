@@ -15,6 +15,30 @@ function decimalPrice(amount: string, minorUnit: number) {
   return (Number(amount || 0) / Math.pow(10, minorUnit)).toFixed(minorUnit)
 }
 
+const ukOfferPolicy = {
+  shippingDetails: {
+    '@type': 'OfferShippingDetails',
+    shippingRate: {
+      '@type': 'MonetaryAmount',
+      value: 0,
+      currency: 'GBP',
+    },
+    shippingDestination: {
+      '@type': 'DefinedRegion',
+      addressCountry: 'GB',
+    },
+  },
+  hasMerchantReturnPolicy: {
+    '@type': 'MerchantReturnPolicy',
+    applicableCountry: 'GB',
+    returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+    merchantReturnDays: 14,
+    returnMethod: 'https://schema.org/ReturnByMail',
+    returnFees: 'https://schema.org/FreeReturn',
+    merchantReturnLink: `${SITE_URL}/returns`,
+  },
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const product = await getProductBySlug(slug)
@@ -63,6 +87,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         highPrice: decimalPrice(range.max_amount, prices.currency_minor_unit),
         offerCount: variations.length || product.variations?.length || 1,
         availability: product.is_in_stock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+        url: `${SITE_URL}/produto/${product.slug}`,
+        ...ukOfferPolicy,
       }
     : {
         '@type': 'Offer',
@@ -70,6 +96,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         price: decimalPrice(prices.price, prices.currency_minor_unit),
         availability: product.is_in_stock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
         url: `${SITE_URL}/produto/${product.slug}`,
+        ...ukOfferPolicy,
       }
 
   const structuredData = {
