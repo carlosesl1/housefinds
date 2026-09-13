@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Housefinds Order Bridge
  * Description: Exposes a minimal, privacy-conscious order tracking endpoint for the Housefinds headless storefront.
- * Version: 0.1.0
+ * Version: 0.2.0
  * Author: Housefinds
  */
 
@@ -39,8 +39,10 @@ final class Housefinds_Order_Bridge {
     }
 
     private static function client_key() {
-        $ip = isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'])) : 'unknown';
-        return 'hf_order_lookup_' . substr(hash('sha256', $ip . '|' . wp_salt('auth')), 0, 32);
+        $forwarded = isset($_SERVER['HTTP_X_HOUSEFINDS_CLIENT_IP']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_X_HOUSEFINDS_CLIENT_IP'])) : '';
+        $remote = isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'])) : 'unknown';
+        $client = $forwarded ?: $remote;
+        return 'hf_order_lookup_' . substr(hash('sha256', $client . '|' . wp_salt('auth')), 0, 32);
     }
 
     private static function rate_limited() {
@@ -186,9 +188,9 @@ final class Housefinds_Order_Bridge {
                 ];
             }
             $line_items[] = [
-                'name' => $item->get_name(),
+                'name' => wp_strip_all_tags((string) $item->get_name()),
                 'quantity' => (int) $item->get_quantity(),
-                'total' => (string) $order->get_formatted_line_subtotal($item),
+                'total' => (string) wc_format_decimal($item->get_total(), wc_get_price_decimals()),
                 'image' => $image ?: '',
                 'variation' => $variation,
             ];
@@ -204,7 +206,7 @@ final class Housefinds_Order_Bridge {
             'created_at' => $created ? $created->date(DATE_ATOM) : null,
             'estimated_delivery' => $estimated ? $estimated->date('Y-m-d') : null,
             'currency' => (string) $order->get_currency(),
-            'total' => (string) $order->get_formatted_order_total(),
+            'total' => (string) wc_format_decimal($order->get_total(), wc_get_price_decimals()),
             'items' => $line_items,
             'shipping' => [
                 'name' => trim(((string) ($shipping['first_name'] ?? '')) . ' ' . ((string) ($shipping['last_name'] ?? ''))),
