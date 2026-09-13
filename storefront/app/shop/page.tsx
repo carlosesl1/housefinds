@@ -3,6 +3,7 @@ import { AdjustmentsHorizontalIcon, ChevronRightIcon, TagIcon, XMarkIcon } from 
 import { getProducts } from '@/lib/woocommerce/client'
 import { ProductCard } from '@/components/product/product-card'
 import { STORE_CATEGORIES, filterProductsByStoreCategory, getStoreCategory } from '@/lib/storefront/categories'
+import { dedupeStoreProducts } from '@/lib/storefront/catalog'
 import type { WooProduct } from '@/lib/woocommerce/types'
 
 export const metadata = { title: 'Shop' }
@@ -55,7 +56,7 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
   const activeSort = sorts.some((item) => item.value === params.sort) ? params.sort || 'recommended' : 'recommended'
   const activePrice = priceFilters.some((item) => item.value === params.price) ? params.price : undefined
   const query = sortQuery(activeSort)
-  const allProducts = await getProducts({ per_page: 100, ...query })
+  const allProducts = dedupeStoreProducts(await getProducts({ per_page: 100, ...query }))
   let products = filterProductsByStoreCategory(allProducts, params.category)
   products = filterByPrice(products, activePrice)
   if (params.sale === '1') products = products.filter((product) => product.on_sale)
