@@ -16,11 +16,7 @@ function selectedTerm(attribute: WooProductAttribute, selectedSlug?: string) {
   return attribute.terms.find((term) => term.slug === selectedSlug || normalize(term.name) === normalize(selectedSlug))
 }
 
-function variationSupportsSelection(
-  product: WooProduct,
-  selections: Record<string, string>,
-  attributeOverride?: { name: string; term: WooAttributeTerm },
-) {
+function variationSupportsSelection(product: WooProduct, selections: Record<string, string>, attributeOverride?: { name: string; term: WooAttributeTerm }) {
   if (!product.variations?.length) return true
   const nextSelections = { ...selections }
   if (attributeOverride) nextSelections[attributeOverride.name] = attributeOverride.term.slug
@@ -169,7 +165,7 @@ export function ProductPurchasePanel({ product, variations = [], dark = false }:
         <span>✓ Free standard UK delivery</span>
         <Link href="/returns" className="transition hover:underline">✓ Free 14-day returns on eligible online orders</Link>
         <Link href="/returns" className="transition hover:underline">✓ Damaged or faulty? Refund or replacement where appropriate</Link>
-        <span>✓ Secure Stripe checkout — cards, Apple Pay, Google Pay and Link</span>
+        <span>✓ Card payment securely processed by Stripe</span>
       </div>
 
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-black/10 bg-[#fbfaf7]/96 p-3 shadow-[0_-16px_50px_rgba(20,30,24,.10)] backdrop-blur-xl lg:hidden" style={{ paddingBottom: 'max(.75rem, env(safe-area-inset-bottom))' }}>
