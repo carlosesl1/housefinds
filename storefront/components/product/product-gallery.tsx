@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ArrowsPointingOutIcon, ChevronLeftIcon, ChevronRightIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import type { WooImage } from '@/lib/woocommerce/types'
 
@@ -9,16 +9,69 @@ export function ProductGallery({ images, productName }: { images: WooImage[]; pr
   const gallery = images.slice(0, 12)
   const [active, setActive] = useState(0)
   const [expanded, setExpanded] = useState(false)
+  const openerRef = useRef<HTMLButtonElement | null>(null)
+  const closeRef = useRef<HTMLButtonElement | null>(null)
+  const touchStartX = useRef<number | null>(null)
+
+  const previous = () => setActive((value) => (value - 1 + gallery.length) % gallery.length)
+  const next = () => setActive((value) => (value + 1) % gallery.length)
+
+  const closeExpanded = () => {
+    setExpanded(false)
+    window.setTimeout(() => openerRef.current?.focus(), 0)
+  }
+
+  const handleTouchStart = (event: React.TouchEvent) => {
+    touchStartX.current = event.touches[0]?.clientX ?? null
+  }
+
+  const handleTouchEnd = (event: React.TouchEvent) => {
+    if (gallery.length < 2 || touchStartX.current === null) return
+    const endX = event.changedTouches[0]?.clientX
+    if (typeof endX !== 'number') return
+    const distance = endX - touchStartX.current
+    touchStartX.current = null
+    if (Math.abs(distance) < 45) return
+    if (distance > 0) previous()
+    else next()
+  }
 
   useEffect(() => {
     if (!expanded) return
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
+    window.setTimeout(() => closeRef.current?.focus(), 0)
+
     const handleKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setExpanded(false)
-      if (event.key === 'ArrowLeft') setActive((value) => (value - 1 + gallery.length) % gallery.length)
-      if (event.key === 'ArrowRight') setActive((value) => (value + 1) % gallery.length)
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        closeExpanded()
+      }
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault()
+        previous()
+      }
+      if (event.key === 'ArrowRight') {
+        event.preventDefault()
+        next()
+      }
+      if (event.key === 'Tab') {
+        const dialog = document.querySelector<HTMLElement>('[data-product-gallery-dialog]')
+        if (!dialog) return
+        const focusable = Array.from(dialog.querySelectorAll<HTMLElement>('button:not([disabled]), a[href]'))
+        if (!focusable.length) return
+        const first = focusable[0]
+        const last = focusable[focusable.length - 1]
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault()
+          last.focus()
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault()
+          first.focus()
+        }
+      }
     }
+
     window.addEventListener('keydown', handleKey)
     return () => {
       document.body.style.overflow = previousOverflow
@@ -31,17 +84,15 @@ export function ProductGallery({ images, productName }: { images: WooImage[]; pr
   }
 
   const current = gallery[Math.min(active, gallery.length - 1)]
-  const previous = () => setActive((value) => (value - 1 + gallery.length) % gallery.length)
-  const next = () => setActive((value) => (value + 1) % gallery.length)
 
   return (
     <>
-      <div className="relative aspect-[4/3] overflow-hidden rounded-[28px] bg-[#efede7] sm:rounded-[34px]">
-        <button type="button" onClick={() => setExpanded(true)} className="absolute inset-0 z-10" aria-label={`Expand ${productName} image ${active + 1}`} />
+      <div className="relative aspect-[4/3] touch-pan-y overflow-hidden rounded-[28px] bg-[#efede7] sm:rounded-[34px]" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+        <button ref={openerRef} type="button" onClick={() => setExpanded(true)} className="absolute inset-0 z-10" aria-label={`Expand ${productName} image ${active + 1}`} />
         <Image
           key={current.id || current.src}
           src={current.src}
-          alt={current.alt || `${productName} view ${active + 1}`}
+          alt={current.alt || `${productName} product photo ${active + 1}`}
           fill
           priority={active === 0}
           sizes="(max-width:1280px) 100vw, 58vw"
@@ -58,14 +109,17 @@ export function ProductGallery({ images, productName }: { images: WooImage[]; pr
 
         {gallery.length > 1 && (
           <>
-            <button type="button" onClick={(event) => { event.stopPropagation(); previous() }} className="absolute left-3 top-1/2 z-30 grid size-11 -translate-y-1/2 place-items-center rounded-full border border-white/50 bg-white/88 shadow-sm backdrop-blur transition hover:bg-white" aria-label="Previous product image"><ChevronLeftIcon className="size-5" /></button>
-            <button type="button" onClick={(event) => { event.stopPropagation(); next() }} className="absolute right-3 top-1/2 z-30 grid size-11 -translate-y-1/2 place-items-center rounded-full border border-white/50 bg-white/88 shadow-sm backdrop-blur transition hover:bg-white" aria-label="Next product image"><ChevronRightIcon className="size-5" /></button>
+            <button type="button" onClick={(event) => { event.stopPropagation(); previous() }} className="absolute left-3 top-1/2 z-30 hidden size-11 -translate-y-1/2 place-items-center rounded-full border border-white/50 bg-white/88 shadow-sm backdrop-blur transition hover:bg-white sm:grid" aria-label="Previous product image"><ChevronLeftIcon className="size-5" /></button>
+            <button type="button" onClick={(event) => { event.stopPropagation(); next() }} className="absolute right-3 top-1/2 z-30 hidden size-11 -translate-y-1/2 place-items-center rounded-full border border-white/50 bg-white/88 shadow-sm backdrop-blur transition hover:bg-white sm:grid" aria-label="Next product image"><ChevronRightIcon className="size-5" /></button>
+            <div className="pointer-events-none absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 gap-1.5 sm:hidden" aria-hidden="true">
+              {gallery.slice(0, 6).map((image, index) => <span key={image.id || index} className={`h-1.5 rounded-full bg-white shadow-sm transition-all ${active === index ? 'w-5' : 'w-1.5 opacity-65'}`} />)}
+            </div>
           </>
         )}
       </div>
 
       {gallery.length > 1 && (
-        <div className="mt-3 flex gap-2 overflow-x-auto pb-2" aria-label="Product image thumbnails">
+        <div className="mt-3 hidden gap-2 overflow-x-auto pb-2 sm:flex" aria-label="Product image thumbnails">
           {gallery.map((image, index) => (
             <button
               key={image.id || `${image.src}-${index}`}
@@ -82,25 +136,28 @@ export function ProductGallery({ images, productName }: { images: WooImage[]; pr
       )}
 
       {expanded && (
-        <div className="fixed inset-0 z-[160] bg-[#0d100e]/96 p-3 text-white sm:p-6" role="dialog" aria-modal="true" aria-label={`${productName} image viewer`}>
+        <div data-product-gallery-dialog className="fixed inset-0 z-[160] bg-[#0d100e]/96 p-3 text-white sm:p-6" role="dialog" aria-modal="true" aria-label={`${productName} image viewer`}>
           <div className="relative mx-auto flex h-full max-w-[1500px] flex-col">
             <div className="flex items-center justify-between gap-4 pb-3">
               <div><p className="text-xs font-semibold uppercase tracking-[.2em] text-white/38">{productName}</p><p className="mt-1 text-sm text-white/60">Image {active + 1} of {gallery.length}</p></div>
-              <button type="button" onClick={() => setExpanded(false)} className="grid size-11 place-items-center rounded-full border border-white/15 bg-white/10 transition hover:bg-white/15" aria-label="Close image viewer"><XMarkIcon className="size-5" /></button>
+              <button ref={closeRef} type="button" onClick={closeExpanded} className="grid size-11 place-items-center rounded-full border border-white/15 bg-white/10 transition hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-white" aria-label="Close image viewer"><XMarkIcon className="size-5" /></button>
             </div>
 
-            <div className="relative min-h-0 flex-1 overflow-hidden rounded-[24px] bg-black/20">
-              <Image key={`expanded-${current.id || current.src}`} src={current.src} alt={current.alt || `${productName} enlarged view ${active + 1}`} fill sizes="100vw" quality={90} className="object-contain p-2 sm:p-6" />
+            <div className="relative min-h-0 flex-1 touch-pan-y overflow-hidden rounded-[24px] bg-black/20" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+              <Image key={`expanded-${current.id || current.src}`} src={current.src} alt={current.alt || `${productName} enlarged product photo ${active + 1}`} fill sizes="100vw" quality={90} className="object-contain p-2 sm:p-6" />
               {gallery.length > 1 && (
                 <>
-                  <button type="button" onClick={previous} className="absolute left-3 top-1/2 grid size-12 -translate-y-1/2 place-items-center rounded-full border border-white/15 bg-black/35 backdrop-blur transition hover:bg-black/55 sm:left-5" aria-label="Previous image"><ChevronLeftIcon className="size-6" /></button>
-                  <button type="button" onClick={next} className="absolute right-3 top-1/2 grid size-12 -translate-y-1/2 place-items-center rounded-full border border-white/15 bg-black/35 backdrop-blur transition hover:bg-black/55 sm:right-5" aria-label="Next image"><ChevronRightIcon className="size-6" /></button>
+                  <button type="button" onClick={previous} className="absolute left-3 top-1/2 hidden size-12 -translate-y-1/2 place-items-center rounded-full border border-white/15 bg-black/35 backdrop-blur transition hover:bg-black/55 sm:grid sm:left-5" aria-label="Previous image"><ChevronLeftIcon className="size-6" /></button>
+                  <button type="button" onClick={next} className="absolute right-3 top-1/2 hidden size-12 -translate-y-1/2 place-items-center rounded-full border border-white/15 bg-black/35 backdrop-blur transition hover:bg-black/55 sm:grid sm:right-5" aria-label="Next image"><ChevronRightIcon className="size-6" /></button>
+                  <div className="pointer-events-none absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-1.5 sm:hidden" aria-hidden="true">
+                    {gallery.slice(0, 6).map((image, index) => <span key={`expanded-dot-${image.id || index}`} className={`h-1.5 rounded-full bg-white transition-all ${active === index ? 'w-5' : 'w-1.5 opacity-50'}`} />)}
+                  </div>
                 </>
               )}
             </div>
 
             {gallery.length > 1 && (
-              <div className="mt-3 flex justify-center gap-2 overflow-x-auto pb-1">
+              <div className="mt-3 hidden justify-center gap-2 overflow-x-auto pb-1 sm:flex">
                 {gallery.map((image, index) => (
                   <button key={`expanded-thumb-${image.id || index}`} type="button" onClick={() => setActive(index)} className={`relative aspect-square w-14 shrink-0 overflow-hidden rounded-xl border ${active === index ? 'border-white' : 'border-white/15 opacity-45 hover:opacity-80'}`} aria-label={`Show image ${index + 1}`}>
                     <Image src={image.thumbnail || image.src} alt="" fill sizes="56px" className="object-cover" />
