@@ -32,9 +32,9 @@ export const HELP_DESTINATIONS: HelpDestination[] = [
   },
   {
     title: 'Contact Housefinds',
-    href: 'mailto:contact@housefindsstore.com',
-    description: 'Email customer support at contact@housefindsstore.com.',
-    keywords: ['contact', 'email', 'support', 'customer service', 'speak', 'help me'],
+    href: '/contact',
+    description: 'Customer support for orders, products, delivery and returns.',
+    keywords: ['contact', 'email', 'support', 'customer service', 'speak', 'help me', 'contact housefinds'],
   },
 ]
 
