@@ -15,6 +15,7 @@ const customerLinks = [
   ['Shipping & delivery', '/shipping'],
   ['Returns', '/returns'],
   ['FAQ', '/faq'],
+  ['Contact', '/contact'],
   ['About Housefinds', '/about'],
 ]
 
@@ -63,7 +64,7 @@ export function SiteFooter() {
       <div className="border-t border-black/5">
         <div className="mx-auto flex max-w-[1480px] flex-col gap-3 px-5 py-6 text-xs text-black/45 sm:flex-row sm:items-center sm:justify-between lg:px-8">
           <span>© 2026 Housefinds. All rights reserved.</span>
-          <div className="flex flex-wrap gap-x-4 gap-y-2"><Link href="/track-order" className="hover:text-black">Track order</Link><Link href="/shipping" className="hover:text-black">Shipping</Link><Link href="/returns" className="hover:text-black">Returns</Link><Link href="/faq" className="hover:text-black">FAQ</Link><a href="mailto:contact@housefindsstore.com" className="hover:text-black">Contact</a><span>Small changes. Bigger living.</span></div>
+          <div className="flex flex-wrap gap-x-4 gap-y-2"><Link href="/track-order" className="hover:text-black">Track order</Link><Link href="/shipping" className="hover:text-black">Shipping</Link><Link href="/returns" className="hover:text-black">Returns</Link><Link href="/faq" className="hover:text-black">FAQ</Link><Link href="/contact" className="hover:text-black">Contact</Link><span>Small changes. Bigger living.</span></div>
         </div>
       </div>
     </footer>
