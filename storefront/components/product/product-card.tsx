@@ -8,6 +8,7 @@ import { displayProductName, displayProductTagline } from '@/lib/woocommerce/pre
 export function ProductCard({ product }: { product: WooProduct }) {
   const image = product.images?.[0]
   const secondImage = product.images?.[1]
+  const secondImageSrc = secondImage?.thumbnail || secondImage?.src
   const name = displayProductName(product.name)
   const tagline = displayProductTagline(product)
 
@@ -27,12 +28,12 @@ export function ProductCard({ product }: { product: WooProduct }) {
             <div className="absolute inset-0 grid place-items-center text-black/20"><PhotoIcon className="size-9" /></div>
           )}
 
-          {secondImage && (
+          {secondImageSrc && (
             <Image
-              src={secondImage.src}
+              src={secondImageSrc}
               alt=""
               fill
-              sizes="(max-width:768px) 50vw, (max-width:1280px) 33vw, 25vw"
+              sizes="(max-width:768px) 1px, (max-width:1280px) 33vw, 25vw"
               className="hidden object-cover opacity-0 transition duration-500 group-hover:opacity-100 sm:block"
             />
           )}
