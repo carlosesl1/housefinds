@@ -7,7 +7,11 @@ import { STORE_CATEGORIES } from '@/lib/storefront/categories'
 import { dedupeStoreProducts } from '@/lib/storefront/catalog'
 import { isSupportIntent, searchHelp } from '@/lib/storefront/help'
 
-export const metadata = { title: 'Search' }
+export const metadata = {
+  title: 'Search',
+  description: 'Search Housefinds products, delivery information, returns, support and order tracking.',
+  robots: { index: false, follow: true },
+}
 
 export default async function SearchPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const { q = '' } = await searchParams
