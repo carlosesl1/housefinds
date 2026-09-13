@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { getProductBySlug, getProductReviews, getRelatedProducts } from '@/lib/woocommerce/client'
+import { getProductBySlug, getProductReviews, getProductVariations, getRelatedProducts } from '@/lib/woocommerce/client'
 import { DefaultProduct } from '@/components/product/default-product'
 import { ProductReviews } from '@/components/product/product-reviews'
 import { RelatedProducts } from '@/components/product/related-products'
@@ -42,9 +42,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const product = await getProductBySlug(slug)
   if (!product) notFound()
 
-  const [reviews, relatedProducts] = await Promise.all([
+  const [reviews, relatedProducts, variations] = await Promise.all([
     getProductReviews(product.id, 12).catch(() => []),
     getRelatedProducts(product.id, 8).catch(() => []),
+    product.type === 'variable' || product.variations?.length
+      ? getProductVariations(product.id).catch(() => [])
+      : Promise.resolve([]),
   ])
 
   const name = displayProductName(product.name)
@@ -57,7 +60,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         priceCurrency: prices.currency_code,
         lowPrice: decimalPrice(range.min_amount, prices.currency_minor_unit),
         highPrice: decimalPrice(range.max_amount, prices.currency_minor_unit),
-        offerCount: product.variations?.length || 1,
+        offerCount: variations.length || product.variations?.length || 1,
         availability: product.is_in_stock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
       }
     : {
@@ -95,12 +98,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
       {experience === 'aurora-projector' ? (
         <>
-          <AuroraProjectorExperience product={product} />
+          <AuroraProjectorExperience product={product} variations={variations} />
           <ProductReviews product={product} reviews={reviews} />
           <RelatedProducts products={relatedProducts} />
         </>
       ) : (
-        <DefaultProduct product={product} reviews={reviews} relatedProducts={relatedProducts} />
+        <DefaultProduct product={product} variations={variations} reviews={reviews} relatedProducts={relatedProducts} />
       )}
       <RecentlyViewed product={product} />
     </>
