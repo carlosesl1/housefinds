@@ -5,6 +5,7 @@ import { CART_COOKIE, getCartToken } from '@/lib/woocommerce/cart-token'
 const WC_URL = (process.env.WOOCOMMERCE_URL || 'https://housefindsstore.com').replace(/\/$/, '')
 const CART_URL = `${WC_URL}/wp-json/wc/store/v1/cart`
 const CHECKOUT_URL = `${WC_URL}/wp-json/wc/store/v1/checkout`
+const UK_LAUNCH_ORDER_LIMIT_GBP = 135
 export const LAST_ORDER_COOKIE = 'hf_last_order'
 
 type CheckoutRequestBody = {
@@ -18,6 +19,14 @@ type CheckoutResponseBody = {
   order_key?: string
   status?: string
   [key: string]: unknown
+}
+
+type CartSnapshot = {
+  totals?: {
+    total_price?: string
+    currency_code?: string
+    currency_minor_unit?: number
+  }
 }
 
 type LastOrderSession = {
@@ -43,6 +52,25 @@ async function bootstrapCartToken() {
   return getCartToken(response.headers)
 }
 
+async function getServerCart(token: string) {
+  const response = await fetch(CART_URL, {
+    method: 'GET',
+    headers: { Accept: 'application/json', 'Cart-Token': token },
+    cache: 'no-store',
+  })
+  if (!response.ok) return null
+  return response.json() as Promise<CartSnapshot>
+}
+
+function exceedsLaunchLimit(cart: CartSnapshot | null) {
+  const totals = cart?.totals
+  if (!totals?.total_price) return false
+  if (totals.currency_code && totals.currency_code !== 'GBP') return true
+  const minorUnit = Number.isFinite(totals.currency_minor_unit) ? Number(totals.currency_minor_unit) : 2
+  const total = Number(totals.total_price) / Math.pow(10, minorUnit)
+  return Number.isFinite(total) && total >= UK_LAUNCH_ORDER_LIMIT_GBP
+}
+
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies()
   let token = cookieStore.get(CART_COOKIE)?.value || ''
@@ -53,6 +81,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       { code: 'housefinds_missing_cart', message: 'Your cart session could not be restored. Please refresh and try again.' },
       { status: 400 },
+    )
+  }
+
+  // Never trust the browser-provided expected total. Re-read the live Woo cart
+  // server-side immediately before checkout so the launch basket cap cannot be
+  // bypassed by calling this route directly.
+  const liveCart = await getServerCart(token)
+  if (!liveCart) {
+    return NextResponse.json(
+      { code: 'housefinds_cart_unavailable', message: 'We could not verify your basket total. Refresh the checkout and try again.' },
+      { status: 409 },
+    )
+  }
+
+  if (exceedsLaunchLimit(liveCart)) {
+    return NextResponse.json(
+      { code: 'housefinds_order_limit', message: 'Housefinds launch orders must remain below £135. Reduce quantity or remove an item before paying.' },
+      { status: 422 },
     )
   }
 
