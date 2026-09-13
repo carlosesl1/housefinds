@@ -1,7 +1,7 @@
-import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowLeftIcon, CheckCircleIcon, ChevronRightIcon, ShieldCheckIcon, TruckIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
 import type { WooProduct, WooProductReview } from '@/lib/woocommerce/types'
+import { ProductGallery } from '@/components/product/product-gallery'
 import { ProductPurchasePanel } from '@/components/product/product-purchase-panel'
 import { ProductReviews } from '@/components/product/product-reviews'
 import { RelatedProducts } from '@/components/product/related-products'
@@ -20,7 +20,6 @@ export function DefaultProduct({
   const name = displayProductName(product.name)
   const tagline = displayProductTagline(product)
   const story = getProductStory(product)
-  const gallery = product.images?.slice(0, 8) || []
   const visibleAttributes = product.attributes.filter((attribute) => attribute.terms.length > 0 && !isOperationalAttribute(attribute))
 
   return (
@@ -36,30 +35,7 @@ export function DefaultProduct({
 
         <div className="grid gap-10 xl:grid-cols-[1.08fr_.92fr] xl:gap-16">
           <section className="min-w-0" aria-label={`${name} product gallery`}>
-            {gallery.length > 0 ? (
-              <div className="grid gap-3 sm:grid-cols-2">
-                {gallery.map((image, index) => (
-                  <div
-                    key={image.id || index}
-                    className={`relative overflow-hidden bg-[#efede7] ${index === 0 ? 'aspect-[4/3] rounded-[32px] sm:col-span-2' : 'aspect-square rounded-[26px]'}`}
-                  >
-                    <Image
-                      src={image.src}
-                      alt={image.alt || `${name} view ${index + 1}`}
-                      fill
-                      priority={index === 0}
-                      className="object-cover transition duration-700 hover:scale-[1.015]"
-                      sizes={index === 0 ? '(max-width:1280px) 100vw, 58vw' : '(max-width:768px) 100vw, 29vw'}
-                    />
-                    {index === 0 && gallery.length > 1 && (
-                      <span className="absolute bottom-4 right-4 rounded-full border border-white/50 bg-white/88 px-3 py-1.5 text-xs font-semibold text-black/58 shadow-sm backdrop-blur">{gallery.length} product views</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="grid aspect-[4/3] place-items-center rounded-[32px] bg-[#efede7] text-sm text-black/35">Product imagery coming soon</div>
-            )}
+            <ProductGallery images={product.images || []} productName={name} />
           </section>
 
           <aside className="xl:sticky xl:top-28 xl:self-start">
