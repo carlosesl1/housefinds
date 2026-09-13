@@ -3,6 +3,7 @@ import { ArrowLeftIcon, CheckCircleIcon, ChevronRightIcon, ShieldCheckIcon, Truc
 import type { WooProduct, WooProductReview } from '@/lib/woocommerce/types'
 import { ProductGallery } from '@/components/product/product-gallery'
 import { ProductPurchasePanel } from '@/components/product/product-purchase-panel'
+import { ProductFAQ } from '@/components/product/product-faq'
 import { ProductReviews } from '@/components/product/product-reviews'
 import { RelatedProducts } from '@/components/product/related-products'
 import { displayProductName, displayProductTagline, getProductStory } from '@/lib/woocommerce/presentation'
@@ -69,7 +70,7 @@ export function DefaultProduct({
               <div className="rounded-2xl bg-[#f0f2ed] p-4">
                 <ShieldCheckIcon className="size-5 text-[#557562]" />
                 <p className="mt-3 text-sm font-semibold text-[#172018]">Secure Stripe checkout</p>
-                <p className="mt-1 text-xs leading-5 text-black/42">Cards, Apple Pay, Google Pay and Link are supported.</p>
+                <p className="mt-1 text-xs leading-5 text-black/42">Card details are securely processed by Stripe, not stored by Housefinds.</p>
               </div>
             </div>
           </aside>
@@ -102,6 +103,7 @@ export function DefaultProduct({
         </section>
       )}
 
+      <ProductFAQ product={product} />
       <ProductReviews product={product} reviews={reviews} />
       <RelatedProducts products={relatedProducts} />
     </main>
