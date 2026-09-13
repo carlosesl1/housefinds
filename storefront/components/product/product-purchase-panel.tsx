@@ -147,10 +147,7 @@ export function ProductPurchasePanel({
   return (
     <div className="space-y-7" id="purchase-panel">
       <div aria-live="polite">
-        <div className="flex items-center justify-between gap-4">
-          <p className={`text-sm font-medium ${labelClass}`}>{selectedVariation ? 'Selected price' : 'Price'}</p>
-          {exactProduct.on_sale && <span className="rounded-full bg-[#e5eee7] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[.14em] text-[#355f4a]">Sale</span>}
-        </div>
+        <p className={`text-sm font-medium ${labelClass}`}>{selectedVariation ? 'Selected price' : 'Price'}</p>
         <p className="mt-1 text-3xl font-semibold tracking-[-.04em]">{displayPrice}</p>
         {allSelected && variations.length > 0 && !selectedVariation && <p className="mt-2 text-xs font-medium text-amber-700">Select another combination to see exact availability.</p>}
         {selectedVariation && !selectedVariation.is_in_stock && <p className="mt-2 text-xs font-semibold text-rose-700">This option is currently out of stock.</p>}
