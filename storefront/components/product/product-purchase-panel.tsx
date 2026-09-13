@@ -60,7 +60,15 @@ function findVariationId(product: WooProduct, selections: Record<string, string>
   return match?.id || null
 }
 
-export function ProductPurchasePanel({ product, dark = false }: { product: WooProduct; dark?: boolean }) {
+export function ProductPurchasePanel({
+  product,
+  variations = [],
+  dark = false,
+}: {
+  product: WooProduct
+  variations?: WooProduct[]
+  dark?: boolean
+}) {
   const variableAttributes = useMemo(
     () => product.attributes.filter((attribute) => attribute.has_variations && attribute.terms.length > 0),
     [product.attributes],
@@ -89,7 +97,12 @@ export function ProductPurchasePanel({ product, dark = false }: { product: WooPr
   const allSelected = variableAttributes.every((attribute) => Boolean(selections[attribute.name]))
   const visibleAllSelected = visibleVariableAttributes.every((attribute) => Boolean(selections[attribute.name]))
   const variationId = allSelected ? findVariationId(product, selections) : null
+  const selectedVariation = variationId ? variations.find((variation) => variation.id === variationId) : undefined
   const selectionIsValid = !variableAttributes.length || Boolean(variationId) || !product.variations?.length
+  const exactProduct = selectedVariation || product
+  const exactAvailabilityKnown = !variableAttributes.length || Boolean(selectedVariation) || !variations.length
+  const isPurchasable = exactAvailabilityKnown ? exactProduct.is_purchasable : product.is_purchasable
+  const isInStock = exactAvailabilityKnown ? exactProduct.is_in_stock : product.is_in_stock
 
   const variationPayload = variableAttributes.flatMap((attribute) => {
     const term = selectedTerm(attribute, selections[attribute.name])
@@ -107,10 +120,12 @@ export function ProductPurchasePanel({ product, dark = false }: { product: WooPr
     })
     .join(' · ')
 
-  const minimum = Math.max(1, product.add_to_cart?.minimum || 1)
-  const maximum = product.add_to_cart?.maximum && product.add_to_cart.maximum > 0 ? product.add_to_cart.maximum : 99
-  const step = product.add_to_cart?.multiple_of && product.add_to_cart.multiple_of > 0 ? product.add_to_cart.multiple_of : 1
-  const canAdd = product.is_purchasable && product.is_in_stock && allSelected && selectionIsValid && !loading
+  const cartRules = selectedVariation?.add_to_cart || product.add_to_cart
+  const minimum = Math.max(1, cartRules?.minimum || 1)
+  const maximum = cartRules?.maximum && cartRules.maximum > 0 ? cartRules.maximum : 99
+  const step = cartRules?.multiple_of && cartRules.multiple_of > 0 ? cartRules.multiple_of : 1
+  const canAdd = isPurchasable && isInStock && allSelected && selectionIsValid && !loading
+  const displayPrice = formatProductPrice(exactProduct)
 
   const labelClass = dark ? 'text-white/62' : 'text-black/52'
   const optionIdle = dark ? 'border-white/15 bg-white/[.04] text-white/78 hover:bg-white/[.08]' : 'border-black/10 bg-white text-black/68 hover:border-black/20'
@@ -131,12 +146,15 @@ export function ProductPurchasePanel({ product, dark = false }: { product: WooPr
 
   return (
     <div className="space-y-7" id="purchase-panel">
-      <div>
+      <div aria-live="polite">
         <div className="flex items-center justify-between gap-4">
-          <p className={`text-sm font-medium ${labelClass}`}>Price</p>
-          {product.on_sale && <span className="rounded-full bg-[#e5eee7] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[.14em] text-[#355f4a]">Sale</span>}
+          <p className={`text-sm font-medium ${labelClass}`}>{selectedVariation ? 'Selected price' : 'Price'}</p>
+          {exactProduct.on_sale && <span className="rounded-full bg-[#e5eee7] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[.14em] text-[#355f4a]">Sale</span>}
         </div>
-        <p className="mt-1 text-3xl font-semibold tracking-[-.04em]">{formatProductPrice(product)}</p>
+        <p className="mt-1 text-3xl font-semibold tracking-[-.04em]">{displayPrice}</p>
+        {allSelected && variations.length > 0 && !selectedVariation && <p className="mt-2 text-xs font-medium text-amber-700">Select another combination to see exact availability.</p>}
+        {selectedVariation && !selectedVariation.is_in_stock && <p className="mt-2 text-xs font-semibold text-rose-700">This option is currently out of stock.</p>}
+        {selectedVariation?.is_in_stock && <p className={`mt-2 text-xs font-medium ${dark ? 'text-[#a8c6b0]' : 'text-[#456b55]'}`}>Selected option is in stock.</p>}
         <p className={`mt-2 text-xs leading-5 ${labelClass}`}>Delivery options and final totals are shown before payment.</p>
       </div>
 
@@ -191,7 +209,7 @@ export function ProductPurchasePanel({ product, dark = false }: { product: WooPr
           onClick={() => void handleAdd()}
           className={`h-14 rounded-full px-7 font-semibold transition disabled:cursor-not-allowed disabled:opacity-45 ${dark ? 'bg-[#dce8df] text-[#172018] hover:bg-white' : 'bg-[#355f4a] text-white hover:bg-[#294b3a]'}`}
         >
-          {loading ? 'Adding…' : !product.is_in_stock ? 'Out of stock' : visibleVariableAttributes.length && !visibleAllSelected ? 'Choose options' : 'Add to cart'}
+          {loading ? 'Adding…' : !isInStock ? 'Out of stock' : visibleVariableAttributes.length && !visibleAllSelected ? 'Choose options' : 'Add to cart'}
         </button>
       </div>
 
@@ -204,17 +222,17 @@ export function ProductPurchasePanel({ product, dark = false }: { product: WooPr
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-black/10 bg-[#fbfaf7]/96 p-3 shadow-[0_-16px_50px_rgba(20,30,24,.10)] backdrop-blur-xl lg:hidden" style={{ paddingBottom: 'max(.75rem, env(safe-area-inset-bottom))' }}>
         <div className="mx-auto flex max-w-xl items-center gap-3">
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-[#172018]">{formatProductPrice(product)}</p>
+            <p className="text-sm font-semibold text-[#172018]">{displayPrice}</p>
             <p className="truncate text-[11px] text-black/42">{selectionSummary || (visibleVariableAttributes.length ? 'Choose product options' : 'Ready to add')}</p>
           </div>
           <button
             type="button"
-            disabled={!product.is_purchasable || !product.is_in_stock || loading || (allSelected && !selectionIsValid)}
+            disabled={!isPurchasable || !isInStock || loading || (allSelected && !selectionIsValid)}
             onClick={handleStickyAction}
             className="inline-flex h-12 shrink-0 items-center gap-2 rounded-full bg-[#355f4a] px-5 text-sm font-semibold text-white disabled:opacity-45"
           >
             <ShoppingBagIcon className="size-4" />
-            {loading ? 'Adding…' : visibleVariableAttributes.length && !visibleAllSelected ? 'Choose options' : 'Add to cart'}
+            {loading ? 'Adding…' : visibleVariableAttributes.length && !visibleAllSelected ? 'Choose options' : !isInStock ? 'Out of stock' : 'Add to cart'}
           </button>
         </div>
       </div>
