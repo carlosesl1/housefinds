@@ -77,6 +77,22 @@ export type WooProduct = {
   }
 }
 
+export type WooProductReview = {
+  id: number
+  date_created: string
+  formatted_date_created?: string
+  date_created_gmt?: string
+  product_id: number
+  product_name?: string
+  product_permalink?: string
+  product_image?: WooImage | null
+  reviewer: string
+  review: string
+  rating: number
+  verified: boolean
+  reviewer_avatar_urls?: Record<string, string>
+}
+
 export type WooCartItem = {
   key: string
   id: number
