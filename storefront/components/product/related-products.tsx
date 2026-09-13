@@ -1,10 +1,12 @@
 import Link from 'next/link'
 import { ArrowRightIcon } from '@heroicons/react/24/outline'
 import type { WooProduct } from '@/lib/woocommerce/types'
+import { dedupeStoreProducts } from '@/lib/storefront/catalog'
 import { ProductCard } from '@/components/product/product-card'
 
 export function RelatedProducts({ products }: { products: WooProduct[] }) {
-  if (!products.length) return null
+  const visibleProducts = dedupeStoreProducts(products).slice(0, 8)
+  if (!visibleProducts.length) return null
 
   return (
     <section className="bg-[#fbfaf7] px-5 py-20 lg:px-8 lg:py-28">
@@ -18,7 +20,7 @@ export function RelatedProducts({ products }: { products: WooProduct[] }) {
         </div>
 
         <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-12 md:grid-cols-3 xl:grid-cols-4">
-          {products.slice(0, 8).map((product) => <ProductCard key={product.id} product={product} />)}
+          {visibleProducts.map((product) => <ProductCard key={product.id} product={product} />)}
         </div>
       </div>
     </section>
