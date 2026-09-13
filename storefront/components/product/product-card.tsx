@@ -39,7 +39,6 @@ export function ProductCard({ product }: { product: WooProduct }) {
           )}
 
           <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/22 to-transparent opacity-0 transition group-hover:opacity-100" />
-          {product.on_sale && <span className="absolute left-3 top-3 rounded-full bg-[#355f4a] px-3 py-1.5 text-[11px] font-semibold text-white">Sale</span>}
           {product.images.length > 1 && (
             <span className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-full border border-white/50 bg-white/86 px-2.5 py-1.5 text-[10px] font-semibold text-black/55 shadow-sm backdrop-blur">
               <PhotoIcon className="size-3.5" /> {product.images.length} views
