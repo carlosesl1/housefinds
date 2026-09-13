@@ -5,15 +5,16 @@ import { ProductCard } from '@/components/product/product-card'
 import { searchStoreProducts } from '@/lib/storefront/search'
 import { STORE_CATEGORIES } from '@/lib/storefront/categories'
 import { dedupeStoreProducts } from '@/lib/storefront/catalog'
-import { searchHelp } from '@/lib/storefront/help'
+import { isSupportIntent, searchHelp } from '@/lib/storefront/help'
 
 export const metadata = { title: 'Search' }
 
 export default async function SearchPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const { q = '' } = await searchParams
   const query = q.trim()
-  const products = dedupeStoreProducts(await getProducts({ per_page: 100 }))
-  const results = query ? searchStoreProducts(products, query) : []
+  const supportIntent = isSupportIntent(query)
+  const products = supportIntent ? [] : dedupeStoreProducts(await getProducts({ per_page: 100 }))
+  const results = query && !supportIntent ? searchStoreProducts(products, query) : []
   const helpResults = query ? searchHelp(query) : []
   const hasResults = results.length > 0 || helpResults.length > 0
 
@@ -57,14 +58,11 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
                   <Link href="/faq" className="hidden text-sm font-semibold text-[#355f4a] sm:inline">View FAQ →</Link>
                 </div>
                 <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                  {helpResults.map((item) => {
-                    const content = <><div><p className="text-lg font-semibold tracking-[-.025em] text-[#172018]">{item.title}</p><p className="mt-2 text-sm leading-6 text-black/48">{item.description}</p></div><ArrowRightIcon className="size-5 shrink-0 text-[#557562] transition group-hover:translate-x-1" /></>
-                    return item.href.startsWith('mailto:') ? (
-                      <a key={item.href} href={item.href} className="group flex items-center justify-between gap-5 rounded-[24px] border border-black/[.07] bg-white p-5 transition hover:-translate-y-0.5 hover:border-[#557562]/30">{content}</a>
-                    ) : (
-                      <Link key={item.href} href={item.href} className="group flex items-center justify-between gap-5 rounded-[24px] border border-black/[.07] bg-white p-5 transition hover:-translate-y-0.5 hover:border-[#557562]/30">{content}</Link>
-                    )
-                  })}
+                  {helpResults.map((item) => (
+                    <Link key={item.href} href={item.href} className="group flex items-center justify-between gap-5 rounded-[24px] border border-black/[.07] bg-white p-5 transition hover:-translate-y-0.5 hover:border-[#557562]/30">
+                      <div><p className="text-lg font-semibold tracking-[-.025em] text-[#172018]">{item.title}</p><p className="mt-2 text-sm leading-6 text-black/48">{item.description}</p></div><ArrowRightIcon className="size-5 shrink-0 text-[#557562] transition group-hover:translate-x-1" />
+                    </Link>
+                  ))}
                 </div>
               </section>
             )}
@@ -79,6 +77,12 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
                   {results.map((product) => <ProductCard key={product.id} product={product} />)}
                 </div>
               </section>
+            )}
+
+            {supportIntent && helpResults.length > 0 && (
+              <div className="mx-auto mt-8 max-w-5xl rounded-2xl bg-[#f1f3ee] px-5 py-4 text-sm leading-6 text-black/48">
+                Looking for a product instead? <Link href="/shop" className="font-semibold text-[#355f4a] underline underline-offset-3">Browse the shop</Link> or search by the product or problem it solves.
+              </div>
             )}
 
             {!hasResults && (
