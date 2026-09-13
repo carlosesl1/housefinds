@@ -22,6 +22,17 @@ function cleanText(value?: string) {
   return String(value || '').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim()
 }
 
+function money(value?: string, currency = 'GBP') {
+  const cleaned = cleanText(value)
+  const numeric = Number(cleaned)
+  if (!cleaned || Number.isNaN(numeric)) return cleaned
+  try {
+    return new Intl.NumberFormat('en-GB', { style: 'currency', currency }).format(numeric)
+  } catch {
+    return `£${numeric.toFixed(2)}`
+  }
+}
+
 function dateLabel(value?: string | null) {
   if (!value) return ''
   const date = new Date(value.length === 10 ? `${value}T12:00:00` : value)
@@ -50,7 +61,7 @@ function TrackingResult({ result }: { result: LookupResult }) {
         <p className="text-[10px] font-semibold uppercase tracking-[.24em] text-white/40">Order #{result.order_number}</p>
         <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
           <h3 className="text-3xl font-semibold tracking-[-.045em]">{result.status_label || 'Order status'}</h3>
-          {result.total && <strong className="text-lg">{cleanText(result.total)}</strong>}
+          {result.total && <strong className="text-lg">{money(result.total, result.currency)}</strong>}
         </div>
         {result.estimated_delivery && <p className="mt-3 text-sm text-white/58">Current delivery estimate: around {dateLabel(result.estimated_delivery)}</p>}
       </div>
@@ -92,7 +103,7 @@ function TrackingResult({ result }: { result: LookupResult }) {
               {result.items.map((item, index) => (
                 <div key={`${item.name}-${index}`} className="flex items-start justify-between gap-4 py-3 text-sm">
                   <div><p className="font-medium text-[#172018]">{item.name}</p>{item.variation?.length ? <p className="mt-1 text-xs text-black/40">{item.variation.map((value) => value.value).filter(Boolean).join(' · ')}</p> : null}<p className="mt-1 text-xs text-black/38">Qty {item.quantity}</p></div>
-                  {item.total && <span className="shrink-0 font-semibold">{cleanText(item.total)}</span>}
+                  {item.total && <span className="shrink-0 font-semibold">{money(item.total, result.currency)}</span>}
                 </div>
               ))}
             </div>
