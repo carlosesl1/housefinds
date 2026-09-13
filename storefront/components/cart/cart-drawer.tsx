@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { XMarkIcon, MinusIcon, PlusIcon, ExclamationTriangleIcon, LockClosedIcon, ArrowPathIcon, TruckIcon } from '@heroicons/react/24/outline'
 import { useCart } from '@/store/cart'
 import { formatMoney } from '@/lib/woocommerce/money'
@@ -12,28 +12,52 @@ const UK_LAUNCH_ORDER_LIMIT = 135
 
 export function CartDrawer() {
   const { cart, open, loading, error, clearError, setOpen, update, remove } = useCart()
+  const dialogRef = useRef<HTMLElement | null>(null)
+  const closeRef = useRef<HTMLButtonElement | null>(null)
+  const returnFocusRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
     if (!open) return
+    returnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
+    window.setTimeout(() => closeRef.current?.focus(), 0)
+
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false)
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        setOpen(false)
+        return
+      }
+      if (event.key !== 'Tab' || !dialogRef.current) return
+      const focusable = Array.from(dialogRef.current.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'))
+      if (!focusable.length) return
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+      }
     }
+
     window.addEventListener('keydown', onKeyDown)
     return () => {
       document.body.style.overflow = previousOverflow
       window.removeEventListener('keydown', onKeyDown)
+      window.setTimeout(() => returnFocusRef.current?.focus(), 0)
     }
   }, [open, setOpen])
 
   if (!open) return null
 
   const subtotal = cart ? formatMoney(cart.totals.total_items, cart.totals.currency_minor_unit, cart.totals.currency_symbol) : '£0.00'
-  const subtotalValue = cart
-    ? Number(cart.totals.total_items || 0) / Math.pow(10, cart.totals.currency_minor_unit || 2)
+  const totalValue = cart
+    ? Number(cart.totals.total_price || 0) / Math.pow(10, cart.totals.currency_minor_unit || 2)
     : 0
-  const exceedsLaunchLimit = subtotalValue >= UK_LAUNCH_ORDER_LIMIT
+  const exceedsLaunchLimit = totalValue >= UK_LAUNCH_ORDER_LIMIT
   const discount = cart && Number(cart.totals.total_discount) > 0
     ? formatMoney(cart.totals.total_discount, cart.totals.currency_minor_unit, cart.totals.currency_symbol)
     : null
@@ -42,13 +66,13 @@ export function CartDrawer() {
     <div className="fixed inset-0 z-[100]" role="dialog" aria-modal="true" aria-labelledby="cart-title">
       <button type="button" className="absolute inset-0 bg-black/35 backdrop-blur-[3px]" aria-label="Close cart" onClick={() => setOpen(false)} />
 
-      <aside className="absolute right-0 top-0 flex h-full w-full max-w-[470px] flex-col bg-[#fbfaf7] shadow-[-30px_0_100px_rgba(20,28,23,.16)]">
+      <aside ref={dialogRef} className="absolute right-0 top-0 flex h-full w-full max-w-[470px] flex-col bg-[#fbfaf7] shadow-[-30px_0_100px_rgba(20,28,23,.16)]">
         <div className="flex items-center justify-between border-b border-black/10 px-6 py-5">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[.26em] text-[#557562]">Housefinds</p>
             <h2 id="cart-title" className="mt-1 text-2xl font-semibold tracking-[-.04em]">Your cart {cart?.items_count ? <span className="text-base font-medium text-black/35">({cart.items_count})</span> : null}</h2>
           </div>
-          <button type="button" className="grid size-10 place-items-center rounded-full border border-black/10 bg-white transition hover:bg-black/[.03]" onClick={() => setOpen(false)} aria-label="Close cart"><XMarkIcon className="size-5" /></button>
+          <button ref={closeRef} type="button" className="grid size-10 place-items-center rounded-full border border-black/10 bg-white transition hover:bg-black/[.03] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#557562]" onClick={() => setOpen(false)} aria-label="Close cart"><XMarkIcon className="size-5" /></button>
         </div>
 
         {error && (
@@ -88,11 +112,11 @@ export function CartDrawer() {
 
           {exceedsLaunchLimit && (
             <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-950">
-              <strong>Launch order limit: below £135.</strong> Remove an item or reduce quantity to continue to checkout.
+              <strong>This basket needs to stay below £135.</strong> Reduce quantity or remove an item before checkout.
             </div>
           )}
 
-          <Link href="/checkout" onClick={() => setOpen(false)} className={`mt-5 flex h-14 items-center justify-center gap-2 rounded-full bg-[#355f4a] font-semibold text-white transition hover:bg-[#294b3a] ${!cart?.items?.length || loading || exceedsLaunchLimit ? 'pointer-events-none opacity-50' : ''}`}><LockClosedIcon className="size-4" /> Continue to checkout</Link>
+          <Link href="/checkout" onClick={() => setOpen(false)} aria-disabled={!cart?.items?.length || loading || exceedsLaunchLimit} className={`mt-5 flex h-14 items-center justify-center gap-2 rounded-full bg-[#355f4a] font-semibold text-white transition hover:bg-[#294b3a] ${!cart?.items?.length || loading || exceedsLaunchLimit ? 'pointer-events-none opacity-50' : ''}`}><LockClosedIcon className="size-4" /> Continue to checkout</Link>
           <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-[11px] font-medium text-black/42">
             <span className="inline-flex items-center gap-1.5"><TruckIcon className="size-3.5" /> Free UK delivery</span>
             <span className="inline-flex items-center gap-1.5"><LockClosedIcon className="size-3.5" /> Secure payment</span>
