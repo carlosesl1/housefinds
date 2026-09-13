@@ -7,6 +7,7 @@ This file tracks facts that must be true before the public storefront is indexed
 - Standard UK delivery: free to the customer; Housefinds absorbs the supplier shipping cost.
 - Current delivery estimate: around 14 days.
 - Returns: customer may start an eligible change-of-mind return within 14 days of delivery; Housefinds intends to provide a free return method.
+- Damaged/faulty/incorrect item support: for the fastest resolution, ask the customer to contact Housefinds within 14 days and provide clear photos or a short video where reasonably practical. Where appropriate, Housefinds can offer a replacement or refund. This operating workflow must not be presented as limiting UK statutory consumer rights.
 - Support email: contact@housefindsstore.com.
 - Payments intended through Stripe: Visa, Mastercard, American Express, Apple Pay, Google Pay and Link.
 - PayPal: not planned for initial launch.
@@ -24,26 +25,40 @@ UK distance-selling information must identify the trader, not only the Housefind
 Do not invent these fields in the storefront.
 
 ### UK VAT
-Housefinds is selling directly to UK consumers from an overseas seller setup. For consignments valued at £135 or less and outside the UK at sale, HMRC guidance requires the overseas seller to register for UK VAT and charge/account for VAT at the point of sale unless an exception applies.
+Housefinds is selling directly to UK consumers from an overseas seller setup. For consignments valued at £135 or less and outside the UK at sale, current HMRC guidance says the overseas seller must register for UK VAT and charge/account for VAT at the point of sale unless a specific exception applies.
+
+Important distinction:
+- when an online marketplace facilitates the actual sale to the UK customer, that marketplace can be liable for the VAT;
+- Housefinds customers buy on the Housefinds storefront, not on the supplier marketplace;
+- VAT that a supplier marketplace may collect on Housefinds' separate upstream purchase does not automatically establish that Housefinds' own retail-sale VAT obligation has been discharged.
 
 Before launch:
+- obtain advice for the actual Housefinds contractual flow from a UK VAT adviser/accountant familiar with non-established sellers and dropshipping;
 - confirm the legal seller and UK VAT registration position;
 - configure WooCommerce tax accordingly;
 - confirm whether displayed GBP prices are VAT-inclusive;
 - test a real checkout total and invoice;
 - decide how carts/consignments above £135 are handled so customers are not surprised by import VAT or customs charges.
 
+Do not publish “VAT included”, “tax paid” or similar customer-facing claims until this position is verified for the Housefinds transaction itself.
+
 Northern Ireland can involve different VAT/import rules. Confirm whether launch scope is all UK or Great Britain only before enabling NI delivery.
 
 ### Returns operations
 The customer-facing return promise belongs to Housefinds. Supplier/platform protection can support it operationally but must not be the only mechanism.
 
-Before launch:
+Change of mind:
 - define the exact workflow that creates a prepaid return label or other free return method;
 - define where returned goods are sent for each supplier route;
 - decide who pays when supplier/platform return coverage is unavailable or limited;
-- test one return end to end;
-- keep faulty/misdescribed goods handling separate from simple change-of-mind returns.
+- test one return end to end.
+
+Damaged, faulty or incorrect items:
+- ask for the order number plus clear photos/video where reasonably necessary for rapid assessment;
+- use this evidence operationally to open the supplier/platform dispute where applicable;
+- decide whether the customer wants the appropriate refund or replacement where those remedies are available;
+- do not reject a valid statutory consumer claim solely because a customer cannot provide a video;
+- keep the 14-day Housefinds damage-support workflow separate from broader UK statutory rights for faulty goods.
 
 ### Reviews policy
 Before importing reviews at scale:
@@ -68,6 +83,7 @@ Use:
 - “Free UK delivery”
 - “Current delivery estimate: around 14 days”
 - “Free 14-day returns on eligible online orders”
+- “Damaged or faulty? Contact Housefinds for a replacement or refund where appropriate”
 - “Secure Stripe checkout”
 - “Product reviews”
 - “Some reviews were collected for the same product on third-party marketplaces”
@@ -79,4 +95,5 @@ Avoid until independently substantiated:
 - “Tracked delivery” when only internal order status exists
 - “Verified Housefinds buyer” for imported reviews
 - “100% satisfaction guarantee”
+- “VAT included” until the Housefinds VAT position is verified
 - fake scarcity, fake countdowns, inherited marketplace sale claims or arbitrary crossed-out prices
