@@ -1,7 +1,8 @@
 'use client'
 
+import Link from 'next/link'
 import { useMemo, useState } from 'react'
-import { MinusIcon, PlusIcon, CheckIcon } from '@heroicons/react/24/outline'
+import { MinusIcon, PlusIcon, CheckIcon, ShoppingBagIcon } from '@heroicons/react/24/outline'
 import type { WooProduct, WooProductAttribute, WooAttributeTerm } from '@/lib/woocommerce/types'
 import { useCart } from '@/store/cart'
 import { formatProductPrice } from '@/lib/woocommerce/money'
@@ -91,6 +92,13 @@ export function ProductPurchasePanel({ product, dark = false }: { product: WooPr
     }]
   })
 
+  const selectionSummary = variableAttributes
+    .flatMap((attribute) => {
+      const term = selectedTerm(attribute, selections[attribute.name])
+      return term ? [term.name] : []
+    })
+    .join(' · ')
+
   const minimum = Math.max(1, product.add_to_cart?.minimum || 1)
   const maximum = product.add_to_cart?.maximum && product.add_to_cart.maximum > 0 ? product.add_to_cart.maximum : 99
   const step = product.add_to_cart?.multiple_of && product.add_to_cart.multiple_of > 0 ? product.add_to_cart.multiple_of : 1
@@ -105,39 +113,54 @@ export function ProductPurchasePanel({ product, dark = false }: { product: WooPr
     await add(variationId || product.id, quantity, variationPayload)
   }
 
+  function handleStickyAction() {
+    if (variableAttributes.length && !allSelected) {
+      document.getElementById('purchase-options')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      return
+    }
+    void handleAdd()
+  }
+
   return (
-    <div className="space-y-7">
+    <div className="space-y-7" id="purchase-panel">
       <div>
-        <p className={`text-sm font-medium ${labelClass}`}>Price</p>
+        <div className="flex items-center justify-between gap-4">
+          <p className={`text-sm font-medium ${labelClass}`}>Price</p>
+          {product.on_sale && <span className="rounded-full bg-[#e5eee7] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[.14em] text-[#355f4a]">Sale</span>}
+        </div>
         <p className="mt-1 text-3xl font-semibold tracking-[-.04em]">{formatProductPrice(product)}</p>
+        <p className={`mt-2 text-xs leading-5 ${labelClass}`}>Delivery options and final totals are shown before payment.</p>
       </div>
 
-      {variableAttributes.map((attribute) => (
-        <div key={attribute.name}>
-          <div className="flex items-center justify-between gap-4">
-            <label className={`text-sm font-semibold ${dark ? 'text-white/86' : 'text-[#172018]'}`}>{attribute.name}</label>
-            {!selections[attribute.name] && <span className={`text-xs ${labelClass}`}>Select an option</span>}
+      <div id="purchase-options" className="space-y-6 scroll-mt-32">
+        {variableAttributes.map((attribute) => (
+          <div key={attribute.name}>
+            <div className="flex items-center justify-between gap-4">
+              <label className={`text-sm font-semibold ${dark ? 'text-white/86' : 'text-[#172018]'}`}>{attribute.name}</label>
+              {!selections[attribute.name] && <span className={`text-xs ${labelClass}`}>Choose one</span>}
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2.5">
+              {attribute.terms.map((term) => {
+                const active = selections[attribute.name] === term.slug
+                const available = variationSupportsSelection(product, selections, { name: attribute.name, term })
+                return (
+                  <button
+                    key={`${attribute.name}-${term.slug}`}
+                    type="button"
+                    disabled={!available}
+                    aria-pressed={active}
+                    onClick={() => setSelections((current) => ({ ...current, [attribute.name]: term.slug }))}
+                    className={`relative min-h-11 rounded-full border px-4 py-2 text-sm font-medium transition ${active ? optionActive : optionIdle} ${!available ? 'cursor-not-allowed opacity-35 line-through' : ''}`}
+                  >
+                    {active && <CheckIcon className="mr-1.5 inline size-4" />}
+                    {term.name}
+                  </button>
+                )
+              })}
+            </div>
           </div>
-          <div className="mt-3 flex flex-wrap gap-2.5">
-            {attribute.terms.map((term) => {
-              const active = selections[attribute.name] === term.slug
-              const available = variationSupportsSelection(product, selections, { name: attribute.name, term })
-              return (
-                <button
-                  key={`${attribute.name}-${term.slug}`}
-                  type="button"
-                  disabled={!available}
-                  onClick={() => setSelections((current) => ({ ...current, [attribute.name]: term.slug }))}
-                  className={`relative min-h-11 rounded-full border px-4 py-2 text-sm font-medium transition ${active ? optionActive : optionIdle} ${!available ? 'cursor-not-allowed opacity-35' : ''}`}
-                >
-                  {active && <CheckIcon className="mr-1.5 inline size-4" />}
-                  {term.name}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      ))}
+        ))}
+      </div>
 
       {allSelected && !selectionIsValid && (
         <p className="rounded-2xl border border-amber-300/60 bg-amber-50 px-4 py-3 text-sm text-amber-950">
@@ -156,7 +179,7 @@ export function ProductPurchasePanel({ product, dark = false }: { product: WooPr
           >
             <MinusIcon className="size-4" />
           </button>
-          <span className="min-w-9 text-center text-sm font-semibold">{quantity}</span>
+          <span className="min-w-9 text-center text-sm font-semibold" aria-label={`Quantity ${quantity}`}>{quantity}</span>
           <button
             type="button"
             className="grid size-12 place-items-center disabled:opacity-35"
@@ -178,10 +201,28 @@ export function ProductPurchasePanel({ product, dark = false }: { product: WooPr
         </button>
       </div>
 
-      <div className={`grid gap-2.5 text-sm ${labelClass}`}>
-        <span>✓ Secure checkout</span>
-        <span>✓ Order tracking</span>
-        <span>✓ Support when you need it</span>
+      <div className={`grid gap-2.5 border-t pt-5 text-sm ${dark ? 'border-white/10' : 'border-black/[.07]'} ${labelClass}`}>
+        <span>✓ Secure checkout with Stripe</span>
+        <Link href="/returns" className="transition hover:underline">✓ 14-day return request window</Link>
+        <Link href="/shipping" className="transition hover:underline">✓ Delivery methods shown before payment</Link>
+      </div>
+
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-black/10 bg-[#fbfaf7]/96 p-3 shadow-[0_-16px_50px_rgba(20,30,24,.10)] backdrop-blur-xl lg:hidden" style={{ paddingBottom: 'max(.75rem, env(safe-area-inset-bottom))' }}>
+        <div className="mx-auto flex max-w-xl items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-[#172018]">{formatProductPrice(product)}</p>
+            <p className="truncate text-[11px] text-black/42">{selectionSummary || (variableAttributes.length ? 'Choose product options' : 'Ready to add')}</p>
+          </div>
+          <button
+            type="button"
+            disabled={!product.is_purchasable || !product.is_in_stock || loading || (allSelected && !selectionIsValid)}
+            onClick={handleStickyAction}
+            className="inline-flex h-12 shrink-0 items-center gap-2 rounded-full bg-[#355f4a] px-5 text-sm font-semibold text-white disabled:opacity-45"
+          >
+            <ShoppingBagIcon className="size-4" />
+            {loading ? 'Adding…' : variableAttributes.length && !allSelected ? 'Choose options' : 'Add to cart'}
+          </button>
+        </div>
       </div>
     </div>
   )
