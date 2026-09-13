@@ -6,6 +6,7 @@ import { ProductPurchasePanel } from '@/components/product/product-purchase-pane
 import { ProductReviews } from '@/components/product/product-reviews'
 import { RelatedProducts } from '@/components/product/related-products'
 import { displayProductName, displayProductTagline, getProductStory } from '@/lib/woocommerce/presentation'
+import { isOperationalAttribute, storefrontAttributeName, storefrontTermName } from '@/lib/storefront/catalog'
 
 export function DefaultProduct({
   product,
@@ -20,7 +21,7 @@ export function DefaultProduct({
   const tagline = displayProductTagline(product)
   const story = getProductStory(product)
   const gallery = product.images?.slice(0, 8) || []
-  const visibleAttributes = product.attributes.filter((attribute) => attribute.terms.length > 0)
+  const visibleAttributes = product.attributes.filter((attribute) => attribute.terms.length > 0 && !isOperationalAttribute(attribute))
 
   return (
     <main className="bg-[#fbfaf7]">
@@ -66,9 +67,7 @@ export function DefaultProduct({
               <ArrowLeftIcon className="size-4" /> Back to shop
             </Link>
             <p className="text-[11px] font-semibold uppercase tracking-[.28em] text-[#557562]">{story.eyebrow}</p>
-            <h1 className="mt-4 max-w-2xl text-[clamp(3rem,4.5vw,5.7rem)] font-semibold leading-[.9] tracking-[-.065em] text-[#101622]">
-              {name}
-            </h1>
+            <h1 className="mt-4 max-w-2xl text-[clamp(3rem,4.5vw,5.7rem)] font-semibold leading-[.9] tracking-[-.065em] text-[#101622]">{name}</h1>
             <p className="mt-6 max-w-xl text-lg leading-8 text-black/52">{tagline}</p>
 
             {product.review_count > 0 && (
@@ -107,9 +106,7 @@ export function DefaultProduct({
         <div className="mx-auto grid max-w-[1480px] gap-12 lg:grid-cols-[.95fr_1.05fr] lg:gap-20">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[.28em] text-black/40">Why it earns a spot</p>
-            <h2 className="mt-5 text-[clamp(3.2rem,5vw,6rem)] font-semibold leading-[.9] tracking-[-.06em] text-[#101622]">
-              {story.headline}
-            </h2>
+            <h2 className="mt-5 text-[clamp(3.2rem,5vw,6rem)] font-semibold leading-[.9] tracking-[-.06em] text-[#101622]">{story.headline}</h2>
             <p className="mt-6 max-w-xl text-lg leading-8 text-black/50">{story.intro}</p>
           </div>
 
@@ -134,13 +131,13 @@ export function DefaultProduct({
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[.28em] text-black/40">Product details</p>
                 <h2 className="mt-4 text-4xl font-semibold tracking-[-.05em]">The useful bits, clearly.</h2>
-                <p className="mt-4 max-w-sm text-sm leading-6 text-black/45">Variants and specifications below come from the live product catalog, so you can compare the available options before ordering.</p>
+                <p className="mt-4 max-w-sm text-sm leading-6 text-black/45">Customer-facing options and specifications from the live product catalog, cleaned up so operational fulfilment metadata does not get in the way.</p>
               </div>
               <dl className="divide-y divide-black/[.07] border-y border-black/[.07]">
                 {visibleAttributes.map((attribute) => (
                   <div key={attribute.name} className="grid gap-2 py-5 sm:grid-cols-[180px_1fr]">
-                    <dt className="text-sm font-semibold text-black/45">{attribute.name}</dt>
-                    <dd className="text-sm leading-6 text-black/68">{attribute.terms.map((term) => term.name).join(', ')}</dd>
+                    <dt className="text-sm font-semibold text-black/45">{storefrontAttributeName(attribute)}</dt>
+                    <dd className="text-sm leading-6 text-black/68">{attribute.terms.map((term) => storefrontTermName(term)).join(', ')}</dd>
                   </div>
                 ))}
               </dl>
