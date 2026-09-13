@@ -3,17 +3,21 @@ import { ArrowLeftIcon, ArrowRightIcon } from '@heroicons/react/24/outline'
 
 export const metadata = {
   title: 'FAQ',
-  description: 'Common Housefinds questions about products, delivery, returns, payments and split shipments.',
+  description: 'Common Housefinds questions about UK delivery, returns, damaged products, reviews and payments.',
 }
 
 const faqs = [
   {
     q: 'Where does Housefinds deliver?',
-    a: 'The storefront is currently being built around UK checkout and GBP pricing. Enter your delivery address at checkout to see the methods available for that destination.',
+    a: 'Housefinds currently ships to the United Kingdom only. The storefront uses GBP pricing and a UK-focused checkout.',
   },
   {
     q: 'How much is delivery?',
-    a: 'Shipping is calculated from the delivery address and selected method. The charge is shown in the order summary before payment, rather than being added after card details are submitted.',
+    a: 'Standard UK delivery is free. Housefinds absorbs the supplier shipping cost rather than adding a delivery charge to your order.',
+  },
+  {
+    q: 'How long does delivery take?',
+    a: 'Our current standard delivery estimate is around 14 days. This is an estimate rather than a guaranteed arrival date, and tracking updates are shown when available.',
   },
   {
     q: 'Can different items arrive separately?',
@@ -21,11 +25,15 @@ const faqs = [
   },
   {
     q: 'Can I return an item?',
-    a: 'For most online purchases you can start a change-of-mind return request within 14 days of delivery. Faulty, damaged or incorrect products are handled separately so the appropriate resolution can be arranged.',
+    a: 'Yes. For most eligible online purchases, you can tell Housefinds within 14 days of receiving the item that you want to return it. Housefinds provides the eligible return method without charging you return postage.',
   },
   {
-    q: 'What if the product arrives damaged or incorrect?',
-    a: 'Keep the packaging and contact Housefinds using the details provided with your order. Include the order number and clear photos or video where useful. The resolution may be a replacement, refund or return depending on the case.',
+    q: 'What if the product arrives damaged, faulty or incorrect?',
+    a: 'Contact Housefinds as soon as possible at contact@housefindsstore.com with your order number and details of the problem. For the fastest resolution, contact us within 14 days and include clear photos or a short video showing the issue. Where appropriate, we can arrange a replacement or refund. This support process does not limit your statutory consumer rights.',
+  },
+  {
+    q: 'Do I have to send a video?',
+    a: 'A short video is usually the fastest way to show damage or a functional fault, and it helps us resolve the case quickly. If video is not practical, contact us and we will explain another suitable way to provide evidence. We do not use the video request to remove rights you may have under UK consumer law.',
   },
   {
     q: 'Are product reviews all from Housefinds customers?',
@@ -33,11 +41,11 @@ const faqs = [
   },
   {
     q: 'How are payments handled?',
-    a: 'The checkout uses WooCommerce for the order and Stripe for card processing. Card details are entered in secure Stripe fields rather than stored by the Housefinds storefront.',
+    a: 'The checkout uses WooCommerce for the order and Stripe for payment processing. Supported methods are planned to include Visa, Mastercard, American Express, Apple Pay, Google Pay and Link where available on the customer’s device.',
   },
   {
     q: 'Why do some products have several prices?',
-    a: 'A price range means the product has variants, sizes, colours, capacities or other options with different prices. Choose the required options on the product page before adding the item to the cart.',
+    a: 'A price range means the product has variants, sizes, colours, capacities or other options with different prices. Choose the required options on the product page to see the exact price and availability before adding the item to the cart.',
   },
 ]
 
