@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useMemo, useState } from 'react'
 import { MinusIcon, PlusIcon, CheckIcon, ShoppingBagIcon } from '@heroicons/react/24/outline'
 import type { WooProduct, WooProductAttribute, WooAttributeTerm } from '@/lib/woocommerce/types'
+import { isOperationalAttribute, storefrontAttributeName, storefrontTermName } from '@/lib/storefront/catalog'
 import { useCart } from '@/store/cart'
 import { formatProductPrice } from '@/lib/woocommerce/money'
 
@@ -64,11 +65,17 @@ export function ProductPurchasePanel({ product, dark = false }: { product: WooPr
     () => product.attributes.filter((attribute) => attribute.has_variations && attribute.terms.length > 0),
     [product.attributes],
   )
+  const visibleVariableAttributes = useMemo(
+    () => variableAttributes.filter((attribute) => !isOperationalAttribute(attribute)),
+    [variableAttributes],
+  )
 
   const initialSelections = useMemo(() => {
     const defaults: Record<string, string> = {}
     variableAttributes.forEach((attribute) => {
-      const defaultTerm = attribute.terms.find((term) => term.default) || (attribute.terms.length === 1 ? attribute.terms[0] : undefined)
+      const defaultTerm = attribute.terms.find((term) => term.default)
+        || (isOperationalAttribute(attribute) ? attribute.terms[0] : undefined)
+        || (attribute.terms.length === 1 ? attribute.terms[0] : undefined)
       if (defaultTerm) defaults[attribute.name] = defaultTerm.slug
     })
     return defaults
@@ -80,6 +87,7 @@ export function ProductPurchasePanel({ product, dark = false }: { product: WooPr
   const loading = useCart((state) => state.loading)
 
   const allSelected = variableAttributes.every((attribute) => Boolean(selections[attribute.name]))
+  const visibleAllSelected = visibleVariableAttributes.every((attribute) => Boolean(selections[attribute.name]))
   const variationId = allSelected ? findVariationId(product, selections) : null
   const selectionIsValid = !variableAttributes.length || Boolean(variationId) || !product.variations?.length
 
@@ -92,10 +100,10 @@ export function ProductPurchasePanel({ product, dark = false }: { product: WooPr
     }]
   })
 
-  const selectionSummary = variableAttributes
+  const selectionSummary = visibleVariableAttributes
     .flatMap((attribute) => {
       const term = selectedTerm(attribute, selections[attribute.name])
-      return term ? [term.name] : []
+      return term ? [storefrontTermName(term)] : []
     })
     .join(' · ')
 
@@ -114,7 +122,7 @@ export function ProductPurchasePanel({ product, dark = false }: { product: WooPr
   }
 
   function handleStickyAction() {
-    if (variableAttributes.length && !allSelected) {
+    if (visibleVariableAttributes.length && !visibleAllSelected) {
       document.getElementById('purchase-options')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       return
     }
@@ -132,35 +140,37 @@ export function ProductPurchasePanel({ product, dark = false }: { product: WooPr
         <p className={`mt-2 text-xs leading-5 ${labelClass}`}>Delivery options and final totals are shown before payment.</p>
       </div>
 
-      <div id="purchase-options" className="space-y-6 scroll-mt-32">
-        {variableAttributes.map((attribute) => (
-          <div key={attribute.name}>
-            <div className="flex items-center justify-between gap-4">
-              <label className={`text-sm font-semibold ${dark ? 'text-white/86' : 'text-[#172018]'}`}>{attribute.name}</label>
-              {!selections[attribute.name] && <span className={`text-xs ${labelClass}`}>Choose one</span>}
+      {visibleVariableAttributes.length > 0 && (
+        <div id="purchase-options" className="space-y-6 scroll-mt-32">
+          {visibleVariableAttributes.map((attribute) => (
+            <div key={attribute.name}>
+              <div className="flex items-center justify-between gap-4">
+                <label className={`text-sm font-semibold ${dark ? 'text-white/86' : 'text-[#172018]'}`}>{storefrontAttributeName(attribute)}</label>
+                {!selections[attribute.name] && <span className={`text-xs ${labelClass}`}>Choose one</span>}
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2.5">
+                {attribute.terms.map((term) => {
+                  const active = selections[attribute.name] === term.slug
+                  const available = variationSupportsSelection(product, selections, { name: attribute.name, term })
+                  return (
+                    <button
+                      key={`${attribute.name}-${term.slug}`}
+                      type="button"
+                      disabled={!available}
+                      aria-pressed={active}
+                      onClick={() => setSelections((current) => ({ ...current, [attribute.name]: term.slug }))}
+                      className={`relative min-h-11 rounded-full border px-4 py-2 text-sm font-medium transition ${active ? optionActive : optionIdle} ${!available ? 'cursor-not-allowed opacity-35 line-through' : ''}`}
+                    >
+                      {active && <CheckIcon className="mr-1.5 inline size-4" />}
+                      {storefrontTermName(term)}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
-            <div className="mt-3 flex flex-wrap gap-2.5">
-              {attribute.terms.map((term) => {
-                const active = selections[attribute.name] === term.slug
-                const available = variationSupportsSelection(product, selections, { name: attribute.name, term })
-                return (
-                  <button
-                    key={`${attribute.name}-${term.slug}`}
-                    type="button"
-                    disabled={!available}
-                    aria-pressed={active}
-                    onClick={() => setSelections((current) => ({ ...current, [attribute.name]: term.slug }))}
-                    className={`relative min-h-11 rounded-full border px-4 py-2 text-sm font-medium transition ${active ? optionActive : optionIdle} ${!available ? 'cursor-not-allowed opacity-35 line-through' : ''}`}
-                  >
-                    {active && <CheckIcon className="mr-1.5 inline size-4" />}
-                    {term.name}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {allSelected && !selectionIsValid && (
         <p className="rounded-2xl border border-amber-300/60 bg-amber-50 px-4 py-3 text-sm text-amber-950">
@@ -170,25 +180,9 @@ export function ProductPurchasePanel({ product, dark = false }: { product: WooPr
 
       <div className="grid gap-3 sm:grid-cols-[auto_1fr]">
         <div className={`flex h-14 w-fit items-center rounded-full border ${dark ? 'border-white/15 bg-white/[.05]' : 'border-black/10 bg-white'}`}>
-          <button
-            type="button"
-            className="grid size-12 place-items-center disabled:opacity-35"
-            disabled={quantity <= minimum}
-            onClick={() => setQuantity((value) => Math.max(minimum, value - step))}
-            aria-label="Decrease quantity"
-          >
-            <MinusIcon className="size-4" />
-          </button>
+          <button type="button" className="grid size-12 place-items-center disabled:opacity-35" disabled={quantity <= minimum} onClick={() => setQuantity((value) => Math.max(minimum, value - step))} aria-label="Decrease quantity"><MinusIcon className="size-4" /></button>
           <span className="min-w-9 text-center text-sm font-semibold" aria-label={`Quantity ${quantity}`}>{quantity}</span>
-          <button
-            type="button"
-            className="grid size-12 place-items-center disabled:opacity-35"
-            disabled={quantity >= maximum}
-            onClick={() => setQuantity((value) => Math.min(maximum, value + step))}
-            aria-label="Increase quantity"
-          >
-            <PlusIcon className="size-4" />
-          </button>
+          <button type="button" className="grid size-12 place-items-center disabled:opacity-35" disabled={quantity >= maximum} onClick={() => setQuantity((value) => Math.min(maximum, value + step))} aria-label="Increase quantity"><PlusIcon className="size-4" /></button>
         </div>
 
         <button
@@ -197,7 +191,7 @@ export function ProductPurchasePanel({ product, dark = false }: { product: WooPr
           onClick={() => void handleAdd()}
           className={`h-14 rounded-full px-7 font-semibold transition disabled:cursor-not-allowed disabled:opacity-45 ${dark ? 'bg-[#dce8df] text-[#172018] hover:bg-white' : 'bg-[#355f4a] text-white hover:bg-[#294b3a]'}`}
         >
-          {loading ? 'Adding…' : !product.is_in_stock ? 'Out of stock' : variableAttributes.length && !allSelected ? 'Choose options' : 'Add to cart'}
+          {loading ? 'Adding…' : !product.is_in_stock ? 'Out of stock' : visibleVariableAttributes.length && !visibleAllSelected ? 'Choose options' : 'Add to cart'}
         </button>
       </div>
 
@@ -211,7 +205,7 @@ export function ProductPurchasePanel({ product, dark = false }: { product: WooPr
         <div className="mx-auto flex max-w-xl items-center gap-3">
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-[#172018]">{formatProductPrice(product)}</p>
-            <p className="truncate text-[11px] text-black/42">{selectionSummary || (variableAttributes.length ? 'Choose product options' : 'Ready to add')}</p>
+            <p className="truncate text-[11px] text-black/42">{selectionSummary || (visibleVariableAttributes.length ? 'Choose product options' : 'Ready to add')}</p>
           </div>
           <button
             type="button"
@@ -220,7 +214,7 @@ export function ProductPurchasePanel({ product, dark = false }: { product: WooPr
             className="inline-flex h-12 shrink-0 items-center gap-2 rounded-full bg-[#355f4a] px-5 text-sm font-semibold text-white disabled:opacity-45"
           >
             <ShoppingBagIcon className="size-4" />
-            {loading ? 'Adding…' : variableAttributes.length && !allSelected ? 'Choose options' : 'Add to cart'}
+            {loading ? 'Adding…' : visibleVariableAttributes.length && !visibleAllSelected ? 'Choose options' : 'Add to cart'}
           </button>
         </div>
       </div>
