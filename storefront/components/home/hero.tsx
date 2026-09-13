@@ -70,10 +70,10 @@ export function Hero({ products }: { products: WooProduct[] }) {
       <div className="border-t border-black/[.06] bg-white/65">
         <div className="mx-auto grid max-w-[1600px] divide-y divide-black/[.06] px-6 md:grid-cols-4 md:divide-x md:divide-y-0 lg:px-10">
           {[
-            ['Browse by need', 'Categories and search help narrow the catalog.'],
-            ['Compare options', 'Variants stay visible before adding to cart.'],
-            ['See delivery first', 'Shipping options and totals appear before payment.'],
-            ['Secure payment', 'Checkout is designed around WooCommerce and Stripe.'],
+            ['Free UK delivery', 'Standard delivery is included in the price.'],
+            ['Around 14 days', 'Current delivery estimate for UK orders.'],
+            ['Free 14-day returns', 'Eligible online orders can be returned without return postage.'],
+            ['Secure payment', 'Visa, Mastercard, Amex, Apple Pay, Google Pay and Link via Stripe.'],
           ].map(([title, copy]) => (
             <div key={title} className="py-6 md:px-7 first:md:pl-0"><p className="font-semibold text-[#172018]">{title}</p><p className="mt-1 text-sm text-black/42">{copy}</p></div>
           ))}
