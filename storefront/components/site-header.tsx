@@ -12,7 +12,7 @@ const navItems = [
   { href: '/', label: 'Home', exact: true },
   { href: '/shop', label: 'Shop' },
   { href: '/shop?sort=new', label: 'New In' },
-  { href: '/shop?sort=popular', label: 'Best Sellers' },
+  { href: '/shop?sort=popular', label: 'Popular Finds' },
   { href: '/about', label: 'About' },
 ]
 
