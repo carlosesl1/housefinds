@@ -48,6 +48,12 @@ const storyRules: Array<[RegExp, Story]> = [
     intro: 'A simple, durable board for fruit, vegetables, meat and the everyday jobs that happen around the kitchen.',
     benefits: ['Double-sided prep surface', 'Easy-to-clean stainless steel design', 'Built for daily chopping and food prep'],
   }],
+  [/shoe washing|wash bag/i, {
+    eyebrow: 'A neater wash day',
+    headline: 'Wash the shoes. Protect the rest.',
+    intro: 'A protective wash bag that keeps shoes contained in the machine and makes occasional deep-cleaning less awkward.',
+    benefits: ['Keeps shoes contained during washing', 'Helps reduce direct contact with the drum', 'Reusable for trainers and casual shoes'],
+  }],
   [/door closer|surface door stop/i, {
     eyebrow: 'Small upgrade, quieter home',
     headline: 'Let the door take care of itself.',
@@ -77,6 +83,24 @@ const storyRules: Array<[RegExp, Story]> = [
     headline: 'A cleaner home for everyday essentials.',
     intro: 'A covered wall-mounted holder designed to keep toothbrushes organised and protected between uses.',
     benefits: ['Wall-mounted organisation', 'Protective cover', 'Helps free up counter space'],
+  }],
+  [/bath mat|floor mat/i, {
+    eyebrow: 'A steadier step',
+    headline: 'Comfort underfoot. Grip where it matters.',
+    intro: 'A bathroom mat designed to make the everyday step out of the shower feel softer and more secure.',
+    benefits: ['Textured surface for everyday grip', 'Soft landing for bathroom routines', 'Easy home upgrade with no installation'],
+  }],
+  [/mosquito racket|insect killer/i, {
+    eyebrow: 'A practical pest helper',
+    headline: 'Reach the mosquito before it reaches you.',
+    intro: 'A rechargeable electric racket with an extendable form for dealing with flying insects indoors or outside.',
+    benefits: ['Rechargeable for repeated use', 'Retractable design extends reach', 'Useful around bedrooms, patios and living spaces'],
+  }],
+  [/homefish|aurora projector|ocean wave/i, {
+    eyebrow: 'Atmosphere on demand',
+    headline: 'Change the mood without changing the room.',
+    intro: 'A compact RGB projector that adds moving colour and ambient light to bedrooms, desks and quiet corners.',
+    benefits: ['Multiple colours and lighting moods', 'Remote-controlled adjustments', 'Rechargeable, portable accent lighting'],
   }],
 ]
 
@@ -112,10 +136,12 @@ export function getProductStory(product: WooProduct): Story {
 }
 
 export function findProductByKeywords(products: WooProduct[], keywords: string[]) {
-  return products.find((product) => {
-    const haystack = `${product.name} ${product.slug}`.toLowerCase()
-    return keywords.some((keyword) => haystack.includes(keyword.toLowerCase()))
-  })
+  for (const keyword of keywords) {
+    const normalizedKeyword = keyword.toLowerCase()
+    const match = products.find((product) => `${product.name} ${product.slug}`.toLowerCase().includes(normalizedKeyword))
+    if (match) return match
+  }
+  return undefined
 }
 
 export function pickHeroProduct(products: WooProduct[]) {
