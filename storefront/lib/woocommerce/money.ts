@@ -5,7 +5,7 @@ export function formatMoney(amount: string | number, minorUnit = 2, symbol = '£
   return `${symbol}${(value / Math.pow(10, minorUnit)).toFixed(minorUnit)}`
 }
 
-export function formatProductPrice(product: WooProduct) {
+export function formatProductPrice(product: Pick<WooProduct, 'prices'>) {
   const { prices } = product
   const range = prices.price_range
 
