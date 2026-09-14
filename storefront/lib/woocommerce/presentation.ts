@@ -104,10 +104,34 @@ const storyRules: Array<[RegExp, Story]> = [
   }],
 ]
 
+function curatedProductName(name: string) {
+  return nameRules.find(([pattern]) => pattern.test(name))?.[1]
+}
+
+function slugify(value: string) {
+  return value
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
 export function displayProductName(name: string) {
-  const match = nameRules.find(([pattern]) => pattern.test(name))
-  if (match) return match[1]
+  const curated = curatedProductName(name)
+  if (curated) return curated
   return name.length > 58 ? `${name.slice(0, 55).trim()}…` : name
+}
+
+/**
+ * Keep DSers/WooCommerce slugs untouched operationally while giving products
+ * with a curated Housefinds name a stable, readable public URL. Unknown items
+ * deliberately keep their Woo slug so two similar imports cannot collide.
+ */
+export function storefrontProductSlug(product: Pick<WooProduct, 'name' | 'slug'>) {
+  const curated = curatedProductName(product.name)
+  return curated ? slugify(curated) || product.slug : product.slug
 }
 
 export function displayProductTagline(product: WooProduct) {
