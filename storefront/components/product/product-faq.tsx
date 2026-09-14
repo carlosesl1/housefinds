@@ -9,12 +9,12 @@ type Rule = [RegExp, FAQ[]]
 const productRules: Rule[] = [
   [/oil spray|oil brush/i, [
     { q: 'What is it useful for?', a: 'Everyday cooking where you want more control over how oil reaches the pan or food — frying, roasting, grilling and finishing.' },
-    { q: 'What should I check before choosing an option?', a: 'Choose the capacity/finish you actually want from the options above. Different variants can have different prices, so the selected price is the one that matters.' },
-    { q: 'Can I use very thick sauces in it?', a: 'We would not assume that. Thick liquids can behave differently in spray mechanisms; unless a selected variant explicitly says otherwise, use it for free-flowing cooking oils.' },
+    { q: 'What should I check before choosing an option?', a: 'Choose the capacity or finish you actually want from the options above. Different options can have different prices, so the selected price is the one that matters.' },
+    { q: 'Can I use very thick sauces in it?', a: 'We would not assume that. Thick liquids can behave differently in spray mechanisms; unless the selected option explicitly says otherwise, use it for free-flowing cooking oils.' },
   ]],
   [/cutting board|chopping board/i, [
     { q: 'What is this board intended for?', a: 'Everyday kitchen prep such as fruit, vegetables, meat and general chopping. Use separate prep practices where food-safety guidance calls for them.' },
-    { q: 'Is it dishwasher safe?', a: 'We have not verified a dishwasher-safe claim across every imported variant, so Housefinds does not promise it. Follow the care information supplied with the selected product.' },
+    { q: 'Is it dishwasher safe?', a: 'We have not verified a dishwasher-safe claim across every version, so Housefinds does not promise it. Follow the care information supplied with the product.' },
   ]],
   [/shoe washing|wash bag/i, [
     { q: 'Will it fit every shoe?', a: 'Shoe size and shape vary, so do not assume universal fit. Check the selected option and product imagery before ordering, particularly for bulky footwear.' },
@@ -26,11 +26,11 @@ const productRules: Rule[] = [
   ]],
   [/shoe storage|shoe rack|x-type/i, [
     { q: 'Where does this rack make the most sense?', a: 'Entryways, bedrooms and other places where using vertical space can reduce the footprint of loose shoes.' },
-    { q: 'How many pairs will it hold?', a: 'Capacity can vary with the selected version and shoe size. Use the product option and imagery rather than assuming one capacity across every variant.' },
+    { q: 'How many pairs will it hold?', a: 'Capacity can vary with the selected version and shoe size. Use the product option and imagery rather than assuming one capacity across every version.' },
   ]],
   [/spoon scale|digital spoon/i, [
     { q: 'What is a spoon scale best for?', a: 'Small ingredients that are easier to scoop and weigh in one motion — for example coffee, baking ingredients and powders.' },
-    { q: 'What accuracy and maximum weight does it support?', a: 'Those are technical specifications we do not want to guess. Housefinds will show a verified figure once it is confirmed for the exact variant being sold.' },
+    { q: 'What accuracy and maximum weight does it support?', a: 'Those are technical specifications we do not want to guess. Housefinds will show a verified figure once it is confirmed for the exact option being sold.' },
   ]],
   [/bath mat|floor mat/i, [
     { q: 'Where should I use it?', a: 'On a suitable bathroom floor where a softer landing and extra everyday grip are useful.' },
@@ -38,7 +38,7 @@ const productRules: Rule[] = [
   ]],
   [/door closer|surface door stop/i, [
     { q: 'Does it require drilling?', a: 'This product is presented as a punch-free installation concept. The actual fixing method and surface condition still matter, so inspect the supplied installation parts before fitting.' },
-    { q: 'Will it close any door?', a: 'Door weight, hinge resistance and installation position affect any closer. Housefinds does not claim universal compatibility without a verified door-weight specification for the selected variant.' },
+    { q: 'Will it close any door?', a: 'Door weight, hinge resistance and installation position affect any closer. Housefinds does not claim universal compatibility without a verified door-weight specification for the selected option.' },
     { q: 'Where is it most useful?', a: 'Everyday internal doors that are regularly left open or need a simple automatic closing action.' },
   ]],
   [/mosquito racket|insect killer/i, [
@@ -47,12 +47,12 @@ const productRules: Rule[] = [
   ]],
   [/motion sensor led|led bar light|induction night light/i, [
     { q: 'Where is motion lighting most useful?', a: 'Wardrobes, cupboards, bedside areas, kitchens and other dark corners where you want light without reaching for a switch.' },
-    { q: 'Does it stay on continuously?', a: 'This listing is built around motion-sensor lighting, but operating modes can differ by variant. Check the selected option and the controls supplied with it.' },
-    { q: 'How is it charged?', a: 'The current product is presented as rechargeable. Where the selected variant specifies USB-C, use a compatible power source and the supplied charging guidance.' },
+    { q: 'Does it stay on continuously?', a: 'This listing is built around motion-sensor lighting, but operating modes can differ by option. Check the selected option and the controls supplied with it.' },
+    { q: 'How is it charged?', a: 'The current product is presented as rechargeable. Where the selected option specifies USB-C, use a compatible power source and the supplied charging guidance.' },
   ]],
   [/homefish|aurora projector|ocean wave/i, [
     { q: 'What is the projector designed for?', a: 'Ambient lighting — adding moving colour and atmosphere to bedrooms, desks and quiet corners rather than replacing normal task lighting.' },
-    { q: 'Can I change the colours?', a: 'The current listing includes multiple RGB colour modes and remote-controlled adjustments. Available effects can depend on the selected variant.' },
+    { q: 'Can I change the colours?', a: 'The current listing includes multiple RGB colour modes and remote-controlled adjustments. Available effects can depend on the selected option.' },
   ]],
 ]
 
@@ -77,7 +77,7 @@ export function ProductFAQ({ product }: { product: WooProduct }) {
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[.28em] text-[#557562]">Product questions</p>
           <h2 className="mt-4 text-4xl font-semibold leading-[.95] tracking-[-.05em] text-[#101622]">Useful things to know before you order.</h2>
-          <p className="mt-5 max-w-sm text-sm leading-6 text-black/45">Answers for {name}, plus the Housefinds delivery and returns promises. If a technical specification has not been verified for the exact variant, we say so instead of guessing.</p>
+          <p className="mt-5 max-w-sm text-sm leading-6 text-black/45">Answers for {name}, plus the Housefinds delivery and returns promises. If a technical specification has not been verified for the exact option, we say so instead of guessing.</p>
         </div>
 
         <div className="divide-y divide-black/[.07] border-y border-black/[.07]">
