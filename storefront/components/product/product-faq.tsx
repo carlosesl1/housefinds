@@ -65,29 +65,29 @@ export function ProductFAQ({ product }: { product: WooProduct }) {
   const name = displayProductName(product.name)
   const specific = productFAQs(product)
   const common: FAQ[] = [
-    { q: 'How much is UK delivery?', a: <>Standard UK delivery is free. The current delivery estimate is around 14 days and is not a guaranteed arrival date. <Link href="/shipping" className="font-semibold text-[#355f4a] underline underline-offset-3">Delivery details</Link>.</> },
-    { q: 'What if it arrives damaged, faulty or incorrect?', a: <>Contact Housefinds as soon as possible. For the fastest resolution, send the order number plus a short video or clear photos where reasonably practical. Where appropriate, we’ll arrange a refund or replacement. <Link href="/returns" className="font-semibold text-[#355f4a] underline underline-offset-3">Returns & problems</Link>.</> },
+    { q: 'How much is UK delivery?', a: <>Standard UK delivery is free. The current delivery estimate is around 14 days and is not a guaranteed arrival date. <Link href="/shipping" className="font-semibold text-[var(--hf-brand)] underline underline-offset-3">Delivery details</Link>.</> },
+    { q: 'What if it arrives damaged, faulty or incorrect?', a: <>Contact Housefinds as soon as possible. For the fastest resolution, send the order number plus a short video or clear photos where reasonably practical. Where appropriate, we’ll arrange a refund or replacement. <Link href="/returns" className="font-semibold text-[var(--hf-brand)] underline underline-offset-3">Returns & problems</Link>.</> },
     { q: 'Can I return it if I change my mind?', a: <>Eligible online orders have free 14-day returns. Tell Housefinds within 14 days of delivery and follow the return instructions provided for that order.</> },
   ]
   const faqs = [...specific, ...common]
 
   return (
-    <section className="border-t border-black/[.06] bg-white px-5 py-20 lg:px-8 lg:py-28">
-      <div className="mx-auto grid max-w-[1200px] gap-10 lg:grid-cols-[.68fr_1.32fr] lg:gap-20">
+    <section className="hf-section border-t border-black/[.06] bg-white">
+      <div className="mx-auto grid max-w-[1200px] gap-10 px-5 sm:px-6 lg:grid-cols-[.68fr_1.32fr] lg:gap-20">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[.28em] text-[#557562]">Product questions</p>
-          <h2 className="mt-4 text-4xl font-semibold leading-[.95] tracking-[-.05em] text-[#101622]">Useful things to know before you order.</h2>
-          <p className="mt-5 max-w-sm text-sm leading-6 text-black/45">Answers for {name}, plus the Housefinds delivery and returns promises. If a technical specification has not been verified for the exact option, we say so instead of guessing.</p>
+          <p className="hf-eyebrow text-[var(--hf-brand-muted)]">Product questions</p>
+          <h2 className="mt-4 max-w-md text-[clamp(2.45rem,3.4vw,3.65rem)] font-semibold leading-[.98] tracking-[-.048em] text-[var(--hf-ink)]">Useful things to know before you order.</h2>
+          <p className="mt-5 max-w-sm text-sm leading-6 text-black/45">Product-specific answers for {name}, followed by the delivery and returns essentials.</p>
         </div>
 
-        <div className="divide-y divide-black/[.07] border-y border-black/[.07]">
+        <div className="divide-y divide-black/[.08] border-y border-black/[.08]">
           {faqs.map((faq, index) => (
             <details key={faq.q} className="group py-1" open={index === 0 && specific.length > 0}>
               <summary className="flex cursor-pointer list-none items-start justify-between gap-6 py-5 text-left">
-                <span className="text-[17px] font-semibold leading-6 tracking-[-.02em] text-[#172018]">{faq.q}</span>
-                <span className="grid size-8 shrink-0 place-items-center rounded-full border border-black/10 text-lg text-black/45 transition group-open:rotate-45">+</span>
+                <span className="text-[16px] font-semibold leading-6 tracking-[-.018em] text-[var(--hf-ink)] sm:text-[17px]">{faq.q}</span>
+                <span className="grid size-8 shrink-0 place-items-center rounded-[var(--hf-radius-sm)] border border-black/10 text-lg text-black/45 transition group-open:rotate-45">+</span>
               </summary>
-              <div className="max-w-3xl pb-6 pr-12 text-sm leading-7 text-black/55">{faq.a}</div>
+              <div className="max-w-3xl pb-6 pr-10 text-sm leading-7 text-black/55">{faq.a}</div>
             </details>
           ))}
         </div>
