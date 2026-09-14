@@ -4,17 +4,9 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { ArrowRightIcon } from '@heroicons/react/24/outline'
-import type { WooProduct } from '@/lib/woocommerce/types'
-import { displayProductName, displayProductTagline } from '@/lib/woocommerce/presentation'
-import { formatProductPrice } from '@/lib/woocommerce/money'
+import type { RecentlyViewedProductInput } from '@/lib/storefront/client-product'
 
-type RecentProduct = {
-  id: number
-  slug: string
-  name: string
-  tagline: string
-  price: string
-  image: string
+type RecentProduct = RecentlyViewedProductInput & {
   viewedAt: number
 }
 
@@ -32,7 +24,7 @@ function readRecent(): RecentProduct[] {
   }
 }
 
-export function RecentlyViewed({ product }: { product: WooProduct }) {
+export function RecentlyViewed({ product }: { product: RecentlyViewedProductInput }) {
   const [items, setItems] = useState<RecentProduct[]>([])
 
   useEffect(() => {
@@ -40,12 +32,7 @@ export function RecentlyViewed({ product }: { product: WooProduct }) {
     setItems(previous.slice(0, 4))
 
     const current: RecentProduct = {
-      id: product.id,
-      slug: product.slug,
-      name: displayProductName(product.name),
-      tagline: displayProductTagline(product),
-      price: formatProductPrice(product),
-      image: product.images?.[0]?.thumbnail || product.images?.[0]?.src || '',
+      ...product,
       viewedAt: Date.now(),
     }
 
