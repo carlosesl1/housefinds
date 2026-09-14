@@ -32,8 +32,10 @@ export default async function HomePage() {
     <main className="overflow-hidden bg-[var(--hf-background)]">
       <Hero products={products} />
 
+      <CategoryGrid products={products} />
+
       {showcaseProducts.length > 0 && (
-        <section className="hf-section bg-[var(--hf-background)]">
+        <section className="hf-section border-t border-black/[.06] bg-[var(--hf-background)]">
           <div className="hf-container">
             <div className="grid gap-7 lg:grid-cols-[1fr_390px] lg:items-end">
               <div>
@@ -53,7 +55,6 @@ export default async function HomePage() {
         </section>
       )}
 
-      <CategoryGrid products={products} />
       <FeaturedFind product={featuredProduct} />
       <ProductReviewHighlights products={products} reviews={reviews} />
 
