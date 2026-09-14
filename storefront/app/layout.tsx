@@ -3,8 +3,8 @@ import './globals.css'
 import { CartProvider } from '@/components/cart/cart-provider'
 import { CartDrawer } from '@/components/cart/cart-drawer'
 import { SiteShell } from '@/components/site-shell'
+import { SITE_URL } from '@/lib/storefront/site-url'
 
-const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://housefindsstore.com').replace(/\/$/, '')
 const shouldNoIndex = process.env.VERCEL_ENV === 'preview' || process.env.VERCEL_ENV === 'development'
 
 export const metadata: Metadata = {
