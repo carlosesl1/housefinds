@@ -23,7 +23,7 @@ export default function ShippingPage() {
             { icon: TruckIcon, title: 'Free standard UK delivery', copy: 'Housefinds absorbs the standard delivery cost, so there is no extra standard shipping charge added at checkout.' },
             { icon: ClockIcon, title: 'Around 14 days', copy: 'Our current estimated delivery time is around 14 days. Timing can vary by route, product and carrier, and we keep the order status updated when new information becomes available.' },
             { icon: MapPinIcon, title: 'UK delivery only for now', copy: 'At launch, Housefinds is focused on UK customers so delivery, pricing and checkout can stay clear and consistent.' },
-            { icon: ArchiveBoxIcon, title: 'Orders can arrive separately', copy: 'If an order contains products fulfilled through different routes, items may occasionally arrive in more than one parcel.' },
+            { icon: ArchiveBoxIcon, title: 'Orders can arrive separately', copy: 'If an order contains several items, they may occasionally be packed and dispatched separately and arrive in more than one parcel.' },
           ].map(({ icon: Icon, title, copy }) => (
             <section key={title} className="rounded-[30px] border border-black/[.06] bg-white p-7 shadow-[0_18px_60px_rgba(34,45,37,.035)]">
               <span className="grid size-12 place-items-center rounded-2xl bg-[#e7eee9] text-[#456b55]"><Icon className="size-6" /></span>
@@ -36,7 +36,7 @@ export default function ShippingPage() {
         <div className="mt-12 grid gap-6 lg:grid-cols-[1fr_.8fr]">
           <section className="rounded-[32px] bg-[#edf1ec] p-7 sm:p-9">
             <h2 className="text-3xl font-semibold tracking-[-.045em]">Order tracking and updates</h2>
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-black/52">Housefinds keeps the customer-facing order status in one place. When carrier tracking becomes available, it can be connected to the order so the customer does not need to deal with the fulfilment source directly.</p>
+            <p className="mt-4 max-w-2xl text-sm leading-7 text-black/52">Housefinds keeps the customer-facing order status in one place. When carrier tracking becomes available, it is linked to your order so you can follow the latest delivery information from the Housefinds tracking page.</p>
             <p className="mt-4 text-sm leading-7 text-black/52">Keep your order confirmation until every item has arrived. It contains the Housefinds order reference used for delivery support.</p>
           </section>
 
