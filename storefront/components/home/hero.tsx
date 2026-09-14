@@ -3,12 +3,13 @@ import Link from 'next/link'
 import { ArrowRightIcon, SparklesIcon } from '@heroicons/react/24/outline'
 import type { WooProduct } from '@/lib/woocommerce/types'
 import { formatProductPrice } from '@/lib/woocommerce/money'
-import { displayProductName, pickHeroProduct } from '@/lib/woocommerce/presentation'
+import { displayProductName, pickHeroProduct, storefrontProductSlug } from '@/lib/woocommerce/presentation'
 
 export function Hero({ products }: { products: WooProduct[] }) {
   const featured = pickHeroProduct(products)
   const image = featured?.images?.[0]
   const featuredName = featured ? displayProductName(featured.name) : ''
+  const featuredHref = featured ? `/product/${storefrontProductSlug(featured)}` : '/shop'
 
   return (
     <section className="relative overflow-hidden border-b border-black/[.06] bg-[#f7f6f1]">
@@ -58,7 +59,7 @@ export function Hero({ products }: { products: WooProduct[] }) {
                 <h2 className="mt-2 text-xl font-semibold leading-tight tracking-[-.03em] text-[#111720]">{featuredName}</h2>
                 <div className="mt-4 flex items-center justify-between gap-4">
                   <span className="text-lg font-semibold">{formatProductPrice(featured)}</span>
-                  <Link href={`/product/${featured.slug}`} className="inline-flex items-center gap-2 rounded-full bg-[#355f4a] px-4 py-2 text-sm font-semibold text-white">View find <ArrowRightIcon className="size-3.5" /></Link>
+                  <Link href={featuredHref} className="inline-flex items-center gap-2 rounded-full bg-[#355f4a] px-4 py-2 text-sm font-semibold text-white">View find <ArrowRightIcon className="size-3.5" /></Link>
                 </div>
               </div>
               <div className="absolute right-8 top-12 rounded-2xl border border-white/40 bg-white/82 px-4 py-3 text-sm font-medium shadow-lg backdrop-blur-xl lg:right-12"><span className="mr-2 inline-block size-2 rounded-full bg-[#5c806b]" />Housefinds pick</div>
