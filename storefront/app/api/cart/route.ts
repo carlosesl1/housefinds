@@ -1,9 +1,109 @@
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { CART_COOKIE, getCartToken } from '@/lib/woocommerce/cart-token'
+import { displayProductName } from '@/lib/woocommerce/presentation'
+import { isOperationalAttributeName } from '@/lib/storefront/catalog'
 
 const WC_URL = (process.env.WOOCOMMERCE_URL || 'https://housefindsstore.com').replace(/\/$/, '')
-const CART_URL = `${WC_URL}/wp-json/wc/store/v1/cart`
+const STORE_API = `${WC_URL}/wp-json/wc/store/v1`
+const CART_URL = `${STORE_API}/cart`
+
+type StoreTerm = { name: string; slug: string }
+type StoreAttribute = { name: string; taxonomy?: string | null; terms?: StoreTerm[] }
+type StoreVariationSummary = { id: number; attributes?: Array<{ name: string; value: string | null }> }
+type StoreProduct = {
+  id: number
+  parent?: number
+  attributes?: StoreAttribute[]
+  variations?: StoreVariationSummary[]
+}
+
+type AddItemBody = {
+  id?: number
+  quantity?: number
+  variation?: Array<{ attribute: string; value: string }>
+  [key: string]: unknown
+}
+
+function normalize(value: string | null | undefined) {
+  return (value || '').trim().toLowerCase()
+}
+
+async function getStoreProduct(id: number): Promise<StoreProduct | null> {
+  const response = await fetch(`${STORE_API}/products/${id}`, {
+    headers: { Accept: 'application/json' },
+    next: { revalidate: 300 },
+  })
+  if (!response.ok) return null
+  return response.json() as Promise<StoreProduct>
+}
+
+async function resolveVariationPayload(variationId: number) {
+  const variation = await getStoreProduct(variationId)
+  const parentId = Number(variation?.parent || 0)
+  if (!parentId) return null
+
+  const parent = await getStoreProduct(parentId)
+  const summary = parent?.variations?.find((candidate) => candidate.id === variationId)
+  if (!parent || !summary?.attributes?.length) return null
+
+  return summary.attributes.flatMap((selected) => {
+    if (!selected.value) return []
+    const attribute = parent.attributes?.find((candidate) => normalize(candidate.name) === normalize(selected.name))
+    const term = attribute?.terms?.find((candidate) =>
+      [candidate.name, candidate.slug].map(normalize).includes(normalize(selected.value)),
+    )
+
+    return [{
+      attribute: attribute?.taxonomy || attribute?.name || selected.name,
+      value: attribute?.taxonomy ? (term?.slug || selected.value) : (term?.name || selected.value),
+    }]
+  })
+}
+
+async function preparePostBody(action: string, rawBody: string) {
+  if (action !== 'add-item') return rawBody
+
+  try {
+    const body = JSON.parse(rawBody) as AddItemBody
+    const id = Number(body.id || 0)
+    if (!id) return rawBody
+
+    const resolvedVariation = await resolveVariationPayload(id)
+    if (!resolvedVariation?.length) return rawBody
+
+    // The browser only needs the variation ID. Complete every WooCommerce
+    // attribute here so operational options (warehouse / Ships From) never need
+    // to be serialized into the customer-facing React tree.
+    return JSON.stringify({ ...body, variation: resolvedVariation })
+  } catch {
+    return rawBody
+  }
+}
+
+function sanitizeCartResponse(text: string) {
+  try {
+    const cart = JSON.parse(text) as { items?: Array<Record<string, unknown>> }
+    if (!Array.isArray(cart.items)) return text
+
+    cart.items = cart.items.map((item) => {
+      const variation = Array.isArray(item.variation)
+        ? (item.variation as Array<{ attribute?: string; value?: string }>).filter((entry) => !isOperationalAttributeName(String(entry.attribute || '')))
+        : item.variation
+
+      return {
+        ...item,
+        name: typeof item.name === 'string' ? displayProductName(item.name) : item.name,
+        short_description: '',
+        variation,
+      }
+    })
+
+    return JSON.stringify(cart)
+  } catch {
+    return text
+  }
+}
 
 async function createCartToken() {
   const initial = await fetch(CART_URL, {
@@ -26,7 +126,8 @@ async function proxy(req: NextRequest, method: 'GET' | 'POST') {
   let token = cookieStore.get(CART_COOKIE)?.value || ''
   const action = req.nextUrl.searchParams.get('action') || ''
   const url = action ? `${CART_URL}/${action}` : CART_URL
-  const body = method === 'POST' ? await req.text() : undefined
+  const rawBody = method === 'POST' ? await req.text() : undefined
+  const body = method === 'POST' && rawBody !== undefined ? await preparePostBody(action, rawBody) : undefined
 
   // Store API write routes need a Cart-Token (or nonce). When a shopper clicks
   // Add to cart before the initial cart GET has finished, bootstrap a token here
@@ -46,17 +147,18 @@ async function proxy(req: NextRequest, method: 'GET' | 'POST') {
     cache: 'no-store',
   })
 
-  const text = await upstream.text()
+  const upstreamText = await upstream.text()
 
   if (!upstream.ok) {
     console.error('[housefinds-cart] WooCommerce Store API error', {
       action: action || 'get-cart',
       status: upstream.status,
-      body: text.slice(0, 1000),
+      body: upstreamText.slice(0, 1000),
       hadToken: Boolean(token),
     })
   }
 
+  const text = upstream.ok ? sanitizeCartResponse(upstreamText) : upstreamText
   const response = new NextResponse(text, {
     status: upstream.status,
     headers: {
