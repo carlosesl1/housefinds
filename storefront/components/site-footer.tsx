@@ -52,7 +52,7 @@ export function SiteFooter() {
           </div>
         </div>
 
-        <div className="self-start border-l border-black/[.08] pl-0 lg:pl-8">
+        <div className="self-start pl-0 lg:border-l lg:border-black/[.08] lg:pl-8">
           <p className="hf-eyebrow">Not sure where to start?</p>
           <h3 className="mt-4 max-w-sm text-[2rem] font-semibold leading-[1.05] tracking-[-.04em] text-[var(--hf-ink)]">Search by the problem you want to solve.</h3>
           <p className="mt-4 max-w-sm text-sm leading-6 text-black/46">Find a product directly, or browse the full collection when you want inspiration.</p>
