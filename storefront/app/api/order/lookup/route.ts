@@ -22,6 +22,19 @@ function clean(value: unknown, max = 160) {
   return String(value ?? '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim().slice(0, max)
 }
 
+function describeUpstreamError(text: string) {
+  try {
+    const parsed = JSON.parse(text) as { code?: unknown; message?: unknown; data?: { status?: unknown } }
+    return {
+      code: typeof parsed.code === 'string' ? parsed.code : undefined,
+      message: typeof parsed.message === 'string' ? parsed.message : undefined,
+      status: parsed.data?.status,
+    }
+  } catch {
+    return { message: text.replace(/\s+/g, ' ').slice(0, 300) }
+  }
+}
+
 function safeTrackingUrl(value: unknown) {
   const raw = clean(value, 500)
   if (!raw) return ''
@@ -96,10 +109,12 @@ function sanitizeLookupResult(raw: RawLookupResult) {
 }
 
 function publicLookupError(status: number, text: string) {
-  console.error('[housefinds-order-lookup] upstream lookup failed', {
-    status,
-    detail: text.replace(/\s+/g, ' ').slice(0, 800),
-  })
+  const diagnostic = { status, detail: describeUpstreamError(text) }
+  if (status >= 500 || status === 401 || status === 403) {
+    console.error('[housefinds-order-lookup] upstream lookup failed', diagnostic)
+  } else {
+    console.warn('[housefinds-order-lookup] lookup rejected', diagnostic)
+  }
 
   if (status === 404) {
     return NextResponse.json(
