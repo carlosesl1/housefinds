@@ -7,6 +7,15 @@ import { isOperationalAttributeName } from '@/lib/storefront/catalog'
 const WC_URL = (process.env.WOOCOMMERCE_URL || 'https://housefindsstore.com').replace(/\/$/, '')
 const STORE_API = `${WC_URL}/wp-json/wc/store/v1`
 const CART_URL = `${STORE_API}/cart`
+const ALLOWED_CART_ACTIONS = new Set([
+  'add-item',
+  'remove-item',
+  'update-item',
+  'update-customer',
+  'select-shipping-rate',
+  'apply-coupon',
+  'remove-coupon',
+])
 
 type StoreTerm = { name: string; slug: string }
 type StoreAttribute = { name: string; taxonomy?: string | null; terms?: StoreTerm[] }
@@ -21,8 +30,6 @@ type StoreProduct = {
 type AddItemBody = {
   id?: number
   quantity?: number
-  variation?: Array<{ attribute: string; value: string }>
-  [key: string]: unknown
 }
 
 function normalize(value: string | null | undefined) {
@@ -67,17 +74,21 @@ async function preparePostBody(action: string, rawBody: string) {
   try {
     const body = JSON.parse(rawBody) as AddItemBody
     const id = Number(body.id || 0)
-    if (!id) return rawBody
+    const quantity = Math.max(1, Math.min(99, Math.trunc(Number(body.quantity || 1))))
+    if (!Number.isInteger(id) || id <= 0) return JSON.stringify({ id: 0, quantity })
 
     const resolvedVariation = await resolveVariationPayload(id)
-    if (!resolvedVariation?.length) return rawBody
 
-    // The browser only needs the variation ID. Complete every WooCommerce
-    // attribute here so operational options (warehouse / Ships From) never need
-    // to be serialized into the customer-facing React tree.
-    return JSON.stringify({ ...body, variation: resolvedVariation })
+    // The browser only supplies the product/variation ID and quantity. Rebuild
+    // attributes here so operational options never cross the public boundary,
+    // and drop every caller-supplied field that the cart does not need.
+    return JSON.stringify({
+      id,
+      quantity,
+      ...(resolvedVariation?.length ? { variation: resolvedVariation } : {}),
+    })
   } catch {
-    return rawBody
+    return JSON.stringify({ id: 0, quantity: 1 })
   }
 }
 
@@ -96,9 +107,6 @@ function sanitizeCartResponse(text: string) {
             }))
         : []
 
-      // Keep the browser payload intentionally small. In particular, do not
-      // pass Woo/DSers SKUs, raw descriptions, item_data, extensions, product
-      // permalinks or any other fulfilment/integration metadata to the client.
       return {
         key: item.key,
         id: item.id,
@@ -153,6 +161,27 @@ function sanitizeCartResponse(text: string) {
   }
 }
 
+function cartErrorPayload(action: string, upstreamStatus: number) {
+  const message = action === 'add-item'
+    ? 'We could not add that option to your cart. Check its availability and try again.'
+    : action === 'remove-item'
+      ? 'We could not remove that item from your cart. Refresh and try again.'
+      : action === 'update-item'
+        ? 'We could not update that cart item. Refresh and try again.'
+        : action === 'update-customer'
+          ? 'We could not confirm those delivery details. Check the address and postcode, then try again.'
+          : action === 'select-shipping-rate'
+            ? 'We could not confirm that delivery option. Refresh the checkout and try again.'
+            : action === 'apply-coupon' || action === 'remove-coupon'
+              ? 'We could not update that discount code. Check it and try again.'
+              : 'We could not load your cart. Refresh the page and try again.'
+
+  return {
+    status: upstreamStatus >= 500 || upstreamStatus === 401 || upstreamStatus === 403 || upstreamStatus === 429 ? 502 : 422,
+    body: JSON.stringify({ code: 'housefinds_cart_error', message }),
+  }
+}
+
 async function createCartToken() {
   const initial = await fetch(CART_URL, {
     method: 'GET',
@@ -162,7 +191,7 @@ async function createCartToken() {
 
   if (!initial.ok) {
     const body = await initial.text()
-    console.error('[housefinds-cart] failed to initialize WooCommerce cart', initial.status, body.slice(0, 600))
+    console.error('[housefinds-cart] cart initialization failed', initial.status, body.replace(/\s+/g, ' ').slice(0, 600))
     return ''
   }
 
@@ -173,13 +202,24 @@ async function proxy(req: NextRequest, method: 'GET' | 'POST') {
   const cookieStore = await cookies()
   let token = cookieStore.get(CART_COOKIE)?.value || ''
   const action = req.nextUrl.searchParams.get('action') || ''
+
+  if (action && !ALLOWED_CART_ACTIONS.has(action)) {
+    return NextResponse.json(
+      { code: 'housefinds_invalid_cart_action', message: 'That cart action is not available.' },
+      { status: 404, headers: { 'Cache-Control': 'no-store' } },
+    )
+  }
+  if (method === 'GET' && action) {
+    return NextResponse.json(
+      { code: 'housefinds_invalid_cart_action', message: 'That cart action is not available.' },
+      { status: 405, headers: { 'Cache-Control': 'no-store' } },
+    )
+  }
+
   const url = action ? `${CART_URL}/${action}` : CART_URL
   const rawBody = method === 'POST' ? await req.text() : undefined
   const body = method === 'POST' && rawBody !== undefined ? await preparePostBody(action, rawBody) : undefined
 
-  // Store API write routes need a Cart-Token (or nonce). When a shopper clicks
-  // Add to cart before the initial cart GET has finished, bootstrap a token here
-  // so the first write is still reliable.
   if (method === 'POST' && !token) {
     token = await createCartToken()
   }
@@ -196,21 +236,28 @@ async function proxy(req: NextRequest, method: 'GET' | 'POST') {
   })
 
   const upstreamText = await upstream.text()
+  let text: string
+  let status: number
 
-  if (!upstream.ok) {
-    console.error('[housefinds-cart] WooCommerce Store API error', {
+  if (upstream.ok) {
+    text = sanitizeCartResponse(upstreamText)
+    status = upstream.status
+  } else {
+    console.error('[housefinds-cart] upstream cart request failed', {
       action: action || 'get-cart',
       status: upstream.status,
-      body: upstreamText.slice(0, 1000),
+      detail: upstreamText.replace(/\s+/g, ' ').slice(0, 800),
       hadToken: Boolean(token),
     })
+    const safeError = cartErrorPayload(action, upstream.status)
+    text = safeError.body
+    status = safeError.status
   }
 
-  const text = upstream.ok ? sanitizeCartResponse(upstreamText) : upstreamText
   const response = new NextResponse(text, {
-    status: upstream.status,
+    status,
     headers: {
-      'Content-Type': upstream.headers.get('content-type') || 'application/json',
+      'Content-Type': 'application/json',
       'Cache-Control': 'no-store',
     },
   })
