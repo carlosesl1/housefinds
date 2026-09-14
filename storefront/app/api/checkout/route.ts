@@ -91,10 +91,15 @@ function checkoutFailure(status: number, text: string) {
   // Keep provider/plugin diagnostics in server logs only. Checkout responses are
   // public browser traffic and must not expose WooCommerce, gateway internals,
   // WordPress routes, stack traces or other operational details.
-  console.error('[housefinds-checkout] upstream checkout failed', {
+  const diagnostic = {
     status,
     detail: describeUpstreamError(text),
-  })
+  }
+  if (status >= 500 || status === 401 || status === 403 || status === 429) {
+    console.error('[housefinds-checkout] upstream checkout failed', diagnostic)
+  } else {
+    console.warn('[housefinds-checkout] checkout rejected', diagnostic)
+  }
 
   const responseStatus = status >= 500 || status === 401 || status === 403 || status === 429 ? 502 : 422
   return NextResponse.json(
