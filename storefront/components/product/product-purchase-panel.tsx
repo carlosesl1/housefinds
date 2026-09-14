@@ -48,6 +48,74 @@ function findVariationId(product: PurchaseProduct, selections: Record<string, st
   return match?.id || null
 }
 
+type CompoundDimension = 'pack' | 'capacity' | 'colour'
+type CompoundChoice = Partial<Record<CompoundDimension, string>>
+type ParsedCompoundTerm = {
+  term: WooAttributeTerm
+  pack: string
+  capacity: string
+  colour: string
+}
+
+function parseCompoundTerm(term: WooAttributeTerm): ParsedCompoundTerm | null {
+  const raw = term.name.trim().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ')
+  const capacityMatch = raw.match(/\b(\d+(?:\.\d+)?)\s*(ml|l)\b/i)
+  if (!capacityMatch) return null
+
+  const packMatch = raw.match(/\b(\d+)\s*pcs?\b/i)
+  const capacity = `${capacityMatch[1]}${capacityMatch[2].toLowerCase()}`
+  const colour = raw
+    .replace(/\b\d+\s*pcs?\b/i, ' ')
+    .replace(capacityMatch[0], ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '+')
+
+  if (!colour) return null
+
+  return {
+    term,
+    pack: packMatch ? `${packMatch[1]}-pack` : 'standard',
+    capacity,
+    colour,
+  }
+}
+
+function compoundTerms(attribute: WooProductAttribute): ParsedCompoundTerm[] | null {
+  const parsed = attribute.terms.map(parseCompoundTerm)
+  if (parsed.some((entry) => !entry)) return null
+
+  const terms = parsed.filter((entry): entry is ParsedCompoundTerm => Boolean(entry))
+  const packValues = new Set(terms.map((entry) => entry.pack))
+  const capacityValues = new Set(terms.map((entry) => entry.capacity))
+  const colourValues = new Set(terms.map((entry) => entry.colour))
+
+  // Only decompose supplier values when they clearly contain several choices.
+  if (packValues.size < 2 || capacityValues.size < 2 || colourValues.size < 2) return null
+  return terms
+}
+
+function dimensionLabel(dimension: CompoundDimension) {
+  if (dimension === 'pack') return 'Set'
+  if (dimension === 'capacity') return 'Capacity'
+  return 'Colour'
+}
+
+function dimensionValueLabel(dimension: CompoundDimension, value: string) {
+  if (dimension === 'pack') return value === 'standard' ? 'Standard' : value.replace('-', ' ')
+  if (dimension === 'capacity') return value
+  return value
+    .split('+')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' + ')
+}
+
+function matchesCompoundChoice(entry: ParsedCompoundTerm, choice: CompoundChoice) {
+  return (Object.keys(choice) as CompoundDimension[]).every((dimension) => !choice[dimension] || entry[dimension] === choice[dimension])
+}
+
 export function ProductPurchasePanel({ product, variations = [], dark = false }: { product: PurchaseProduct; variations?: PurchaseVariation[]; dark?: boolean }) {
   const variableAttributes = useMemo(() => product.attributes.filter((attribute) => attribute.has_variations && attribute.terms.length > 0), [product.attributes])
 
@@ -61,7 +129,26 @@ export function ProductPurchasePanel({ product, variations = [], dark = false }:
     return defaults
   }, [variableAttributes])
 
+  const compoundConfigs = useMemo(() => {
+    const configs = new Map<string, ParsedCompoundTerm[]>()
+    variableAttributes.forEach((attribute) => {
+      const parsed = compoundTerms(attribute)
+      if (parsed) configs.set(attribute.name, parsed)
+    })
+    return configs
+  }, [variableAttributes])
+
+  const initialCompoundSelections = useMemo(() => {
+    const result: Record<string, CompoundChoice> = {}
+    compoundConfigs.forEach((entries, attributeName) => {
+      const selected = entries.find((entry) => entry.term.slug === initialSelections[attributeName])
+      if (selected) result[attributeName] = { pack: selected.pack, capacity: selected.capacity, colour: selected.colour }
+    })
+    return result
+  }, [compoundConfigs, initialSelections])
+
   const [selections, setSelections] = useState<Record<string, string>>(initialSelections)
+  const [compoundSelections, setCompoundSelections] = useState<Record<string, CompoundChoice>>(initialCompoundSelections)
   const [quantity, setQuantity] = useState(Math.max(1, product.add_to_cart?.minimum || 1))
   const add = useCart((state) => state.add)
   const loading = useCart((state) => state.loading)
@@ -104,6 +191,43 @@ export function ProductPurchasePanel({ product, variations = [], dark = false }:
     void handleAdd()
   }
 
+  function compoundOptionAvailable(attribute: WooProductAttribute, dimension: CompoundDimension, value: string) {
+    const entries = compoundConfigs.get(attribute.name)
+    if (!entries) return false
+    const current = compoundSelections[attribute.name] || {}
+    const nextChoice = { ...current, [dimension]: value }
+    const baseSelections = { ...selections }
+    delete baseSelections[attribute.name]
+
+    return entries.some((entry) =>
+      matchesCompoundChoice(entry, nextChoice)
+      && variationSupportsSelection(product, baseSelections, { name: attribute.name, term: entry.term }),
+    )
+  }
+
+  function chooseCompoundOption(attribute: WooProductAttribute, dimension: CompoundDimension, value: string) {
+    const entries = compoundConfigs.get(attribute.name)
+    if (!entries) return
+
+    const nextChoice: CompoundChoice = { ...(compoundSelections[attribute.name] || {}), [dimension]: value }
+    setCompoundSelections((current) => ({ ...current, [attribute.name]: nextChoice }))
+
+    const baseSelections = { ...selections }
+    delete baseSelections[attribute.name]
+    const matching = entries.filter((entry) =>
+      matchesCompoundChoice(entry, nextChoice)
+      && variationSupportsSelection(product, baseSelections, { name: attribute.name, term: entry.term }),
+    )
+    const complete = Boolean(nextChoice.pack && nextChoice.capacity && nextChoice.colour)
+
+    setSelections((current) => {
+      const next = { ...current }
+      if (complete && matching.length === 1) next[attribute.name] = matching[0].term.slug
+      else delete next[attribute.name]
+      return next
+    })
+  }
+
   return (
     <div className="space-y-7" id="purchase-panel">
       <div aria-live="polite">
@@ -117,25 +241,72 @@ export function ProductPurchasePanel({ product, variations = [], dark = false }:
 
       {variableAttributes.length > 0 && (
         <div id="purchase-options" className="space-y-6 scroll-mt-32">
-          {variableAttributes.map((attribute) => (
-            <div key={attribute.name}>
-              <div className="flex items-center justify-between gap-4">
-                <label className={`text-sm font-semibold ${dark ? 'text-white/86' : 'text-[#172018]'}`}>{storefrontAttributeName(attribute)}</label>
-                {!selections[attribute.name] && <span className={`text-xs ${labelClass}`}>Choose one</span>}
+          {variableAttributes.map((attribute) => {
+            const compound = compoundConfigs.get(attribute.name)
+
+            if (compound) {
+              const current = compoundSelections[attribute.name] || {}
+              const dimensions: CompoundDimension[] = ['pack', 'capacity', 'colour']
+              return (
+                <div key={attribute.name} className="space-y-5">
+                  <div className="flex items-center justify-between gap-4">
+                    <p className={`text-sm font-semibold ${dark ? 'text-white/86' : 'text-[#172018]'}`}>Choose your option</p>
+                    {!selections[attribute.name] && <span className={`text-xs ${labelClass}`}>3 quick choices</span>}
+                  </div>
+
+                  {dimensions.map((dimension) => {
+                    const values = Array.from(new Set(compound.map((entry) => entry[dimension])))
+                    return (
+                      <div key={`${attribute.name}-${dimension}`}>
+                        <div className="flex items-center justify-between gap-4">
+                          <span className={`text-xs font-semibold uppercase tracking-[.13em] ${labelClass}`}>{dimensionLabel(dimension)}</span>
+                          {current[dimension] && <span className={`text-xs ${labelClass}`}>{dimensionValueLabel(dimension, current[dimension]!)}</span>}
+                        </div>
+                        <div className="mt-2.5 flex flex-wrap gap-2.5">
+                          {values.map((value) => {
+                            const active = current[dimension] === value
+                            const available = compoundOptionAvailable(attribute, dimension, value)
+                            return (
+                              <button
+                                key={`${attribute.name}-${dimension}-${value}`}
+                                type="button"
+                                disabled={!available}
+                                aria-pressed={active}
+                                onClick={() => chooseCompoundOption(attribute, dimension, value)}
+                                className={`relative min-h-11 rounded-full border px-4 py-2 text-sm font-medium transition ${active ? optionActive : optionIdle} ${!available ? 'cursor-not-allowed opacity-35 line-through' : ''}`}
+                              >
+                                {active && <CheckIcon className="mr-1.5 inline size-4" />}{dimensionValueLabel(dimension, value)}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )
+            }
+
+            return (
+              <div key={attribute.name}>
+                <div className="flex items-center justify-between gap-4">
+                  <label className={`text-sm font-semibold ${dark ? 'text-white/86' : 'text-[#172018]'}`}>{storefrontAttributeName(attribute)}</label>
+                  {!selections[attribute.name] && <span className={`text-xs ${labelClass}`}>Choose one</span>}
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2.5">
+                  {attribute.terms.map((term) => {
+                    const active = selections[attribute.name] === term.slug
+                    const available = variationSupportsSelection(product, selections, { name: attribute.name, term })
+                    return (
+                      <button key={`${attribute.name}-${term.slug}`} type="button" disabled={!available} aria-pressed={active} onClick={() => setSelections((currentSelections) => ({ ...currentSelections, [attribute.name]: term.slug }))} className={`relative min-h-11 rounded-full border px-4 py-2 text-sm font-medium transition ${active ? optionActive : optionIdle} ${!available ? 'cursor-not-allowed opacity-35 line-through' : ''}`}>
+                        {active && <CheckIcon className="mr-1.5 inline size-4" />}{storefrontTermName(term)}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
-              <div className="mt-3 flex flex-wrap gap-2.5">
-                {attribute.terms.map((term) => {
-                  const active = selections[attribute.name] === term.slug
-                  const available = variationSupportsSelection(product, selections, { name: attribute.name, term })
-                  return (
-                    <button key={`${attribute.name}-${term.slug}`} type="button" disabled={!available} aria-pressed={active} onClick={() => setSelections((current) => ({ ...current, [attribute.name]: term.slug }))} className={`relative min-h-11 rounded-full border px-4 py-2 text-sm font-medium transition ${active ? optionActive : optionIdle} ${!available ? 'cursor-not-allowed opacity-35 line-through' : ''}`}>
-                      {active && <CheckIcon className="mr-1.5 inline size-4" />}{storefrontTermName(term)}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
