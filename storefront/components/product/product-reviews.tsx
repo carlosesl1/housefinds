@@ -2,7 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { ChevronLeftIcon, ChevronRightIcon, XMarkIcon } from '@heroicons/react/24/outline'
-import type { WooProduct, WooProductReview } from '@/lib/woocommerce/types'
+import type { WooProductReview } from '@/lib/woocommerce/types'
+
+type ProductReviewSummary = {
+  average_rating?: string
+  review_count?: number
+}
 
 function stripHtml(value: string) {
   return value
@@ -38,15 +43,16 @@ function Stars({ rating, size = 'text-base' }: { rating: number; size?: string }
   )
 }
 
-export function ProductReviews({ product, reviews }: { product: WooProduct; reviews: WooProductReview[] }) {
+export function ProductReviews({ summary, reviews }: { summary: ProductReviewSummary; reviews: WooProductReview[] }) {
   const [selectedRating, setSelectedRating] = useState<number | null>(null)
   const [activePhoto, setActivePhoto] = useState<number | null>(null)
   const closeRef = useRef<HTMLButtonElement | null>(null)
 
-  const productAverage = Number(product.average_rating || 0)
+  const productAverage = Number(summary.average_rating || 0)
   const fetchedAverage = reviews.length ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length : 0
   const average = productAverage > 0 ? productAverage : fetchedAverage
-  const count = product.review_count > 0 ? product.review_count : reviews.length
+  const reviewCount = summary.review_count || 0
+  const count = reviewCount > 0 ? reviewCount : reviews.length
 
   const distribution = [5, 4, 3, 2, 1].map((star) => ({
     star,
@@ -135,7 +141,7 @@ export function ProductReviews({ product, reviews }: { product: WooProduct; revi
                       )
                     })}
                   </div>
-                  {product.review_count > reviews.length && <p className="mt-3 text-[11px] leading-4 text-black/34">Rating mix shown from the latest {reviews.length} synchronized reviews.</p>}
+                  {reviewCount > reviews.length && <p className="mt-3 text-[11px] leading-4 text-black/34">Rating mix shown from the latest {reviews.length} synchronized reviews.</p>}
                 </div>
               )}
             </div>
