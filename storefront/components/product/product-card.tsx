@@ -1,14 +1,14 @@
 import Link from 'next/link'
 import type { WooProduct } from '@/lib/woocommerce/types'
 import { formatProductPrice } from '@/lib/woocommerce/money'
-import { displayProductName, displayProductTagline } from '@/lib/woocommerce/presentation'
+import { displayProductName, displayProductTagline, storefrontProductSlug } from '@/lib/woocommerce/presentation'
 import { ProductCardMedia } from '@/components/product/product-card-media'
 import { toStorefrontImages } from '@/lib/storefront/client-product'
 
 export function ProductCard({ product }: { product: WooProduct }) {
   const name = displayProductName(product.name)
   const tagline = displayProductTagline(product)
-  const href = `/product/${product.slug}`
+  const href = `/product/${storefrontProductSlug(product)}`
   const previewImages = toStorefrontImages(product.images || []).slice(0, 3)
   const imageCount = product.images?.length || previewImages.length
 
