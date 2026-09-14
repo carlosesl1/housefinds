@@ -113,22 +113,12 @@ export async function getLastStoreOrder() {
   return { session, order }
 }
 
-export function estimatedDeliveryDate(createdAt: number) {
-  const date = new Date(createdAt)
-  date.setDate(date.getDate() + 14)
-  return date
-}
-
-export function formatUKDate(date: Date) {
-  return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }).format(date)
-}
-
 export function orderStatusCopy(status?: string) {
   switch (status) {
     case 'processing':
       return { label: 'Order confirmed', detail: 'Payment has been received and your order is being prepared.' }
     case 'on-hold':
-      return { label: 'Order received', detail: 'Your order is on hold while payment or fulfilment is being confirmed.' }
+      return { label: 'Order received', detail: 'Your order is on hold while payment or order details are being confirmed.' }
     case 'completed':
       return { label: 'Order completed', detail: 'This order is marked complete in Housefinds. Carrier tracking, when available, is shown separately.' }
     case 'refunded':
