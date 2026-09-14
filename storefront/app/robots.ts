@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next'
 
-const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://housefinds-storefront.vercel.app').replace(/\/$/, '')
-const shouldNoIndex = Boolean(process.env.VERCEL && !process.env.NEXT_PUBLIC_SITE_URL)
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://housefindsstore.com').replace(/\/$/, '')
+const shouldNoIndex = process.env.VERCEL_ENV === 'preview' || process.env.VERCEL_ENV === 'development'
 
 export default function robots(): MetadataRoute.Robots {
   if (shouldNoIndex) {
