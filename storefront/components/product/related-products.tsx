@@ -9,17 +9,17 @@ export function RelatedProducts({ products }: { products: WooProduct[] }) {
   if (!visibleProducts.length) return null
 
   return (
-    <section className="bg-[#fbfaf7] px-5 py-20 lg:px-8 lg:py-28">
-      <div className="mx-auto max-w-[1480px]">
-        <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+    <section className="hf-section border-t border-black/[.06] bg-[var(--hf-background)]">
+      <div className="hf-container">
+        <div className="grid gap-6 sm:grid-cols-[1fr_auto] sm:items-end">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[.28em] text-[#557562]">Keep exploring</p>
-            <h2 className="mt-4 text-[clamp(3rem,5vw,5.8rem)] font-semibold leading-[.92] tracking-[-.06em] text-[#101622]">You might also find<br /><span className="text-[#557562]">these useful.</span></h2>
+            <p className="hf-eyebrow text-[var(--hf-brand-muted)]">Keep exploring</p>
+            <h2 className="hf-section-title mt-4 max-w-[760px]">More useful finds for <span className="text-[var(--hf-brand-muted)]">everyday home life.</span></h2>
           </div>
-          <Link href="/shop" className="inline-flex items-center gap-2 text-sm font-semibold text-[#355f4a]">Browse all products <ArrowRightIcon className="size-4" /></Link>
+          <Link href="/shop" className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--hf-brand)]">Browse all products <ArrowRightIcon className="size-4" /></Link>
         </div>
 
-        <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-12 md:grid-cols-3 xl:grid-cols-4">
+        <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 xl:grid-cols-4 xl:gap-x-5">
           {visibleProducts.map((product) => <ProductCard key={product.id} product={product} />)}
         </div>
       </div>
