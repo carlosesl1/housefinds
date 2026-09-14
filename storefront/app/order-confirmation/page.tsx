@@ -3,7 +3,8 @@ import Link from 'next/link'
 import { CheckCircleIcon, ClockIcon, EnvelopeIcon, MapPinIcon, TruckIcon } from '@heroicons/react/24/outline'
 import { displayProductName } from '@/lib/woocommerce/presentation'
 import { formatMoney } from '@/lib/woocommerce/money'
-import { estimatedDeliveryDate, formatUKDate, getLastStoreOrder, orderStatusCopy } from '@/lib/woocommerce/order-session'
+import { getLastStoreOrder, orderStatusCopy } from '@/lib/woocommerce/order-session'
+import { isOperationalAttributeName } from '@/lib/storefront/catalog'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Order confirmation', robots: { index: false, follow: false } }
@@ -37,7 +38,6 @@ export default async function OrderConfirmationPage() {
   const total = order.totals?.total_price
     ? formatMoney(order.totals.total_price, order.totals.currency_minor_unit ?? 2, order.totals.currency_symbol || '£')
     : null
-  const deliveryDate = estimatedDeliveryDate(session.created_at)
   const showDeliveryEstimate = !['failed', 'cancelled', 'refunded'].includes(order.status)
   const shipping = order.shipping_address || {}
   const email = order.billing_address?.email || session.billing_email
@@ -61,8 +61,8 @@ export default async function OrderConfirmationPage() {
                   <div className="rounded-[26px] bg-[#edf3ee] p-6">
                     <ClockIcon className="size-5 text-[#456b55]" />
                     <p className="mt-4 text-xs font-semibold uppercase tracking-[.16em] text-black/38">Estimated delivery</p>
-                    <p className="mt-1 text-xl font-semibold tracking-[-.03em]">Around {formatUKDate(deliveryDate)}</p>
-                    <p className="mt-2 text-xs leading-5 text-black/42">Current estimate based on the standard ~14-day UK delivery window.</p>
+                    <p className="mt-1 text-xl font-semibold tracking-[-.03em]">Around 14 days</p>
+                    <p className="mt-2 text-xs leading-5 text-black/42">This is the current standard UK delivery estimate, not a guaranteed arrival date.</p>
                   </div>
                 )}
                 <div className="rounded-[26px] bg-[#f3f1eb] p-6">
@@ -78,9 +78,15 @@ export default async function OrderConfirmationPage() {
                 <div className="mt-5 divide-y divide-black/[.07] border-y border-black/[.07]">
                   {(order.items || []).map((item, index) => {
                     const image = item.images?.[0]
-                    const details = item.variation?.map((entry) => entry.value).filter(Boolean)
-                      || item.item_data?.map((entry) => entry.display_value || entry.value).filter(Boolean)
-                      || []
+                    const variationDetails = (item.variation || [])
+                      .filter((entry) => !isOperationalAttributeName(String(entry.attribute || '')))
+                      .map((entry) => entry.value)
+                      .filter(Boolean)
+                    const itemDataDetails = (item.item_data || [])
+                      .filter((entry) => !isOperationalAttributeName(String(entry.display_key || entry.key || '')))
+                      .map((entry) => entry.display_value || entry.value)
+                      .filter(Boolean)
+                    const details = variationDetails.length ? variationDetails : itemDataDetails
                     return (
                       <div key={item.key || `${item.id}-${index}`} className="grid grid-cols-[78px_1fr_auto] gap-4 py-5">
                         <div className="relative aspect-square overflow-hidden rounded-2xl bg-[#efeee8]">{image?.src && <Image src={image.src} alt={displayProductName(item.name)} fill sizes="78px" className="object-cover" />}</div>
@@ -98,7 +104,7 @@ export default async function OrderConfirmationPage() {
                 <TruckIcon className="size-6 text-[#557562]" />
                 <h2 className="mt-4 text-2xl font-semibold tracking-[-.04em]">What happens next</h2>
                 <ol className="mt-6 space-y-5 text-sm leading-6 text-black/52">
-                  <li><strong className="block text-[#172018]">1. We prepare your order</strong>Housefinds sends the fulfilment details for processing.</li>
+                  <li><strong className="block text-[#172018]">1. We prepare your order</strong>Housefinds prepares your order for dispatch.</li>
                   <li><strong className="block text-[#172018]">2. Dispatch update</strong>When shipment information becomes available, your order tracking can be updated.</li>
                   <li><strong className="block text-[#172018]">3. Delivery</strong>Standard UK delivery is free and currently estimated at around 14 days.</li>
                 </ol>
