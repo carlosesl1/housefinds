@@ -72,7 +72,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   if (slug !== publicSlug) permanentRedirect(`/product/${publicSlug}`)
 
   const [reviews, relatedProducts, variations] = await Promise.all([
-    getProductReviews(product.id, 12).catch(() => []),
+    getProductReviews(product.id, 100).catch(() => []),
     getRelatedProducts(product.id, 8).catch(() => []),
     product.type === 'variable' || product.variations?.length
       ? getProductVariations(product.id).catch(() => [])
