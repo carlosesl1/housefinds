@@ -100,7 +100,7 @@ export default async function HomePage() {
             </div>
 
             <div className="bg-[#d3dfd6] px-7 py-12 sm:px-10 lg:px-14 lg:py-16">
-              <p className="text-sm font-semibold text-black/55">Popular starting points</p>
+              <p className="text-sm font-semibold text-black/55">Useful starting points</p>
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
                 {STORE_CATEGORIES.map((category) => (
                   <Link key={category.slug} href={`/shop?category=${category.slug}`} className="rounded-[22px] border border-white/60 bg-white/70 p-5 backdrop-blur transition hover:-translate-y-1 hover:bg-white">
