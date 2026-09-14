@@ -73,7 +73,7 @@ export function Hero({ products }: { products: WooProduct[] }) {
             ['Free UK delivery', 'Standard delivery is included in the price.'],
             ['Around 14 days', 'Current delivery estimate for UK orders.'],
             ['Free 14-day returns', 'Eligible online orders can be returned without return postage.'],
-            ['Secure payment', 'Visa, Mastercard, Amex, Apple Pay, Google Pay and Link via Stripe.'],
+            ['Secure card payment', 'Card details are securely processed by Stripe.'],
           ].map(([title, copy]) => (
             <div key={title} className="py-6 md:px-7 first:md:pl-0"><p className="font-semibold text-[#172018]">{title}</p><p className="mt-1 text-sm text-black/42">{copy}</p></div>
           ))}
