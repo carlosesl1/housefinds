@@ -83,23 +83,66 @@ async function preparePostBody(action: string, rawBody: string) {
 
 function sanitizeCartResponse(text: string) {
   try {
-    const cart = JSON.parse(text) as { items?: Array<Record<string, unknown>> }
+    const cart = JSON.parse(text) as Record<string, unknown> & { items?: Array<Record<string, unknown>> }
     if (!Array.isArray(cart.items)) return text
 
-    cart.items = cart.items.map((item) => {
+    const items = cart.items.map((item) => {
       const variation = Array.isArray(item.variation)
         ? (item.variation as Array<{ attribute?: string; value?: string }>).filter((entry) => !isOperationalAttributeName(String(entry.attribute || '')))
-        : item.variation
+        : []
 
+      // Keep the browser payload intentionally small. In particular, do not
+      // pass Woo/DSers SKUs, raw descriptions, item_data, extensions, product
+      // permalinks or any other fulfilment/integration metadata to the client.
       return {
-        ...item,
+        key: item.key,
+        id: item.id,
+        quantity: item.quantity,
         name: typeof item.name === 'string' ? displayProductName(item.name) : item.name,
         short_description: '',
+        prices: item.prices,
+        totals: item.totals,
+        images: item.images,
         variation,
       }
     })
 
-    return JSON.stringify(cart)
+    const coupons = Array.isArray(cart.coupons)
+      ? (cart.coupons as Array<Record<string, unknown>>).map((coupon) => ({
+          code: coupon.code,
+          discount_type: coupon.discount_type,
+          totals: coupon.totals,
+        }))
+      : []
+
+    const shippingRates = Array.isArray(cart.shipping_rates)
+      ? (cart.shipping_rates as Array<Record<string, unknown>>).map((shippingPackage) => ({
+          package_id: shippingPackage.package_id,
+          name: shippingPackage.name,
+          destination: shippingPackage.destination,
+          shipping_rates: Array.isArray(shippingPackage.shipping_rates)
+            ? (shippingPackage.shipping_rates as Array<Record<string, unknown>>).map((rate) => ({
+                rate_id: rate.rate_id,
+                name: rate.name,
+                description: rate.description,
+                delivery_time: rate.delivery_time,
+                price: rate.price,
+                selected: rate.selected,
+              }))
+            : [],
+        }))
+      : []
+
+    return JSON.stringify({
+      items,
+      coupons,
+      totals: cart.totals,
+      needs_payment: cart.needs_payment,
+      needs_shipping: cart.needs_shipping,
+      has_calculated_shipping: cart.has_calculated_shipping,
+      shipping_rates: shippingRates,
+      items_count: cart.items_count,
+    })
   } catch {
     return text
   }
