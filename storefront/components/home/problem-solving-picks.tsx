@@ -52,7 +52,7 @@ export function ProblemSolvingPicks({ products }: { products: WooProduct[] }) {
             const name = displayProductName(product.name)
 
             return (
-              <Link key={`${eyebrow}-${product.id}`} href={`/produto/${product.slug}`} className="group overflow-hidden rounded-[34px] bg-white shadow-[0_14px_55px_rgba(33,45,37,.05)]">
+              <Link key={`${eyebrow}-${product.id}`} href={`/product/${product.slug}`} className="group overflow-hidden rounded-[34px] bg-white shadow-[0_14px_55px_rgba(33,45,37,.05)]">
                 <div className="relative aspect-[4/3] overflow-hidden bg-[#e8e7e1]">
                   {image && (
                     <Image src={image.src} alt={image.alt || name} fill sizes="(max-width:1024px) 100vw, 33vw" className="object-cover transition duration-700 group-hover:scale-[1.04]" />
