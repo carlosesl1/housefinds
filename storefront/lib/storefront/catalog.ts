@@ -65,6 +65,12 @@ export function storefrontAttributeName(attribute: WooProductAttribute) {
   if (/^color$/i.test(name)) {
     const terms = attribute.terms.map((term) => term.name).join(' ')
     if (/\b(force|kg|g\s*force)\b/i.test(terms)) return 'Colour & closing force'
+
+    const hasCapacity = /\b\d+(?:\.\d+)?\s*(?:ml|l)\b/i.test(terms)
+    const hasPackSize = /\b\d+\s*(?:pcs?|pack)\b/i.test(terms)
+    if (hasCapacity && hasPackSize) return 'Pack, capacity & colour'
+    if (hasCapacity) return 'Capacity & colour'
+
     return 'Colour'
   }
   if (/^ships?\s*from$/i.test(name)) return 'Dispatch option'
@@ -72,9 +78,48 @@ export function storefrontAttributeName(attribute: WooProductAttribute) {
   return name
 }
 
+function titleCaseWords(value: string) {
+  return value
+    .split(' ')
+    .filter(Boolean)
+    .map((part) => {
+      if (/^usb$/i.test(part)) return 'USB'
+      if (/^type-c$/i.test(part)) return 'Type-C'
+      return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
+    })
+    .join(' ')
+}
+
 export function storefrontTermName(term: WooAttributeTerm) {
   const raw = term.name.trim().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ')
   if (!raw) return raw
+
+  // Some supplier catalogs compress several customer choices into one Woo
+  // attribute value (for example "3pcs 300ml black"). Present those values as
+  // a readable option without changing the underlying slug used for matching.
+  const capacityMatch = raw.match(/\b(\d+(?:\.\d+)?)\s*(ml|l)\b/i)
+  if (capacityMatch) {
+    const packMatch = raw.match(/\b(\d+)\s*pcs?\b/i)
+    const capacity = `${capacityMatch[1]}${capacityMatch[2].toLowerCase()}`
+    let remainder = raw
+      .replace(/\b\d+\s*pcs?\b/i, ' ')
+      .replace(capacityMatch[0], ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+
+    if (/^black\s+white$/i.test(remainder) || /^white\s+black$/i.test(remainder)) {
+      remainder = remainder
+        .split(/\s+/)
+        .map((part) => titleCaseWords(part))
+        .join(' + ')
+    } else {
+      remainder = titleCaseWords(remainder)
+    }
+
+    return [packMatch ? `${packMatch[1]}-pack` : '', capacity, remainder]
+      .filter(Boolean)
+      .join(' · ')
+  }
 
   return raw
     .split(' ')
