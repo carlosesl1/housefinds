@@ -41,14 +41,14 @@ function loadStripeScript() {
     const existing = document.querySelector<HTMLScriptElement>('script[src="https://js.stripe.com/v3/"]')
     if (existing) {
       existing.addEventListener('load', () => resolve(), { once: true })
-      existing.addEventListener('error', () => reject(new Error('Stripe.js could not be loaded.')), { once: true })
+      existing.addEventListener('error', () => reject(new Error('Secure card fields could not be loaded. Please refresh and try again.')), { once: true })
       return
     }
     const script = document.createElement('script')
     script.src = 'https://js.stripe.com/v3/'
     script.async = true
     script.onload = () => resolve()
-    script.onerror = () => reject(new Error('Stripe.js could not be loaded.'))
+    script.onerror = () => reject(new Error('Secure card fields could not be loaded. Please refresh and try again.'))
     document.head.appendChild(script)
   })
   return stripeScriptPromise
@@ -75,7 +75,7 @@ function checkoutErrorMessage(text: string, fallback: string) {
     const parsed = JSON.parse(text) as { message?: string; data?: { message?: string } }
     return parsed.message || parsed.data?.message || fallback
   } catch {
-    return text || fallback
+    return fallback
   }
 }
 
@@ -114,7 +114,7 @@ export function StripeCardForm({ address, expectedTotal, disabled }: { address: 
       stripeRef.current = stripe
       cardRef.current = card
       setReady(true)
-    }).catch((reason) => setError(reason instanceof Error ? reason.message : 'Stripe.js could not be loaded.'))
+    }).catch((reason) => setError(reason instanceof Error ? reason.message : 'Secure card fields could not be loaded. Please refresh and try again.'))
     return () => {
       disposed = true
       cardRef.current?.unmount()
@@ -174,7 +174,7 @@ export function StripeCardForm({ address, expectedTotal, disabled }: { address: 
       const checkout = JSON.parse(text) as CheckoutResponse
       const paymentResult = checkout.payment_result || {}
       const details = paymentDetailsToRecord(paymentResult.payment_details)
-      if (paymentResult.payment_status === 'failure' || paymentResult.payment_status === 'failed') throw new Error(details.errorMessage || 'Stripe could not process this payment.')
+      if (paymentResult.payment_status === 'failure' || paymentResult.payment_status === 'failed') throw new Error('We could not complete this payment. Check your card details or try another card.')
 
       const intentSecret = details.payment_intent_secret || details.client_secret
       if (intentSecret) {
@@ -202,7 +202,7 @@ export function StripeCardForm({ address, expectedTotal, disabled }: { address: 
         return
       }
 
-      throw new Error('The payment was accepted but no order confirmation was returned. Please contact support before trying again.')
+      throw new Error('The payment was accepted but no order confirmation was returned. Please contact Housefinds support before trying again.')
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Payment could not be completed.')
       setProcessing(false)
@@ -210,13 +210,13 @@ export function StripeCardForm({ address, expectedTotal, disabled }: { address: 
   }
 
   if (!publishableKey) {
-    return <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-950"><strong>Stripe is connected in WooCommerce.</strong><p className="mt-1">The storefront still needs the Stripe publishable key in Vercel before card fields can be displayed. No secret key is required here.</p></div>
+    return <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-950"><strong>Card payments are temporarily unavailable.</strong><p className="mt-1">Please try again shortly. If the problem continues, contact Housefinds support before placing the order again.</p></div>
   }
 
   return (
     <div>
       <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3"><span className="grid size-11 place-items-center rounded-2xl bg-[#e7eee9] text-[#456b55]"><CreditCardIcon className="size-5" /></span><div><p className="font-semibold">Credit or debit card</p><p className="text-xs text-black/42">Securely processed by Stripe</p></div></div>
+        <div className="flex items-center gap-3"><span className="grid size-11 place-items-center rounded-2xl bg-[#e7eee9] text-[#456b55]"><CreditCardIcon className="size-5" /></span><div><p className="font-semibold">Credit or debit card</p><p className="text-xs text-black/42">Secure card payment</p></div></div>
         <div className="flex gap-1 text-[9px] font-bold tracking-wide text-black/40"><span className="rounded bg-[#f1f1ed] px-2 py-1">VISA</span><span className="rounded bg-[#f1f1ed] px-2 py-1">MC</span><span className="rounded bg-[#f1f1ed] px-2 py-1">AMEX</span></div>
       </div>
 
@@ -227,7 +227,7 @@ export function StripeCardForm({ address, expectedTotal, disabled }: { address: 
       {error && <p className="mt-3 rounded-xl bg-rose-50 px-3 py-2.5 text-sm text-rose-800">{error}</p>}
 
       <button type="button" disabled={disabled || processing || !ready || !complete || exceedsLaunchLimit} onClick={() => void submitPayment()} className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[#355f4a] px-7 font-semibold text-white transition hover:bg-[#294b3a] disabled:cursor-not-allowed disabled:opacity-45"><LockClosedIcon className="size-4" />{processing ? 'Processing securely…' : `Pay ${paymentLabel(expectedTotal)}`}</button>
-      <p className="mt-3 text-center text-xs leading-5 text-black/38">Card details are sent directly to Stripe and never pass through Housefinds servers.</p>
+      <p className="mt-3 text-center text-xs leading-5 text-black/38">Your card details are handled by our secure payment provider and are not stored by Housefinds.</p>
     </div>
   )
 }
