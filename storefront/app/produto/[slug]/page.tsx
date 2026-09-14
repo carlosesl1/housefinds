@@ -8,6 +8,7 @@ import { RecentlyViewed } from '@/components/product/recently-viewed'
 import { AuroraProjectorExperience } from '@/experiences/aurora-projector'
 import { experienceRegistry } from '@/experiences/registry'
 import { displayProductName, displayProductTagline } from '@/lib/woocommerce/presentation'
+import { formatProductPrice } from '@/lib/woocommerce/money'
 
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://housefindsstore.com').replace(/\/$/, '')
 
@@ -119,6 +120,15 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       : {}),
   }
 
+  const recentlyViewedProduct = {
+    id: product.id,
+    slug: product.slug,
+    name,
+    tagline: description,
+    price: formatProductPrice(product),
+    image: product.images?.[0]?.thumbnail || product.images?.[0]?.src || '',
+  }
+
   const experience = experienceRegistry[slug]
 
   return (
@@ -134,7 +144,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       ) : (
         <DefaultProduct product={product} variations={variations} reviews={reviews} relatedProducts={relatedProducts} />
       )}
-      <RecentlyViewed product={product} />
+      <RecentlyViewed product={recentlyViewedProduct} />
     </>
   )
 }
