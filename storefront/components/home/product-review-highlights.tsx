@@ -33,7 +33,7 @@ export function ProductReviewHighlights({ products, reviews }: { products: WooPr
 
           <div className="grid gap-4 md:grid-cols-3">
             {visible.map(({ review, product }) => (
-              <Link key={review.id} href={`/produto/${product!.slug}#reviews`} className="flex min-h-[330px] flex-col justify-between rounded-[28px] border border-white/10 bg-white/[.055] p-6 transition hover:-translate-y-1 hover:bg-white/[.08]">
+              <Link key={review.id} href={`/product/${product!.slug}#reviews`} className="flex min-h-[330px] flex-col justify-between rounded-[28px] border border-white/10 bg-white/[.055] p-6 transition hover:-translate-y-1 hover:bg-white/[.08]">
                 <div>
                   <div className="tracking-[.08em] text-[#d5b074]">{'★'.repeat(Math.max(0, Math.min(5, Math.round(review.rating))))}</div>
                   <p className="mt-5 line-clamp-6 text-[15px] leading-7 text-white/72">“{stripHtml(review.review)}”</p>
