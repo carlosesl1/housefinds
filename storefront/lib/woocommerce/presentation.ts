@@ -104,8 +104,22 @@ const storyRules: Array<[RegExp, Story]> = [
   }],
 ]
 
+const fulfilmentLocationPattern = /\b(?:ships?\s*from|dispatch\s*from|warehouse(?:\s*location)?)\b\s*[:\-]?\s*(?:china mainland|china|united states|spain|russian federation|poland|france|germany|czech republic|belgium)\b/gi
+
 function curatedProductName(name: string) {
   return nameRules.find(([pattern]) => pattern.test(name))?.[1]
+}
+
+function safeFallbackProductName(name: string) {
+  const cleaned = name
+    .replace(fulfilmentLocationPattern, ' ')
+    .replace(/\s+[|/·]\s+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/^[\s,:;|/\-]+|[\s,:;|/\-]+$/g, '')
+    .trim()
+
+  const publicName = cleaned || 'Housefinds product'
+  return publicName.length > 58 ? `${publicName.slice(0, 55).trim()}…` : publicName
 }
 
 function slugify(value: string) {
@@ -121,7 +135,7 @@ function slugify(value: string) {
 export function displayProductName(name: string) {
   const curated = curatedProductName(name)
   if (curated) return curated
-  return name.length > 58 ? `${name.slice(0, 55).trim()}…` : name
+  return safeFallbackProductName(name)
 }
 
 /**
@@ -138,14 +152,10 @@ export function displayProductTagline(product: WooProduct) {
   const match = taglineRules.find(([pattern]) => pattern.test(product.name))
   if (match) return match[1]
 
-  const raw = (product.short_description || product.description)
-    .replace(/<img[^>]*>/gi, ' ')
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-
-  if (raw) return raw.length > 90 ? `${raw.slice(0, 87).trim()}…` : raw
-  return 'A useful find for everyday living.'
+  // Unknown catalog items must never inherit marketplace descriptions into the
+  // public storefront. Keep the fallback intentionally generic until Housefinds
+  // has written or verified product-specific customer copy.
+  return 'A practical Housefinds pick for everyday living.'
 }
 
 export function getProductStory(product: WooProduct): Story {
