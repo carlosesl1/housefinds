@@ -111,7 +111,7 @@ export function DefaultProduct({
 
       {showDetails && (
         <section className="hf-section bg-[var(--hf-background)]">
-          <div className="mx-auto w-[min(calc(100%-2.5rem),1200px)] px-5 sm:px-0">
+          <div className="mx-auto max-w-[1200px] px-5 sm:px-6">
             <div className="grid gap-10 lg:grid-cols-[.7fr_1.3fr] lg:gap-16">
               <div>
                 <p className="hf-eyebrow">Product details</p>
