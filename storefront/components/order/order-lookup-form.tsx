@@ -9,7 +9,7 @@ type LookupResult = {
   status: string
   status_label?: string
   created_at?: string | null
-  estimated_delivery?: string | null
+  delivery_estimate?: string | null
   currency?: string
   total?: string
   items?: Array<{ name: string; quantity: number; total?: string; variation?: Array<{ label?: string; value?: string }> }>
@@ -31,13 +31,6 @@ function money(value?: string, currency = 'GBP') {
   } catch {
     return `£${numeric.toFixed(2)}`
   }
-}
-
-function dateLabel(value?: string | null) {
-  if (!value) return ''
-  const date = new Date(value.length === 10 ? `${value}T12:00:00` : value)
-  if (Number.isNaN(date.getTime())) return value
-  return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }).format(date)
 }
 
 function stageFor(result: LookupResult) {
@@ -63,7 +56,7 @@ function TrackingResult({ result }: { result: LookupResult }) {
           <h3 className="text-3xl font-semibold tracking-[-.045em]">{result.status_label || 'Order status'}</h3>
           {result.total && <strong className="text-lg">{money(result.total, result.currency)}</strong>}
         </div>
-        {result.estimated_delivery && <p className="mt-3 text-sm text-white/58">Current delivery estimate: around {dateLabel(result.estimated_delivery)}</p>}
+        {result.delivery_estimate && <p className="mt-3 text-sm text-white/58">Current delivery estimate: {result.delivery_estimate}. This is not a guaranteed arrival date.</p>}
       </div>
 
       <div className="p-6 sm:p-7">
