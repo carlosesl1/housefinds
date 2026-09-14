@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 import { getProducts } from '@/lib/woocommerce/client'
 import { searchStoreProducts } from '@/lib/storefront/search'
 import { dedupeStoreProducts } from '@/lib/storefront/catalog'
-import { displayProductName, displayProductTagline } from '@/lib/woocommerce/presentation'
+import { displayProductName, displayProductTagline, storefrontProductSlug } from '@/lib/woocommerce/presentation'
 import { formatProductPrice } from '@/lib/woocommerce/money'
 
 export async function GET(request: NextRequest) {
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   const results = searchStoreProducts(products, query).slice(0, 6).map((product) => ({
     id: product.id,
     name: displayProductName(product.name),
-    slug: product.slug,
+    slug: storefrontProductSlug(product),
     tagline: displayProductTagline(product),
     price: formatProductPrice(product),
     image: product.images?.[0]?.thumbnail || product.images?.[0]?.src || '',
