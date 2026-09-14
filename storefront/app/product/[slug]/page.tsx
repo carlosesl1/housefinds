@@ -1,5 +1,5 @@
-import { notFound } from 'next/navigation'
-import { getProductBySlug, getProductReviews, getProductVariations, getRelatedProducts } from '@/lib/woocommerce/client'
+import { notFound, permanentRedirect } from 'next/navigation'
+import { getProductByStorefrontSlug, getProductReviews, getProductVariations, getRelatedProducts } from '@/lib/woocommerce/client'
 import { DefaultProduct } from '@/components/product/default-product'
 import { ProductFAQ } from '@/components/product/product-faq'
 import { ProductReviews } from '@/components/product/product-reviews'
@@ -7,7 +7,7 @@ import { RelatedProducts } from '@/components/product/related-products'
 import { RecentlyViewed } from '@/components/product/recently-viewed'
 import { AuroraProjectorExperience } from '@/experiences/aurora-projector'
 import { experienceRegistry } from '@/experiences/registry'
-import { displayProductName, displayProductTagline } from '@/lib/woocommerce/presentation'
+import { displayProductName, displayProductTagline, storefrontProductSlug } from '@/lib/woocommerce/presentation'
 import { formatProductPrice } from '@/lib/woocommerce/money'
 
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://housefindsstore.com').replace(/\/$/, '')
@@ -42,12 +42,13 @@ const ukOfferPolicy = {
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const product = await getProductBySlug(slug)
+  const product = await getProductByStorefrontSlug(slug)
   if (!product) return {}
 
   const title = displayProductName(product.name)
   const description = displayProductTagline(product)
-  const canonical = `${SITE_URL}/product/${product.slug}`
+  const publicSlug = storefrontProductSlug(product)
+  const canonical = `${SITE_URL}/product/${publicSlug}`
 
   return {
     title,
@@ -65,8 +66,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const product = await getProductBySlug(slug)
+  const product = await getProductByStorefrontSlug(slug)
   if (!product) notFound()
+
+  const publicSlug = storefrontProductSlug(product)
+  if (slug !== publicSlug) permanentRedirect(`/product/${publicSlug}`)
 
   const [reviews, relatedProducts, variations] = await Promise.all([
     getProductReviews(product.id, 12).catch(() => []),
@@ -80,7 +84,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const description = displayProductTagline(product)
   const prices = product.prices
   const range = prices.price_range
-  const productUrl = `${SITE_URL}/product/${product.slug}`
+  const productUrl = `${SITE_URL}/product/${publicSlug}`
   const offer = range
     ? {
         '@type': 'AggregateOffer',
@@ -122,14 +126,14 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
   const recentlyViewedProduct = {
     id: product.id,
-    slug: product.slug,
+    slug: publicSlug,
     name,
     tagline: description,
     price: formatProductPrice(product),
     image: product.images?.[0]?.thumbnail || product.images?.[0]?.src || '',
   }
 
-  const experience = experienceRegistry[slug]
+  const experience = experienceRegistry[product.slug]
 
   return (
     <>
