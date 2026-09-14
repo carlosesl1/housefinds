@@ -1,9 +1,12 @@
 import Image from 'next/image'
 import type { WooProduct } from '@/lib/woocommerce/types'
 import { ProductPurchasePanel } from '@/components/product/product-purchase-panel'
+import { toPurchaseProduct, toPurchaseVariations } from '@/lib/storefront/client-product'
 
 export function AuroraProjectorExperience({ product, variations = [] }: { product: WooProduct; variations?: WooProduct[] }) {
   const image = product.images?.[0]
+  const purchaseProduct = toPurchaseProduct(product)
+  const purchaseVariations = toPurchaseVariations(variations)
 
   return (
     <main className="bg-[#080a12] text-white">
@@ -20,7 +23,7 @@ export function AuroraProjectorExperience({ product, variations = [] }: { produc
               A compact RGB projector made for atmosphere, late nights and spaces that deserve a different mood.
             </p>
             <div className="mt-9 max-w-xl rounded-[30px] border border-white/10 bg-white/[.045] p-6 backdrop-blur-xl">
-              <ProductPurchasePanel product={product} variations={variations} dark />
+              <ProductPurchasePanel product={purchaseProduct} variations={purchaseVariations} dark />
             </div>
           </div>
 
