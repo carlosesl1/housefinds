@@ -139,7 +139,7 @@ export function DefaultProduct({
       )}
 
       <ProductFAQ product={product} />
-      <ProductReviews product={{ average_rating: product.average_rating, review_count: product.review_count } as WooProduct} reviews={reviews} />
+      <ProductReviews summary={{ average_rating: product.average_rating, review_count: product.review_count }} reviews={reviews} />
       <RelatedProducts products={relatedProducts} />
     </main>
   )
