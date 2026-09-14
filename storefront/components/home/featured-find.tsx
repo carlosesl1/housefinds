@@ -14,44 +14,40 @@ export function FeaturedFind({ product }: { product?: WooProduct }) {
   const href = `/product/${storefrontProductSlug(product)}`
 
   return (
-    <section id="featured-find" className="bg-[#101511] px-6 py-6 text-white lg:px-10 lg:py-10">
-      <div className="mx-auto grid max-w-[1600px] overflow-hidden rounded-[40px] bg-[#171e19] lg:grid-cols-[1.06fr_.94fr]">
-        <div className="relative min-h-[560px] overflow-hidden lg:min-h-[760px]">
+    <section id="featured-find" className="bg-[#121714] px-4 py-5 text-white sm:px-6 lg:px-8 lg:py-8">
+      <div className="mx-auto grid max-w-[1480px] overflow-hidden rounded-[var(--hf-radius-lg)] border border-white/[.06] bg-[#19211b] lg:grid-cols-[1.08fr_.92fr]">
+        <div className="relative min-h-[480px] overflow-hidden lg:min-h-[650px]">
           {image ? (
-            <Image src={image.src} alt={image.alt || name} fill sizes="(max-width: 1024px) 100vw, 54vw" className="object-cover transition duration-700 hover:scale-[1.02]" />
+            <Image src={image.src} alt={image.alt || name} fill sizes="(max-width: 1024px) 100vw, 55vw" className="object-cover transition duration-700 hover:scale-[1.015]" />
           ) : (
             <div className="absolute inset-0 bg-[#26352c]" />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/5 to-transparent" />
-          <div className="absolute bottom-7 left-7 rounded-2xl border border-white/15 bg-black/25 px-4 py-3 text-sm backdrop-blur-xl lg:bottom-10 lg:left-10">
-            <span className="mr-2 inline-block size-2 rounded-full bg-[#a8c6b0]" />Selected by Housefinds
-          </div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/48 via-transparent to-transparent" />
+          <p className="absolute bottom-6 left-6 text-xs font-semibold uppercase tracking-[.18em] text-white/70 lg:bottom-8 lg:left-8">Selected by Housefinds</p>
         </div>
 
-        <div className="flex flex-col justify-center px-7 py-16 sm:px-10 lg:px-14 xl:px-20">
-          <div className="flex items-center gap-4 text-[11px] font-semibold uppercase tracking-[.3em] text-white/45">
-            Featured find <span className="h-px w-16 bg-white/20" />
-          </div>
-          <h2 className="mt-7 text-[clamp(3.5rem,5vw,6.5rem)] font-semibold leading-[.88] tracking-[-.065em]">
-            One useful find.<br /><span className="text-[#9bb6a3]">A better little routine.</span>
+        <div className="flex flex-col justify-center px-7 py-14 sm:px-10 lg:px-14 xl:px-16">
+          <p className="hf-eyebrow text-white/42">Featured find</p>
+          <h2 className="mt-5 text-[clamp(2.9rem,4.4vw,4.8rem)] font-semibold leading-[.94] tracking-[-.052em]">
+            One useful find. <span className="text-[#a4bba9]">A better little routine.</span>
           </h2>
-          <h3 className="mt-8 max-w-xl text-2xl font-semibold leading-tight tracking-[-.035em] text-white/92">{name}</h3>
-          <p className="mt-4 max-w-xl text-base leading-7 text-white/52">{copy}</p>
+          <h3 className="mt-7 max-w-xl text-2xl font-semibold leading-tight tracking-[-.03em] text-white/94">{name}</h3>
+          <p className="mt-3 max-w-xl text-base leading-7 text-white/52">{copy}</p>
 
-          <div className="mt-9 grid gap-4 sm:grid-cols-3">
+          <div className="mt-8 grid gap-3 border-y border-white/10 py-5 sm:grid-cols-3">
             {['Useful by design', 'Easy to understand', 'Made for everyday life'].map((item) => (
-              <div key={item} className="border-t border-white/12 pt-4">
-                <CheckIcon className="size-5 text-[#9bb6a3]" />
-                <p className="mt-3 text-sm font-medium text-white/75">{item}</p>
+              <div key={item} className="flex items-center gap-2 text-sm font-medium text-white/72">
+                <CheckIcon className="size-4 shrink-0 text-[#a8c6b0]" />
+                <span>{item}</span>
               </div>
             ))}
           </div>
 
-          <div className="mt-10 flex flex-wrap items-center gap-4">
-            <Link href={href} className="inline-flex h-14 items-center gap-3 rounded-full bg-[#dce8df] px-7 font-semibold text-[#172018] transition hover:-translate-y-0.5 hover:bg-white">
+          <div className="mt-8 flex flex-wrap items-center gap-5">
+            <Link href={href} className="inline-flex min-h-13 items-center gap-3 rounded-[var(--hf-radius-sm)] bg-[#dce8df] px-6 font-semibold text-[#172018] transition hover:bg-white">
               Explore this find <ArrowRightIcon className="size-4" />
             </Link>
-            <span className="text-2xl font-semibold">{formatProductPrice(product)}</span>
+            <span className="text-xl font-semibold">{formatProductPrice(product)}</span>
           </div>
         </div>
       </div>
