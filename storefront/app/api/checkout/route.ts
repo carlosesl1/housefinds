@@ -73,6 +73,39 @@ function exceedsLaunchLimit(cart: CartSnapshot | null) {
   return Number.isFinite(total) && total >= UK_LAUNCH_ORDER_LIMIT_GBP
 }
 
+function describeUpstreamError(text: string) {
+  try {
+    const parsed = JSON.parse(text) as { code?: unknown; message?: unknown; data?: { status?: unknown } }
+    const summary = {
+      code: typeof parsed.code === 'string' ? parsed.code : undefined,
+      message: typeof parsed.message === 'string' ? parsed.message : undefined,
+      status: parsed.data?.status,
+    }
+    return JSON.stringify(summary).slice(0, 800)
+  } catch {
+    return text.replace(/\s+/g, ' ').slice(0, 800)
+  }
+}
+
+function checkoutFailure(status: number, text: string) {
+  // Keep provider/plugin diagnostics in server logs only. Checkout responses are
+  // public browser traffic and must not expose WooCommerce, gateway internals,
+  // WordPress routes, stack traces or other operational details.
+  console.error('[housefinds-checkout] upstream checkout failed', {
+    status,
+    detail: describeUpstreamError(text),
+  })
+
+  const responseStatus = status >= 500 || status === 401 || status === 403 || status === 429 ? 502 : 422
+  return NextResponse.json(
+    {
+      code: 'housefinds_checkout_failed',
+      message: 'We could not complete checkout. Check your delivery and payment details, then try again. If the problem continues, contact Housefinds support before retrying payment.',
+    },
+    { status: responseStatus, headers: { 'Cache-Control': 'no-store' } },
+  )
+}
+
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies()
   let token = cookieStore.get(CART_COOKIE)?.value || ''
@@ -134,23 +167,15 @@ export async function POST(req: NextRequest) {
   })
 
   const text = await upstream.text()
-
-  if (!upstream.ok) {
-    let safeMessage = `WooCommerce checkout failed (${upstream.status})`
-    try {
-      const parsed = JSON.parse(text) as { code?: string; message?: string }
-      safeMessage = `${parsed.code || 'checkout_error'}: ${parsed.message || safeMessage}`
-    } catch {}
-    console.error('[housefinds-checkout]', safeMessage.slice(0, 500))
-  }
-
-  const response = new NextResponse(text, {
-    status: upstream.status,
-    headers: {
-      'Content-Type': upstream.headers.get('content-type') || 'application/json',
-      'Cache-Control': 'no-store',
-    },
-  })
+  const response = upstream.ok
+    ? new NextResponse(text, {
+        status: upstream.status,
+        headers: {
+          'Content-Type': upstream.headers.get('content-type') || 'application/json',
+          'Cache-Control': 'no-store',
+        },
+      })
+    : checkoutFailure(upstream.status, text)
 
   const fresh = getCartToken(upstream.headers) || token
   if (fresh) {
