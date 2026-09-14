@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { ArrowRightIcon, CheckIcon } from '@heroicons/react/24/outline'
 import type { WooProduct } from '@/lib/woocommerce/types'
 import { formatProductPrice } from '@/lib/woocommerce/money'
-import { displayProductName, displayProductTagline } from '@/lib/woocommerce/presentation'
+import { displayProductName, displayProductTagline, storefrontProductSlug } from '@/lib/woocommerce/presentation'
 
 export function FeaturedFind({ product }: { product?: WooProduct }) {
   if (!product) return null
@@ -11,6 +11,7 @@ export function FeaturedFind({ product }: { product?: WooProduct }) {
   const image = product.images?.[0]
   const name = displayProductName(product.name)
   const copy = displayProductTagline(product)
+  const href = `/product/${storefrontProductSlug(product)}`
 
   return (
     <section id="featured-find" className="bg-[#101511] px-6 py-6 text-white lg:px-10 lg:py-10">
@@ -47,7 +48,7 @@ export function FeaturedFind({ product }: { product?: WooProduct }) {
           </div>
 
           <div className="mt-10 flex flex-wrap items-center gap-4">
-            <Link href={`/product/${product.slug}`} className="inline-flex h-14 items-center gap-3 rounded-full bg-[#dce8df] px-7 font-semibold text-[#172018] transition hover:-translate-y-0.5 hover:bg-white">
+            <Link href={href} className="inline-flex h-14 items-center gap-3 rounded-full bg-[#dce8df] px-7 font-semibold text-[#172018] transition hover:-translate-y-0.5 hover:bg-white">
               Explore this find <ArrowRightIcon className="size-4" />
             </Link>
             <span className="text-2xl font-semibold">{formatProductPrice(product)}</span>
