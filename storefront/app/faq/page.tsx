@@ -13,7 +13,7 @@ const faqs = [
   },
   {
     q: 'How much is delivery?',
-    a: 'Standard UK delivery is free. Housefinds absorbs the supplier shipping cost rather than adding a standard delivery charge to your order.',
+    a: 'Standard UK delivery is free. There is no extra standard delivery charge added to your order at checkout.',
   },
   {
     q: 'How long does delivery take?',
@@ -21,11 +21,11 @@ const faqs = [
   },
   {
     q: 'How do I track my order?',
-    a: 'Open the Housefinds Track Order page. The same browser used at checkout can remember the most recent order securely. Once the full order lookup bridge is enabled, you can also use the order number and checkout email. Carrier details appear when shipment information is linked to the order.',
+    a: 'Open the Housefinds Track Order page. The same browser used at checkout can securely remember your most recent order, and you can also check an order using its order number and the billing email used at checkout. Carrier details appear when shipment information is linked to the order.',
   },
   {
     q: 'Can different items arrive separately?',
-    a: 'Yes. Housefinds works with fulfilment partners and different product locations, so a multi-item order can occasionally be split into separate parcels.',
+    a: 'Yes. Some multi-item orders may be packed and dispatched separately, so items can occasionally arrive in more than one parcel or on different days. Shipment information is shown when it becomes available.',
   },
   {
     q: 'Can I return an item?',
@@ -45,11 +45,11 @@ const faqs = [
   },
   {
     q: 'How are payments handled?',
-    a: 'The checkout uses WooCommerce for the order and Stripe for secure payment processing. The current Housefinds headless checkout accepts card payment through Stripe. Additional Stripe wallets will only be displayed once they are enabled and validated in this checkout.',
+    a: 'The current Housefinds checkout accepts credit and debit card payments securely through Stripe. Card details are processed by Stripe and are not stored by Housefinds.',
   },
   {
     q: 'Why do some products have several prices?',
-    a: 'A price range means the product has variants, sizes, colours, capacities or other options with different prices. Choose the required options on the product page to see the exact price and availability before adding the item to the cart.',
+    a: 'A price range means the product has options such as sizes, colours, capacities or other choices with different prices. Choose the required options on the product page to see the exact price and availability before adding the item to the cart.',
   },
 ]
 
