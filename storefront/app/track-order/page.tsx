@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { CheckCircleIcon, ClockIcon, EnvelopeIcon, TruckIcon } from '@heroicons/react/24/outline'
 import { OrderLookupForm } from '@/components/order/order-lookup-form'
-import { estimatedDeliveryDate, formatUKDate, getLastStoreOrder, orderStatusCopy } from '@/lib/woocommerce/order-session'
+import { getLastStoreOrder, orderStatusCopy } from '@/lib/woocommerce/order-session'
 
 export const dynamic = 'force-dynamic'
 export const metadata = {
@@ -14,8 +14,8 @@ export default async function TrackOrderPage() {
   const { session, order } = await getLastStoreOrder()
   const status = order ? orderStatusCopy(order.status) : null
   const orderNumber = order ? order.order_number || session?.order_number || String(order.id) : null
-  const estimate = session ? estimatedDeliveryDate(session.created_at) : null
   const activePreparing = Boolean(order && ['processing', 'on-hold', 'completed'].includes(order.status))
+  const showDeliveryEstimate = Boolean(order && !['failed', 'cancelled', 'refunded'].includes(order.status))
 
   return (
     <main className="bg-[#fbfaf7] px-5 py-12 lg:px-8 lg:py-18">
@@ -34,13 +34,13 @@ export default async function TrackOrderPage() {
                 <h2 className="mt-2 text-4xl font-semibold tracking-[-.05em]">{status.label}</h2>
                 <p className="mt-3 max-w-2xl text-sm leading-6 text-white/55">{status.detail}</p>
               </div>
-              {estimate && !['failed', 'cancelled', 'refunded'].includes(order.status) && <div className="shrink-0 rounded-2xl bg-white/[.07] px-5 py-4"><p className="text-[10px] font-semibold uppercase tracking-[.16em] text-white/35">Current estimate</p><p className="mt-1 font-semibold">Around {formatUKDate(estimate)}</p></div>}
+              {showDeliveryEstimate && <div className="shrink-0 rounded-2xl bg-white/[.07] px-5 py-4"><p className="text-[10px] font-semibold uppercase tracking-[.16em] text-white/35">Current estimate</p><p className="mt-1 font-semibold">Around 14 days</p><p className="mt-1 text-[11px] leading-4 text-white/40">Not a guaranteed arrival date.</p></div>}
             </div>
 
             <div className="p-7 sm:p-9">
               <div className="grid gap-3 md:grid-cols-3">
                 <div className="rounded-2xl border border-[#b8cdbf] bg-[#edf3ee] p-5"><span className="grid size-9 place-items-center rounded-full bg-[#355f4a] text-white"><CheckCircleIcon className="size-5" /></span><p className="mt-4 font-semibold">Order received</p><p className="mt-1 text-xs leading-5 text-black/42">Your order has been created in Housefinds.</p></div>
-                <div className={`rounded-2xl border p-5 ${activePreparing ? 'border-[#b8cdbf] bg-[#edf3ee]' : 'border-black/[.07] bg-[#faf9f6]'}`}><span className={`grid size-9 place-items-center rounded-full ${activePreparing ? 'bg-[#355f4a] text-white' : 'bg-black/[.05] text-black/30'}`}>{activePreparing ? <CheckCircleIcon className="size-5" /> : <ClockIcon className="size-5" />}</span><p className="mt-4 font-semibold">Preparing your order</p><p className="mt-1 text-xs leading-5 text-black/42">Payment and fulfilment are confirmed before dispatch.</p></div>
+                <div className={`rounded-2xl border p-5 ${activePreparing ? 'border-[#b8cdbf] bg-[#edf3ee]' : 'border-black/[.07] bg-[#faf9f6]'}`}><span className={`grid size-9 place-items-center rounded-full ${activePreparing ? 'bg-[#355f4a] text-white' : 'bg-black/[.05] text-black/30'}`}>{activePreparing ? <CheckCircleIcon className="size-5" /> : <ClockIcon className="size-5" />}</span><p className="mt-4 font-semibold">Preparing your order</p><p className="mt-1 text-xs leading-5 text-black/42">Payment and order details are confirmed before dispatch.</p></div>
                 <div className="rounded-2xl border border-black/[.07] bg-[#faf9f6] p-5"><span className="grid size-9 place-items-center rounded-full bg-black/[.05] text-black/30"><TruckIcon className="size-5" /></span><p className="mt-4 font-semibold">Shipment tracking</p><p className="mt-1 text-xs leading-5 text-black/42">Carrier tracking will appear once it is linked to the order.</p></div>
               </div>
 
