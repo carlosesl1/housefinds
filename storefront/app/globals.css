@@ -211,6 +211,11 @@ summary::-webkit-details-marker { display: none; }
   border-radius: var(--hf-radius-pill);
 }
 
+.hf-purchase-shell #purchase-panel > div.grid > div.flex.h-14 {
+  overflow: hidden;
+  border-radius: var(--hf-radius-pill);
+}
+
 @media (max-width: 640px) {
   :root { --hf-section-y: 4.5rem; }
   .hf-container { width: min(calc(100% - 2rem), var(--hf-container)); }
