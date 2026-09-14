@@ -2,7 +2,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowRightIcon } from '@heroicons/react/24/outline'
 import type { WooProduct } from '@/lib/woocommerce/types'
-import { displayProductName, findProductByKeywords } from '@/lib/woocommerce/presentation'
+import { displayProductName, findProductByKeywords, storefrontProductSlug } from '@/lib/woocommerce/presentation'
 
 const picks = [
   {
@@ -50,9 +50,10 @@ export function ProblemSolvingPicks({ products }: { products: WooProduct[] }) {
           {resolved.map(({ product, eyebrow, problem, solution }) => {
             const image = product.images?.[0]
             const name = displayProductName(product.name)
+            const href = `/product/${storefrontProductSlug(product)}`
 
             return (
-              <Link key={`${eyebrow}-${product.id}`} href={`/product/${product.slug}`} className="group overflow-hidden rounded-[34px] bg-white shadow-[0_14px_55px_rgba(33,45,37,.05)]">
+              <Link key={`${eyebrow}-${product.id}`} href={href} className="group overflow-hidden rounded-[34px] bg-white shadow-[0_14px_55px_rgba(33,45,37,.05)]">
                 <div className="relative aspect-[4/3] overflow-hidden bg-[#e8e7e1]">
                   {image && (
                     <Image src={image.src} alt={image.alt || name} fill sizes="(max-width:1024px) 100vw, 33vw" className="object-cover transition duration-700 group-hover:scale-[1.04]" />
