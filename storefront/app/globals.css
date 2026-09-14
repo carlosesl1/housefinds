@@ -14,6 +14,7 @@
   --hf-brand: #355f4a;
   --hf-brand-hover: #294b3a;
   --hf-brand-muted: #557562;
+  --hf-brand-soft: #e6eee8;
   --hf-border: rgba(17, 23, 32, 0.08);
   --hf-border-strong: rgba(17, 23, 32, 0.13);
 
@@ -24,6 +25,7 @@
 
   --hf-shadow-soft: 0 16px 48px rgba(30, 42, 34, 0.055);
   --hf-shadow-float: 0 24px 72px rgba(24, 35, 28, 0.13);
+  --hf-shadow-control: 0 8px 22px rgba(24, 35, 28, 0.08);
 
   --hf-container: 1480px;
   --hf-section-y: clamp(4.75rem, 8vw, 7rem);
@@ -95,38 +97,97 @@ summary::-webkit-details-marker { display: none; }
   line-height: 1.75;
 }
 
+/* Interaction system
+   Pills are the Housefinds signature for actions; circular bubbles are reserved
+   for compact icon-only controls such as gallery arrows and card affordances. */
 .hf-button-primary,
-.hf-button-secondary {
+.hf-button-secondary,
+.hf-button-tertiary {
   display: inline-flex;
   min-height: 52px;
   align-items: center;
   justify-content: center;
   gap: 0.65rem;
-  border-radius: var(--hf-radius-sm);
-  padding: 0.8rem 1.3rem;
+  border-radius: var(--hf-radius-pill);
+  padding: 0.78rem 1.4rem;
   font-weight: 700;
-  transition: transform 180ms ease, background-color 180ms ease, border-color 180ms ease;
+  line-height: 1;
+  transition: transform 180ms ease, background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease, color 180ms ease;
 }
 
 .hf-button-primary {
+  border: 1px solid transparent;
   background: var(--hf-brand);
   color: #fff;
+  box-shadow: 0 8px 20px rgba(53, 95, 74, 0.12);
 }
 
 .hf-button-primary:hover {
   background: var(--hf-brand-hover);
+  box-shadow: 0 11px 24px rgba(53, 95, 74, 0.17);
   transform: translateY(-1px);
 }
 
 .hf-button-secondary {
   border: 1px solid var(--hf-border-strong);
-  background: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.82);
   color: var(--hf-ink);
 }
 
 .hf-button-secondary:hover {
   border-color: rgba(17, 23, 32, 0.2);
   background: #fff;
+  transform: translateY(-1px);
+}
+
+.hf-button-tertiary {
+  min-height: 40px;
+  border: 1px solid color-mix(in srgb, var(--hf-brand) 14%, transparent);
+  background: color-mix(in srgb, var(--hf-brand-soft) 82%, white);
+  padding: 0.62rem 1rem;
+  color: var(--hf-brand);
+  font-size: 0.875rem;
+  box-shadow: 0 6px 16px rgba(53, 95, 74, 0.055);
+}
+
+.hf-button-tertiary:hover {
+  border-color: color-mix(in srgb, var(--hf-brand) 24%, transparent);
+  background: #fff;
+  box-shadow: var(--hf-shadow-control);
+  transform: translateY(-1px);
+}
+
+.hf-button-sm {
+  min-height: 40px;
+  padding: 0.62rem 1rem;
+  font-size: 0.875rem;
+}
+
+.hf-icon-button {
+  display: inline-grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  border-radius: var(--hf-radius-pill);
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--hf-ink);
+  box-shadow: var(--hf-shadow-control);
+  backdrop-filter: blur(12px);
+  transition: transform 180ms ease, background-color 180ms ease, box-shadow 180ms ease;
+}
+
+.hf-icon-button:hover {
+  background: #fff;
+  box-shadow: 0 11px 26px rgba(24, 35, 28, 0.13);
+  transform: translateY(-1px);
+}
+
+.hf-option-pill {
+  min-height: 44px;
+  border-radius: var(--hf-radius-pill);
+  padding-inline: 1rem;
 }
 
 .hf-card {
@@ -138,6 +199,16 @@ summary::-webkit-details-marker { display: none; }
 
 .hf-divider {
   border-color: var(--hf-border);
+}
+
+/* PDP controls inherit the same interaction grammar without changing commerce logic. */
+.hf-purchase-shell #purchase-options button {
+  border-radius: var(--hf-radius-pill);
+}
+
+.hf-purchase-shell #purchase-panel > .grid button,
+.hf-purchase-shell #purchase-panel > .fixed button {
+  border-radius: var(--hf-radius-pill);
 }
 
 @media (max-width: 640px) {
