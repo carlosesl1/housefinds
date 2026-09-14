@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Housefinds Order Bridge
  * Description: Exposes a minimal, privacy-conscious order tracking endpoint for the Housefinds headless storefront.
- * Version: 0.2.0
+ * Version: 0.3.0
  * Author: Housefinds
  */
 
@@ -95,6 +95,39 @@ final class Housefinds_Order_Bridge {
         return null;
     }
 
+    private static function is_operational_meta_label($label) {
+        $label = strtolower(wp_strip_all_tags((string) $label));
+        $label = preg_replace('/[^a-z0-9]+/', ' ', $label);
+        $label = trim((string) $label);
+
+        if (!$label) {
+            return false;
+        }
+
+        $blocked = [
+            'ships from',
+            'ship from',
+            'dispatch from',
+            'warehouse',
+            'warehouse location',
+            'supplier',
+            'vendor',
+            'dsers',
+            'aliexpress',
+            'fulfilment',
+            'fulfillment',
+            'origin',
+        ];
+
+        foreach ($blocked as $needle) {
+            if (strpos($label, $needle) !== false) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static function tracking_items($order) {
         $result = [];
         $items = $order->get_meta('_wc_shipment_tracking_items', true);
@@ -168,11 +201,6 @@ final class Housefinds_Order_Bridge {
         }
 
         $created = $order->get_date_created();
-        $estimated = $created ? clone $created : null;
-        if ($estimated) {
-            $estimated->modify('+14 days');
-        }
-
         $line_items = [];
         foreach ($order->get_items('line_item') as $item) {
             $product = $item->get_product();
@@ -180,13 +208,23 @@ final class Housefinds_Order_Bridge {
             if ($product && $product->get_image_id()) {
                 $image = wp_get_attachment_image_url($product->get_image_id(), 'woocommerce_thumbnail');
             }
+
             $variation = [];
-            foreach ($item->get_formatted_meta_data('') as $meta) {
+            // WooCommerce hides internal underscore-prefixed metadata by default.
+            // Apply an additional allow-boundary so fulfilment/source attributes
+            // never become customer-facing order-tracking details.
+            foreach ($item->get_formatted_meta_data() as $meta) {
+                $label = wp_strip_all_tags((string) $meta->display_key);
+                $value = wp_strip_all_tags((string) $meta->display_value);
+                if (!$value || self::is_operational_meta_label($label)) {
+                    continue;
+                }
                 $variation[] = [
-                    'label' => wp_strip_all_tags((string) $meta->display_key),
-                    'value' => wp_strip_all_tags((string) $meta->display_value),
+                    'label' => $label,
+                    'value' => $value,
                 ];
             }
+
             $line_items[] = [
                 'name' => wp_strip_all_tags((string) $item->get_name()),
                 'quantity' => (int) $item->get_quantity(),
@@ -204,7 +242,7 @@ final class Housefinds_Order_Bridge {
             'status' => (string) $order->get_status(),
             'status_label' => wc_get_order_status_name($order->get_status()),
             'created_at' => $created ? $created->date(DATE_ATOM) : null,
-            'estimated_delivery' => $estimated ? $estimated->date('Y-m-d') : null,
+            'delivery_estimate' => 'around 14 days',
             'currency' => (string) $order->get_currency(),
             'total' => (string) wc_format_decimal($order->get_total(), wc_get_price_decimals()),
             'items' => $line_items,
