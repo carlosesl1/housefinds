@@ -9,8 +9,7 @@ import { AuroraProjectorExperience } from '@/experiences/aurora-projector'
 import { experienceRegistry } from '@/experiences/registry'
 import { displayProductName, displayProductTagline, storefrontProductSlug } from '@/lib/woocommerce/presentation'
 import { formatProductPrice } from '@/lib/woocommerce/money'
-
-const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://housefindsstore.com').replace(/\/$/, '')
+import { SITE_URL } from '@/lib/storefront/site-url'
 
 function decimalPrice(amount: string, minorUnit: number) {
   return (Number(amount || 0) / Math.pow(10, minorUnit)).toFixed(minorUnit)
