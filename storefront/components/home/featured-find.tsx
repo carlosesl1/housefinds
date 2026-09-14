@@ -47,7 +47,7 @@ export function FeaturedFind({ product }: { product?: WooProduct }) {
           </div>
 
           <div className="mt-10 flex flex-wrap items-center gap-4">
-            <Link href={`/produto/${product.slug}`} className="inline-flex h-14 items-center gap-3 rounded-full bg-[#dce8df] px-7 font-semibold text-[#172018] transition hover:-translate-y-0.5 hover:bg-white">
+            <Link href={`/product/${product.slug}`} className="inline-flex h-14 items-center gap-3 rounded-full bg-[#dce8df] px-7 font-semibold text-[#172018] transition hover:-translate-y-0.5 hover:bg-white">
               Explore this find <ArrowRightIcon className="size-4" />
             </Link>
             <span className="text-2xl font-semibold">{formatProductPrice(product)}</span>
