@@ -58,7 +58,7 @@ export function RecentlyViewed({ product }: { product: RecentlyViewedProductInpu
 
         <div className="mt-7 grid grid-cols-2 gap-3 lg:grid-cols-4">
           {items.map((item) => (
-            <Link key={item.id} href={`/produto/${item.slug}`} className="group grid grid-cols-[74px_1fr] gap-3 rounded-[22px] bg-white p-3 shadow-[0_10px_35px_rgba(30,40,34,.035)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_45px_rgba(30,40,34,.07)]">
+            <Link key={item.id} href={`/product/${item.slug}`} className="group grid grid-cols-[74px_1fr] gap-3 rounded-[22px] bg-white p-3 shadow-[0_10px_35px_rgba(30,40,34,.035)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_45px_rgba(30,40,34,.07)]">
               <div className="relative aspect-square overflow-hidden rounded-2xl bg-[#ecebe5]">
                 {item.image && <Image src={item.image} alt="" fill sizes="74px" className="object-cover" />}
               </div>

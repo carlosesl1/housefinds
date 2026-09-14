@@ -7,7 +7,7 @@ import { ProductCardMedia } from '@/components/product/product-card-media'
 export function ProductCard({ product }: { product: WooProduct }) {
   const name = displayProductName(product.name)
   const tagline = displayProductTagline(product)
-  const href = `/produto/${product.slug}`
+  const href = `/product/${product.slug}`
 
   return (
     <article className="group min-w-0">

@@ -153,7 +153,7 @@ export function SiteHeader() {
                         <div className="px-5 pb-2 pt-4 text-[10px] font-semibold uppercase tracking-[.22em] text-black/35">Suggested products</div>
                         <div className="divide-y divide-black/[.05]">
                           {suggestions.map((suggestion) => (
-                            <Link key={suggestion.id} href={`/produto/${suggestion.slug}`} onClick={closeSearch} className="grid grid-cols-[58px_1fr_auto] items-center gap-3 px-4 py-3 transition hover:bg-[#f5f6f2]">
+                            <Link key={suggestion.id} href={`/product/${suggestion.slug}`} onClick={closeSearch} className="grid grid-cols-[58px_1fr_auto] items-center gap-3 px-4 py-3 transition hover:bg-[#f5f6f2]">
                               <div className="relative aspect-square overflow-hidden rounded-xl bg-[#efeee8]">{suggestion.image && <Image src={suggestion.image} alt="" fill sizes="58px" className="object-cover" />}</div>
                               <div className="min-w-0"><p className="truncate text-sm font-semibold text-[#172018]">{suggestion.name}</p><p className="mt-0.5 truncate text-xs text-black/40">{suggestion.tagline}</p></div>
                               <span className="text-sm font-semibold text-[#172018]">{suggestion.price}</span>

@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next'
 import { getProducts } from '@/lib/woocommerce/client'
 import { dedupeStoreProducts } from '@/lib/storefront/catalog'
 
-const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://housefinds-storefront.vercel.app').replace(/\/$/, '')
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://housefindsstore.com').replace(/\/$/, '')
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPages: MetadataRoute.Sitemap = [
@@ -20,7 +20,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     return [
       ...staticPages,
       ...products.map((product) => ({
-        url: `${SITE_URL}/produto/${product.slug}`,
+        url: `${SITE_URL}/product/${product.slug}`,
         changeFrequency: 'weekly' as const,
         priority: 0.8,
       })),

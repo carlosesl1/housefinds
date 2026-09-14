@@ -108,7 +108,7 @@ export function CartDrawer() {
             {discount && <div className="flex items-center justify-between text-[#456b55]"><span>Discount</span><span>−{discount}</span></div>}
             <div className="flex items-center justify-between"><span className="text-black/55">Standard UK delivery</span><strong className="text-[#355f4a]">FREE</strong></div>
           </div>
-          <p className="mt-2 text-xs leading-5 text-black/38">Current UK delivery estimate: around 14 days. Any applicable tax will be shown in the final checkout total.</p>
+          <p className="mt-2 text-xs leading-5 text-black/38">Prices are shown in GBP. Review the final order total before payment.</p>
 
           {exceedsLaunchLimit && (
             <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-950">
