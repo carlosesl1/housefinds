@@ -30,7 +30,7 @@ export function DefaultProduct({
   const purchaseVariations = toPurchaseVariations(variations)
   const storefrontImages = toStorefrontImages(product.images || []).slice(0, 12)
   const storyImages = storefrontImages.length > 1 ? storefrontImages.slice(1, 4) : storefrontImages.slice(0, 1)
-  const showDetails = visibleAttributes.length >= 2
+  const showDetails = visibleAttributes.length >= 1
 
   return (
     <main className="bg-[var(--hf-background)]">
