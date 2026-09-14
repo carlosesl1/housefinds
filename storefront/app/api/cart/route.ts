@@ -36,6 +36,19 @@ function normalize(value: string | null | undefined) {
   return (value || '').trim().toLowerCase()
 }
 
+function describeUpstreamError(text: string) {
+  try {
+    const parsed = JSON.parse(text) as { code?: unknown; message?: unknown; data?: { status?: unknown } }
+    return {
+      code: typeof parsed.code === 'string' ? parsed.code : undefined,
+      message: typeof parsed.message === 'string' ? parsed.message : undefined,
+      status: parsed.data?.status,
+    }
+  } catch {
+    return { message: text.replace(/\s+/g, ' ').slice(0, 300) }
+  }
+}
+
 async function getStoreProduct(id: number): Promise<StoreProduct | null> {
   const response = await fetch(`${STORE_API}/products/${id}`, {
     headers: { Accept: 'application/json' },
@@ -191,11 +204,22 @@ async function createCartToken() {
 
   if (!initial.ok) {
     const body = await initial.text()
-    console.error('[housefinds-cart] cart initialization failed', initial.status, body.replace(/\s+/g, ' ').slice(0, 600))
+    console.error('[housefinds-cart] cart initialization failed', {
+      status: initial.status,
+      detail: describeUpstreamError(body),
+    })
     return ''
   }
 
   return getCartToken(initial.headers)
+}
+
+async function refreshCart(token: string) {
+  return fetch(CART_URL, {
+    method: 'GET',
+    headers: { Accept: 'application/json', 'Cart-Token': token },
+    cache: 'no-store',
+  })
 }
 
 async function proxy(req: NextRequest, method: 'GET' | 'POST') {
@@ -238,17 +262,47 @@ async function proxy(req: NextRequest, method: 'GET' | 'POST') {
   const upstreamText = await upstream.text()
   let text: string
   let status: number
+  let tokenHeaders = upstream.headers
 
   if (upstream.ok) {
     text = sanitizeCartResponse(upstreamText)
     status = upstream.status
+  } else if (upstream.status === 409 && token && (action === 'remove-item' || action === 'update-item')) {
+    // A stale browser can ask to mutate an item that WooCommerce already
+    // removed. Treat that as a sync event: fetch the authoritative cart and
+    // return it instead of trapping the customer behind a recoverable error.
+    console.warn('[housefinds-cart] stale cart item; refreshing cart', {
+      action,
+      detail: describeUpstreamError(upstreamText),
+    })
+    const refreshed = await refreshCart(token)
+    const refreshedText = await refreshed.text()
+    if (refreshed.ok) {
+      text = sanitizeCartResponse(refreshedText)
+      status = 200
+      tokenHeaders = refreshed.headers
+    } else {
+      console.error('[housefinds-cart] cart refresh failed', {
+        status: refreshed.status,
+        detail: describeUpstreamError(refreshedText),
+      })
+      const safeError = cartErrorPayload(action, refreshed.status)
+      text = safeError.body
+      status = safeError.status
+      tokenHeaders = refreshed.headers
+    }
   } else {
-    console.error('[housefinds-cart] upstream cart request failed', {
+    const diagnostic = {
       action: action || 'get-cart',
       status: upstream.status,
-      detail: upstreamText.replace(/\s+/g, ' ').slice(0, 800),
+      detail: describeUpstreamError(upstreamText),
       hadToken: Boolean(token),
-    })
+    }
+    if (upstream.status >= 500 || upstream.status === 401 || upstream.status === 403 || upstream.status === 429) {
+      console.error('[housefinds-cart] upstream cart request failed', diagnostic)
+    } else {
+      console.warn('[housefinds-cart] cart request rejected', diagnostic)
+    }
     const safeError = cartErrorPayload(action, upstream.status)
     text = safeError.body
     status = safeError.status
@@ -262,7 +316,7 @@ async function proxy(req: NextRequest, method: 'GET' | 'POST') {
     },
   })
 
-  const fresh = getCartToken(upstream.headers) || token
+  const fresh = getCartToken(tokenHeaders) || token
   if (fresh) {
     response.cookies.set(CART_COOKIE, fresh, {
       httpOnly: true,
