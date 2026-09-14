@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { getProducts } from '@/lib/woocommerce/client'
 import { dedupeStoreProducts } from '@/lib/storefront/catalog'
+import { storefrontProductSlug } from '@/lib/woocommerce/presentation'
 
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://housefindsstore.com').replace(/\/$/, '')
 
@@ -20,7 +21,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     return [
       ...staticPages,
       ...products.map((product) => ({
-        url: `${SITE_URL}/product/${product.slug}`,
+        url: `${SITE_URL}/product/${storefrontProductSlug(product)}`,
         changeFrequency: 'weekly' as const,
         priority: 0.8,
       })),
