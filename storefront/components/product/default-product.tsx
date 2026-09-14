@@ -8,6 +8,7 @@ import { ProductReviews } from '@/components/product/product-reviews'
 import { RelatedProducts } from '@/components/product/related-products'
 import { displayProductName, displayProductTagline, getProductStory } from '@/lib/woocommerce/presentation'
 import { isOperationalAttribute, storefrontAttributeName, storefrontTermName } from '@/lib/storefront/catalog'
+import { toPurchaseProduct, toPurchaseVariations } from '@/lib/storefront/client-product'
 
 export function DefaultProduct({
   product,
@@ -24,6 +25,8 @@ export function DefaultProduct({
   const tagline = displayProductTagline(product)
   const story = getProductStory(product)
   const visibleAttributes = product.attributes.filter((attribute) => attribute.terms.length > 0 && !isOperationalAttribute(attribute))
+  const purchaseProduct = toPurchaseProduct(product)
+  const purchaseVariations = toPurchaseVariations(variations)
 
   return (
     <main className="bg-[#fbfaf7]">
@@ -54,7 +57,7 @@ export function DefaultProduct({
               </a>
             )}
 
-            <div className="mt-8 rounded-[30px] border border-black/[.07] bg-white p-6 shadow-[0_18px_70px_rgba(34,45,37,.045)] sm:p-7"><ProductPurchasePanel product={product} variations={variations} /></div>
+            <div className="mt-8 rounded-[30px] border border-black/[.07] bg-white p-6 shadow-[0_18px_70px_rgba(34,45,37,.045)] sm:p-7"><ProductPurchasePanel product={purchaseProduct} variations={purchaseVariations} /></div>
 
             <div className="mt-5 grid gap-3 sm:grid-cols-3 xl:grid-cols-1 2xl:grid-cols-3">
               <Link href="/shipping" className="rounded-2xl bg-[#f0f2ed] p-4 transition hover:bg-[#e8ece6]">
