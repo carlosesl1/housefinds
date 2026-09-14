@@ -96,7 +96,7 @@ export function DefaultProduct({
         <section className="px-5 py-24 lg:px-8 lg:py-28">
           <div className="mx-auto max-w-[1200px]">
             <div className="grid gap-10 lg:grid-cols-[.7fr_1.3fr]">
-              <div><p className="text-[11px] font-semibold uppercase tracking-[.28em] text-black/40">Product details</p><h2 className="mt-4 text-4xl font-semibold tracking-[-.05em]">The useful bits, clearly.</h2><p className="mt-4 max-w-sm text-sm leading-6 text-black/45">Customer-facing options and specifications from the live product catalog, cleaned up so operational fulfilment metadata does not get in the way.</p></div>
+              <div><p className="text-[11px] font-semibold uppercase tracking-[.28em] text-black/40">Product details</p><h2 className="mt-4 text-4xl font-semibold tracking-[-.05em]">The useful bits, clearly.</h2><p className="mt-4 max-w-sm text-sm leading-6 text-black/45">The key options and specifications to check before choosing the version that suits you.</p></div>
               <dl className="divide-y divide-black/[.07] border-y border-black/[.07]">
                 {visibleAttributes.map((attribute) => (
                   <div key={attribute.name} className="grid gap-2 py-5 sm:grid-cols-[180px_1fr]"><dt className="text-sm font-semibold text-black/45">{storefrontAttributeName(attribute)}</dt><dd className="text-sm leading-6 text-black/68">{attribute.terms.map((term) => storefrontTermName(term)).join(', ')}</dd></div>
