@@ -91,7 +91,6 @@ function compoundTerms(attribute: WooProductAttribute): ParsedCompoundTerm[] | n
   const capacityValues = new Set(terms.map((entry) => entry.capacity))
   const colourValues = new Set(terms.map((entry) => entry.colour))
 
-  // Only decompose supplier values when they clearly contain several choices.
   if (packValues.size < 2 || capacityValues.size < 2 || colourValues.size < 2) return null
   return terms
 }
@@ -229,10 +228,10 @@ export function ProductPurchasePanel({ product, variations = [], dark = false }:
   }
 
   return (
-    <div className="space-y-7" id="purchase-panel">
+    <div className="space-y-6" id="purchase-panel">
       <div aria-live="polite">
-        <p className={`text-sm font-medium ${labelClass}`}>{selectedVariation ? 'Selected price' : 'Price'}</p>
-        <p className="mt-1 text-3xl font-semibold tracking-[-.04em]">{displayPrice}</p>
+        <p className={`text-xs font-semibold uppercase tracking-[.12em] ${labelClass}`}>{selectedVariation ? 'Selected price' : 'Price'}</p>
+        <p className="mt-1 text-[2rem] font-semibold tracking-[-.035em]">{displayPrice}</p>
         {allSelected && variations.length > 0 && !selectedVariation && <p className="mt-2 text-xs font-medium text-amber-700">Select another combination to see exact availability.</p>}
         {selectedVariation && !selectedVariation.is_in_stock && <p className="mt-2 text-xs font-semibold text-rose-700">This option is currently out of stock.</p>}
         {selectedVariation?.is_in_stock && <p className={`mt-2 text-xs font-medium ${dark ? 'text-[#a8c6b0]' : 'text-[#456b55]'}`}>Selected option is in stock.</p>}
@@ -240,7 +239,7 @@ export function ProductPurchasePanel({ product, variations = [], dark = false }:
       </div>
 
       {variableAttributes.length > 0 && (
-        <div id="purchase-options" className="space-y-6 scroll-mt-32">
+        <div id="purchase-options" className="space-y-6 scroll-mt-32 border-t border-black/[.07] pt-5">
           {variableAttributes.map((attribute) => {
             const compound = compoundConfigs.get(attribute.name)
 
@@ -251,7 +250,7 @@ export function ProductPurchasePanel({ product, variations = [], dark = false }:
                 <div key={attribute.name} className="space-y-5">
                   <div className="flex items-center justify-between gap-4">
                     <p className={`text-sm font-semibold ${dark ? 'text-white/86' : 'text-[#172018]'}`}>Choose your option</p>
-                    {!selections[attribute.name] && <span className={`text-xs ${labelClass}`}>3 quick choices</span>}
+                    {!selections[attribute.name] && <span className={`text-xs ${labelClass}`}>3 choices</span>}
                   </div>
 
                   {dimensions.map((dimension) => {
@@ -259,7 +258,7 @@ export function ProductPurchasePanel({ product, variations = [], dark = false }:
                     return (
                       <div key={`${attribute.name}-${dimension}`}>
                         <div className="flex items-center justify-between gap-4">
-                          <span className={`text-xs font-semibold uppercase tracking-[.13em] ${labelClass}`}>{dimensionLabel(dimension)}</span>
+                          <span className={`text-xs font-semibold uppercase tracking-[.11em] ${labelClass}`}>{dimensionLabel(dimension)}</span>
                           {current[dimension] && <span className={`text-xs ${labelClass}`}>{dimensionValueLabel(dimension, current[dimension]!)}</span>}
                         </div>
                         <div className="mt-2.5 flex flex-wrap gap-2.5">
@@ -273,7 +272,7 @@ export function ProductPurchasePanel({ product, variations = [], dark = false }:
                                 disabled={!available}
                                 aria-pressed={active}
                                 onClick={() => chooseCompoundOption(attribute, dimension, value)}
-                                className={`relative min-h-11 rounded-full border px-4 py-2 text-sm font-medium transition ${active ? optionActive : optionIdle} ${!available ? 'cursor-not-allowed opacity-35 line-through' : ''}`}
+                                className={`relative min-h-11 rounded-[var(--hf-radius-sm)] border px-4 py-2 text-sm font-medium transition ${active ? optionActive : optionIdle} ${!available ? 'cursor-not-allowed opacity-35 line-through' : ''}`}
                               >
                                 {active && <CheckIcon className="mr-1.5 inline size-4" />}{dimensionValueLabel(dimension, value)}
                               </button>
@@ -298,7 +297,7 @@ export function ProductPurchasePanel({ product, variations = [], dark = false }:
                     const active = selections[attribute.name] === term.slug
                     const available = variationSupportsSelection(product, selections, { name: attribute.name, term })
                     return (
-                      <button key={`${attribute.name}-${term.slug}`} type="button" disabled={!available} aria-pressed={active} onClick={() => setSelections((currentSelections) => ({ ...currentSelections, [attribute.name]: term.slug }))} className={`relative min-h-11 rounded-full border px-4 py-2 text-sm font-medium transition ${active ? optionActive : optionIdle} ${!available ? 'cursor-not-allowed opacity-35 line-through' : ''}`}>
+                      <button key={`${attribute.name}-${term.slug}`} type="button" disabled={!available} aria-pressed={active} onClick={() => setSelections((currentSelections) => ({ ...currentSelections, [attribute.name]: term.slug }))} className={`relative min-h-11 rounded-[var(--hf-radius-sm)] border px-4 py-2 text-sm font-medium transition ${active ? optionActive : optionIdle} ${!available ? 'cursor-not-allowed opacity-35 line-through' : ''}`}>
                         {active && <CheckIcon className="mr-1.5 inline size-4" />}{storefrontTermName(term)}
                       </button>
                     )
@@ -310,31 +309,30 @@ export function ProductPurchasePanel({ product, variations = [], dark = false }:
         </div>
       )}
 
-      {allSelected && !selectionIsValid && <p className="rounded-2xl border border-amber-300/60 bg-amber-50 px-4 py-3 text-sm text-amber-950">This combination is currently unavailable. Try another option.</p>}
+      {allSelected && !selectionIsValid && <p className="rounded-[var(--hf-radius-sm)] border border-amber-300/60 bg-amber-50 px-4 py-3 text-sm text-amber-950">This combination is currently unavailable. Try another option.</p>}
 
       <div className="grid gap-3 sm:grid-cols-[auto_1fr]">
-        <div className={`flex h-14 w-fit items-center rounded-full border ${dark ? 'border-white/15 bg-white/[.05]' : 'border-black/10 bg-white'}`}>
+        <div className={`flex h-14 w-fit items-center rounded-[var(--hf-radius-sm)] border ${dark ? 'border-white/15 bg-white/[.05]' : 'border-black/10 bg-white'}`}>
           <button type="button" className="grid size-12 place-items-center disabled:opacity-35" disabled={quantity <= minimum} onClick={() => setQuantity((value) => Math.max(minimum, value - step))} aria-label="Decrease quantity"><MinusIcon className="size-4" /></button>
           <span className="min-w-9 text-center text-sm font-semibold" aria-label={`Quantity ${quantity}`}>{quantity}</span>
           <button type="button" className="grid size-12 place-items-center disabled:opacity-35" disabled={quantity >= maximum} onClick={() => setQuantity((value) => Math.min(maximum, value + step))} aria-label="Increase quantity"><PlusIcon className="size-4" /></button>
         </div>
 
-        <button type="button" disabled={!canAdd} onClick={() => void handleAdd()} className={`h-14 rounded-full px-7 font-semibold transition disabled:cursor-not-allowed disabled:opacity-45 ${dark ? 'bg-[#dce8df] text-[#172018] hover:bg-white' : 'bg-[#355f4a] text-white hover:bg-[#294b3a]'}`}>
+        <button type="button" disabled={!canAdd} onClick={() => void handleAdd()} className={`h-14 rounded-[var(--hf-radius-sm)] px-7 font-semibold transition disabled:cursor-not-allowed disabled:opacity-45 ${dark ? 'bg-[#dce8df] text-[#172018] hover:bg-white' : 'bg-[var(--hf-brand)] text-white hover:bg-[var(--hf-brand-hover)]'}`}>
           {loading ? 'Adding…' : !isInStock ? 'Out of stock' : variableAttributes.length && !allSelected ? 'Choose options' : 'Add to cart'}
         </button>
       </div>
 
-      <div className={`grid gap-2.5 border-t pt-5 text-sm ${dark ? 'border-white/10' : 'border-black/[.07]'} ${labelClass}`}>
-        <span>✓ Free standard UK delivery</span>
-        <Link href="/returns" className="transition hover:underline">✓ Free 14-day returns on eligible online orders</Link>
-        <Link href="/returns" className="transition hover:underline">✓ Damaged or faulty? Refund or replacement where appropriate</Link>
-        <span>✓ Card payment securely processed by Stripe</span>
+      <div className={`grid gap-3 border-t pt-4 text-xs leading-5 sm:grid-cols-3 ${dark ? 'border-white/10' : 'border-black/[.07]'} ${labelClass}`}>
+        <span><strong className={dark ? 'text-white/80' : 'text-black/68'}>Delivery</strong><br />Free UK · around 14 days</span>
+        <Link href="/returns" className="transition hover:underline"><strong className={dark ? 'text-white/80' : 'text-black/68'}>Returns</strong><br />Free 14-day returns</Link>
+        <span><strong className={dark ? 'text-white/80' : 'text-black/68'}>Payment</strong><br />Secure card checkout</span>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-black/10 bg-[#fbfaf7]/96 p-3 shadow-[0_-16px_50px_rgba(20,30,24,.10)] backdrop-blur-xl lg:hidden" style={{ paddingBottom: 'max(.75rem, env(safe-area-inset-bottom))' }}>
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-black/10 bg-[#fbfaf7]/96 p-3 shadow-[0_-12px_36px_rgba(20,30,24,.08)] backdrop-blur-xl lg:hidden" style={{ paddingBottom: 'max(.75rem, env(safe-area-inset-bottom))' }}>
         <div className="mx-auto flex max-w-xl items-center gap-3">
           <div className="min-w-0 flex-1"><p className="text-sm font-semibold text-[#172018]">{displayPrice}</p><p className="truncate text-[11px] text-black/42">{selectionSummary || (variableAttributes.length ? 'Choose product options' : 'Free UK delivery')}</p></div>
-          <button type="button" disabled={!isPurchasable || !isInStock || loading || (allSelected && !selectionIsValid)} onClick={handleStickyAction} className="inline-flex h-12 shrink-0 items-center gap-2 rounded-full bg-[#355f4a] px-5 text-sm font-semibold text-white disabled:opacity-45"><ShoppingBagIcon className="size-4" />{loading ? 'Adding…' : variableAttributes.length && !allSelected ? 'Choose options' : !isInStock ? 'Out of stock' : 'Add to cart'}</button>
+          <button type="button" disabled={!isPurchasable || !isInStock || loading || (allSelected && !selectionIsValid)} onClick={handleStickyAction} className="inline-flex h-12 shrink-0 items-center gap-2 rounded-[var(--hf-radius-sm)] bg-[var(--hf-brand)] px-5 text-sm font-semibold text-white disabled:opacity-45"><ShoppingBagIcon className="size-4" />{loading ? 'Adding…' : variableAttributes.length && !allSelected ? 'Choose options' : !isInStock ? 'Out of stock' : 'Add to cart'}</button>
         </div>
       </div>
     </div>
