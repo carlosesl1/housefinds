@@ -210,21 +210,21 @@ export function StripeCardForm({ address, expectedTotal, disabled }: { address: 
   }
 
   if (!publishableKey) {
-    return <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-950"><strong>Card payments are temporarily unavailable.</strong><p className="mt-1">Please try again shortly. If the problem continues, contact Housefinds support before placing the order again.</p></div>
+    return <div role="alert" className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-950"><strong>Card payments are temporarily unavailable.</strong><p className="mt-1">Please try again shortly. If the problem continues, contact Housefinds support before placing the order again.</p></div>
   }
 
   return (
-    <div>
+    <div aria-busy={processing}>
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3"><span className="grid size-11 place-items-center rounded-2xl bg-[#e7eee9] text-[#456b55]"><CreditCardIcon className="size-5" /></span><div><p className="font-semibold">Credit or debit card</p><p className="text-xs text-black/42">Secure card payment</p></div></div>
-        <div className="flex gap-1 text-[9px] font-bold tracking-wide text-black/40"><span className="rounded bg-[#f1f1ed] px-2 py-1">VISA</span><span className="rounded bg-[#f1f1ed] px-2 py-1">MC</span><span className="rounded bg-[#f1f1ed] px-2 py-1">AMEX</span></div>
+        <div className="flex gap-1 text-[9px] font-bold tracking-wide text-black/40" aria-label="Accepted cards"><span className="rounded bg-[#f1f1ed] px-2 py-1">VISA</span><span className="rounded bg-[#f1f1ed] px-2 py-1">MC</span><span className="rounded bg-[#f1f1ed] px-2 py-1">AMEX</span></div>
       </div>
 
-      {exceedsLaunchLimit && <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950"><strong>This order is above the Housefinds launch limit.</strong><p className="mt-1">Please keep the basket below £135 by removing an item or reducing quantity before paying.</p></div>}
+      {exceedsLaunchLimit && <div role="alert" className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950"><strong>This order is above the Housefinds launch limit.</strong><p className="mt-1">Please keep the basket below £135 by removing an item or reducing quantity before paying.</p></div>}
 
       <div className="mt-5 rounded-2xl border border-black/10 bg-white px-4 py-[15px] shadow-inner"><div ref={mountRef} className="min-h-6" /></div>
-      {!ready && !error && <p className="mt-3 text-xs text-black/42">Loading secure card fields…</p>}
-      {error && <p className="mt-3 rounded-xl bg-rose-50 px-3 py-2.5 text-sm text-rose-800">{error}</p>}
+      {!ready && !error && <p role="status" aria-live="polite" className="mt-3 text-xs text-black/42">Loading secure card fields…</p>}
+      {error && <p role="alert" aria-live="assertive" className="mt-3 rounded-xl bg-rose-50 px-3 py-2.5 text-sm text-rose-800">{error}</p>}
 
       <button type="button" disabled={disabled || processing || !ready || !complete || exceedsLaunchLimit} onClick={() => void submitPayment()} className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[#355f4a] px-7 font-semibold text-white transition hover:bg-[#294b3a] disabled:cursor-not-allowed disabled:opacity-45"><LockClosedIcon className="size-4" />{processing ? 'Processing securely…' : `Pay ${paymentLabel(expectedTotal)}`}</button>
       <p className="mt-3 text-center text-xs leading-5 text-black/38">Your card details are handled by our secure payment provider and are not stored by Housefinds.</p>
