@@ -52,8 +52,12 @@ export function dedupeStoreProducts(products: WooProduct[]) {
 
 const operationalAttributePattern = /(ships?\s*from|dispatch\s*from|warehouse|warehouse\s*location|origin\s*warehouse)/i
 
+export function isOperationalAttributeName(name: string) {
+  return operationalAttributePattern.test(name)
+}
+
 export function isOperationalAttribute(attribute: WooProductAttribute) {
-  return operationalAttributePattern.test(attribute.name)
+  return isOperationalAttributeName(attribute.name)
 }
 
 export function storefrontAttributeName(attribute: WooProductAttribute) {
