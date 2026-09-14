@@ -23,7 +23,7 @@ export function FeaturedFind({ product }: { product?: WooProduct }) {
             <div className="absolute inset-0 bg-[#26352c]" />
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/48 via-transparent to-transparent" />
-          <p className="absolute bottom-6 left-6 text-xs font-semibold uppercase tracking-[.18em] text-white/70 lg:bottom-8 lg:left-8">Selected by Housefinds</p>
+          <p className="absolute bottom-6 left-6 rounded-[var(--hf-radius-pill)] border border-white/15 bg-black/25 px-4 py-2 text-xs font-semibold uppercase tracking-[.16em] text-white/75 backdrop-blur lg:bottom-8 lg:left-8">Selected by Housefinds</p>
         </div>
 
         <div className="flex flex-col justify-center px-7 py-14 sm:px-10 lg:px-14 xl:px-16">
@@ -37,14 +37,14 @@ export function FeaturedFind({ product }: { product?: WooProduct }) {
           <div className="mt-8 grid gap-3 border-y border-white/10 py-5 sm:grid-cols-3">
             {['Useful by design', 'Easy to understand', 'Made for everyday life'].map((item) => (
               <div key={item} className="flex items-center gap-2 text-sm font-medium text-white/72">
-                <CheckIcon className="size-4 shrink-0 text-[#a8c6b0]" />
+                <span className="grid size-7 shrink-0 place-items-center rounded-full bg-white/8 text-[#a8c6b0]"><CheckIcon className="size-4" /></span>
                 <span>{item}</span>
               </div>
             ))}
           </div>
 
           <div className="mt-8 flex flex-wrap items-center gap-5">
-            <Link href={href} className="inline-flex min-h-13 items-center gap-3 rounded-[var(--hf-radius-sm)] bg-[#dce8df] px-6 font-semibold text-[#172018] transition hover:bg-white">
+            <Link href={href} className="hf-button-secondary border-white/12 bg-[#dce8df] text-[#172018] shadow-none hover:border-white/25 hover:bg-white">
               Explore this find <ArrowRightIcon className="size-4" />
             </Link>
             <span className="text-xl font-semibold">{formatProductPrice(product)}</span>
