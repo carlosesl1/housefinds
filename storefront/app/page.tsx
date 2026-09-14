@@ -44,7 +44,9 @@ export default async function HomePage() {
               </div>
               <div className="lg:justify-self-end">
                 <p className="hf-copy-lg max-w-md">A quick edit of practical products already in the Housefinds collection.</p>
-                <Link href="/shop" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[var(--hf-brand)]">Browse the full shop <ArrowRightIcon className="size-4" /></Link>
+                <Link href="/shop" className="hf-button-tertiary mt-5">
+                  Browse the full shop <ArrowRightIcon className="size-4" />
+                </Link>
               </div>
             </div>
 
@@ -73,7 +75,9 @@ export default async function HomePage() {
               { icon: CubeTransparentIcon, title: 'Worth the space', copy: 'Practical upgrades should feel more useful than the room they take up.' },
             ].map(({ icon: Icon, title, copy }) => (
               <article key={title} className="border-t border-black/10 pt-5">
-                <Icon className="size-5 text-[var(--hf-brand-muted)]" />
+                <span className="grid size-10 place-items-center rounded-full bg-white text-[var(--hf-brand-muted)] shadow-sm">
+                  <Icon className="size-5" />
+                </span>
                 <h3 className="mt-5 text-xl font-semibold tracking-[-.03em]">{title}</h3>
                 <p className="mt-3 text-sm leading-6 text-black/48">{copy}</p>
               </article>
