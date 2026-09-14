@@ -51,6 +51,7 @@ export function dedupeStoreProducts(products: WooProduct[]) {
 }
 
 const operationalAttributePattern = /(ships?\s*from|dispatch\s*from|warehouse|warehouse\s*location|origin\s*warehouse)/i
+const dimensionTermPattern = /^\s*\d+(?:\.\d+)?\s*(?:x|×)\s*\d+(?:\.\d+)?\s*(?:cm|mm|m|in|inch|inches)\s*$/i
 
 export function isOperationalAttributeName(name: string) {
   return operationalAttributePattern.test(name)
@@ -60,9 +61,15 @@ export function isOperationalAttribute(attribute: WooProductAttribute) {
   return isOperationalAttributeName(attribute.name)
 }
 
+function termsAreDimensions(attribute: WooProductAttribute) {
+  return attribute.terms.length > 0 && attribute.terms.every((term) => dimensionTermPattern.test(term.name))
+}
+
 export function storefrontAttributeName(attribute: WooProductAttribute) {
   const name = attribute.name.trim()
   if (/^color$/i.test(name)) {
+    if (termsAreDimensions(attribute)) return 'Size'
+
     const terms = attribute.terms.map((term) => term.name).join(' ')
     if (/\b(force|kg|g\s*force)\b/i.test(terms)) return 'Colour & closing force'
 
@@ -93,6 +100,12 @@ function titleCaseWords(value: string) {
 export function storefrontTermName(term: WooAttributeTerm) {
   const raw = term.name.trim().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ')
   if (!raw) return raw
+
+  const dimensionMatch = raw.match(/^(\d+(?:\.\d+)?)\s*(?:x|×)\s*(\d+(?:\.\d+)?)\s*(cm|mm|m|in|inch|inches)$/i)
+  if (dimensionMatch) {
+    const unit = /^in/i.test(dimensionMatch[3]) ? 'in' : dimensionMatch[3].toLowerCase()
+    return `${dimensionMatch[1]} × ${dimensionMatch[2]}${unit}`
+  }
 
   // Some supplier catalogs compress several customer choices into one Woo
   // attribute value (for example "3pcs 300ml black"). Present those values as
