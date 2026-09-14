@@ -5,12 +5,12 @@ import { CartDrawer } from '@/components/cart/cart-drawer'
 import { SiteShell } from '@/components/site-shell'
 
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://housefindsstore.com').replace(/\/$/, '')
-const shouldNoIndex = Boolean(process.env.VERCEL && !process.env.NEXT_PUBLIC_SITE_URL)
+const shouldNoIndex = process.env.VERCEL_ENV === 'preview' || process.env.VERCEL_ENV === 'development'
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: { default: 'Housefinds — Smart finds for a better home', template: '%s | Housefinds' },
-  description: 'Clever, useful and modern home gadgets and organizing solutions for everyday life.',
+  description: 'Clever, useful and modern home gadgets and organising solutions for everyday life.',
   applicationName: 'Housefinds',
   category: 'shopping',
   robots: shouldNoIndex ? { index: false, follow: false } : { index: true, follow: true },
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     type: 'website',
     siteName: 'Housefinds',
     title: 'Housefinds — Smart finds for a better home',
-    description: 'Clever, useful and modern home gadgets and organizing solutions for everyday life.',
+    description: 'Clever, useful and modern home gadgets and organising solutions for everyday life.',
     url: SITE_URL,
   },
 }
