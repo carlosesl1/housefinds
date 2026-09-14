@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next'
+import { SITE_URL } from '@/lib/storefront/site-url'
 
-const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://housefindsstore.com').replace(/\/$/, '')
 const shouldNoIndex = process.env.VERCEL_ENV === 'preview' || process.env.VERCEL_ENV === 'development'
 
 export default function robots(): MetadataRoute.Robots {
