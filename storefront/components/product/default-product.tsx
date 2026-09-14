@@ -1,5 +1,6 @@
+import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeftIcon, CheckCircleIcon, ChevronRightIcon, ShieldCheckIcon, TruckIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
+import { ArrowLeftIcon, CheckCircleIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import type { WooProduct, WooProductReview } from '@/lib/woocommerce/types'
 import { ProductGallery } from '@/components/product/product-gallery'
 import { ProductPurchasePanel } from '@/components/product/product-purchase-panel'
@@ -28,75 +29,95 @@ export function DefaultProduct({
   const purchaseProduct = toPurchaseProduct(product)
   const purchaseVariations = toPurchaseVariations(variations)
   const storefrontImages = toStorefrontImages(product.images || []).slice(0, 12)
+  const storyImages = storefrontImages.length > 1 ? storefrontImages.slice(1, 4) : storefrontImages.slice(0, 1)
+  const showDetails = visibleAttributes.length >= 2
 
   return (
-    <main className="bg-[#fbfaf7]">
-      <div className="mx-auto max-w-[1560px] px-5 pb-20 pt-7 lg:px-8 lg:pb-28">
-        <nav className="mb-7 flex flex-wrap items-center gap-2 text-sm text-black/42" aria-label="Breadcrumb">
+    <main className="bg-[var(--hf-background)]">
+      <div className="hf-container pb-20 pt-6 lg:pb-28 lg:pt-8">
+        <nav className="mb-6 flex flex-wrap items-center gap-2 text-xs text-black/40 sm:text-sm" aria-label="Breadcrumb">
           <Link href="/" className="transition hover:text-black">Home</Link>
           <ChevronRightIcon className="size-3.5" />
           <Link href="/shop" className="transition hover:text-black">Shop</Link>
           <ChevronRightIcon className="size-3.5" />
-          <span className="max-w-[45vw] truncate text-black/65">{name}</span>
+          <span className="max-w-[45vw] truncate text-black/62">{name}</span>
         </nav>
 
-        <div className="grid gap-10 xl:grid-cols-[1.08fr_.92fr] xl:gap-16">
+        <div className="grid gap-9 xl:grid-cols-[1.08fr_.92fr] xl:gap-14">
           <section className="min-w-0" aria-label={`${name} product gallery`}>
             <ProductGallery images={storefrontImages} productName={name} />
           </section>
 
-          <aside className="xl:sticky xl:top-28 xl:self-start">
+          <aside className="xl:sticky xl:top-24 xl:self-start">
             <Link href="/shop" className="mb-5 inline-flex items-center gap-2 text-sm text-black/42 transition hover:text-black xl:hidden"><ArrowLeftIcon className="size-4" /> Back to shop</Link>
-            <p className="text-[11px] font-semibold uppercase tracking-[.28em] text-[#557562]">{story.eyebrow}</p>
-            <h1 className="mt-4 max-w-2xl text-[clamp(3rem,4.5vw,5.7rem)] font-semibold leading-[.9] tracking-[-.065em] text-[#101622]">{name}</h1>
-            <p className="mt-6 max-w-xl text-lg leading-8 text-black/52">{tagline}</p>
+            <p className="hf-eyebrow text-[var(--hf-brand-muted)]">{story.eyebrow}</p>
+            <h1 className="mt-4 max-w-[760px] text-[clamp(2.65rem,3.8vw,4rem)] font-semibold leading-[.96] tracking-[-.052em] text-[var(--hf-ink)]">{name}</h1>
+            <p className="mt-5 max-w-xl text-[17px] leading-7 text-black/52">{tagline}</p>
 
             {product.review_count > 0 && (
-              <a href="#reviews" className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-black/55 transition hover:text-black">
+              <a href="#reviews" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-black/55 transition hover:text-black">
                 <span className="tracking-[.08em] text-[#b17928]">★★★★★</span>
                 <span>{Number(product.average_rating || 0).toFixed(1)} · {product.review_count} product review{product.review_count === 1 ? '' : 's'}</span>
               </a>
             )}
 
-            <div className="mt-8 rounded-[30px] border border-black/[.07] bg-white p-6 shadow-[0_18px_70px_rgba(34,45,37,.045)] sm:p-7"><ProductPurchasePanel product={purchaseProduct} variations={purchaseVariations} /></div>
-
-            <div className="mt-5 grid gap-3 sm:grid-cols-3 xl:grid-cols-1 2xl:grid-cols-3">
-              <Link href="/shipping" className="rounded-2xl bg-[#f0f2ed] p-4 transition hover:bg-[#e8ece6]">
-                <TruckIcon className="size-5 text-[#557562]" />
-                <p className="mt-3 text-sm font-semibold text-[#172018]">Free UK delivery</p>
-                <p className="mt-1 text-xs leading-5 text-black/42">Standard delivery is included. Current estimate: around 14 days.</p>
-              </Link>
-              <Link href="/returns" className="rounded-2xl bg-[#f0f2ed] p-4 transition hover:bg-[#e8ece6]">
-                <ArrowPathIcon className="size-5 text-[#557562]" />
-                <p className="mt-3 text-sm font-semibold text-[#172018]">Free 14-day returns</p>
-                <p className="mt-1 text-xs leading-5 text-black/42">Eligible online orders can be returned without return postage.</p>
-              </Link>
-              <div className="rounded-2xl bg-[#f0f2ed] p-4">
-                <ShieldCheckIcon className="size-5 text-[#557562]" />
-                <p className="mt-3 text-sm font-semibold text-[#172018]">Secure Stripe checkout</p>
-                <p className="mt-1 text-xs leading-5 text-black/42">Card details are securely processed by Stripe, not stored by Housefinds.</p>
-              </div>
+            <div className="mt-7 rounded-[var(--hf-radius-md)] border border-black/[.07] bg-white p-5 shadow-[var(--hf-shadow-soft)] sm:p-6">
+              <ProductPurchasePanel product={purchaseProduct} variations={purchaseVariations} />
             </div>
           </aside>
         </div>
       </div>
 
-      <section className="border-y border-black/[.06] bg-[#f0f1eb] px-5 py-24 lg:px-8 lg:py-32">
-        <div className="mx-auto grid max-w-[1480px] gap-12 lg:grid-cols-[.95fr_1.05fr] lg:gap-20">
-          <div><p className="text-[11px] font-semibold uppercase tracking-[.28em] text-black/40">Why it earns a spot</p><h2 className="mt-5 text-[clamp(3.2rem,5vw,6rem)] font-semibold leading-[.9] tracking-[-.06em] text-[#101622]">{story.headline}</h2><p className="mt-6 max-w-xl text-lg leading-8 text-black/50">{story.intro}</p></div>
-          <div className="grid gap-4 sm:grid-cols-3 lg:self-end">
-            {story.benefits.map((benefit, index) => (
-              <div key={benefit} className="flex min-h-[220px] flex-col justify-between rounded-[28px] bg-white p-6 shadow-[0_16px_55px_rgba(31,42,34,.04)]"><div className="flex items-center justify-between"><span className="text-xs font-semibold tracking-[.2em] text-black/28">0{index + 1}</span><CheckCircleIcon className="size-6 text-[#557562]" /></div><p className="text-lg font-semibold leading-7 tracking-[-.025em]">{benefit}</p></div>
-            ))}
+      <section className="hf-section border-y border-black/[.06] bg-[var(--hf-surface-soft)]">
+        <div className="hf-container grid gap-10 lg:grid-cols-[1.05fr_.95fr] lg:items-center lg:gap-16">
+          <div className="grid gap-3 sm:grid-cols-[1.12fr_.88fr]">
+            <div className="relative min-h-[420px] overflow-hidden rounded-[var(--hf-radius-lg)] bg-[#e8e6df] sm:min-h-[560px]">
+              {storyImages[0] ? (
+                <Image src={storyImages[0].src} alt={storyImages[0].alt || `${name} detail`} fill sizes="(max-width:1024px) 100vw, 38vw" className="object-cover" />
+              ) : (
+                <div className="absolute inset-0 bg-[linear-gradient(135deg,#ebe8df,#dfe7e1)]" />
+              )}
+            </div>
+            <div className="grid gap-3 sm:grid-rows-2">
+              {[storyImages[1], storyImages[2]].map((image, index) => (
+                <div key={image?.id || image?.src || `story-placeholder-${index}`} className="relative min-h-[220px] overflow-hidden rounded-[var(--hf-radius-md)] bg-[#e8e6df] sm:min-h-0">
+                  {image ? (
+                    <Image src={image.src} alt={image.alt || `${name} detail ${index + 2}`} fill sizes="(max-width:1024px) 50vw, 22vw" className="object-cover" />
+                  ) : (
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_60%_35%,#e4ece6,transparent_35%),linear-gradient(135deg,#efede7,#e4e6df)]" />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="lg:py-6">
+            <p className="hf-eyebrow">Why it earns a spot</p>
+            <h2 className="hf-section-title mt-5 max-w-[720px]">{story.headline}</h2>
+            <p className="hf-copy-lg mt-6 max-w-xl">{story.intro}</p>
+
+            <div className="mt-9 divide-y divide-black/[.08] border-y border-black/[.08]">
+              {story.benefits.map((benefit, index) => (
+                <div key={benefit} className="grid grid-cols-[auto_1fr_auto] items-center gap-4 py-5">
+                  <span className="text-xs font-semibold tracking-[.18em] text-black/30">0{index + 1}</span>
+                  <p className="text-base font-semibold leading-6 tracking-[-.018em]">{benefit}</p>
+                  <CheckCircleIcon className="size-5 text-[var(--hf-brand-muted)]" />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      {visibleAttributes.length > 0 && (
-        <section className="px-5 py-24 lg:px-8 lg:py-28">
-          <div className="mx-auto max-w-[1200px]">
-            <div className="grid gap-10 lg:grid-cols-[.7fr_1.3fr]">
-              <div><p className="text-[11px] font-semibold uppercase tracking-[.28em] text-black/40">Product details</p><h2 className="mt-4 text-4xl font-semibold tracking-[-.05em]">The useful bits, clearly.</h2><p className="mt-4 max-w-sm text-sm leading-6 text-black/45">The key options and specifications to check before choosing the version that suits you.</p></div>
+      {showDetails && (
+        <section className="hf-section bg-[var(--hf-background)]">
+          <div className="mx-auto w-[min(calc(100%-2.5rem),1200px)] px-5 sm:px-0">
+            <div className="grid gap-10 lg:grid-cols-[.7fr_1.3fr] lg:gap-16">
+              <div>
+                <p className="hf-eyebrow">Product details</p>
+                <h2 className="mt-4 text-[clamp(2.4rem,3.8vw,3.8rem)] font-semibold leading-[.98] tracking-[-.05em]">The useful bits, clearly.</h2>
+                <p className="mt-4 max-w-sm text-sm leading-6 text-black/45">The key options and specifications available for this product.</p>
+              </div>
               <dl className="divide-y divide-black/[.07] border-y border-black/[.07]">
                 {visibleAttributes.map((attribute) => (
                   <div key={attribute.name} className="grid gap-2 py-5 sm:grid-cols-[180px_1fr]"><dt className="text-sm font-semibold text-black/45">{storefrontAttributeName(attribute)}</dt><dd className="text-sm leading-6 text-black/68">{attribute.terms.map((term) => storefrontTermName(term)).join(', ')}</dd></div>
