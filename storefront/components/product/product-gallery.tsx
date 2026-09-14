@@ -3,9 +3,9 @@
 import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 import { ArrowsPointingOutIcon, ChevronLeftIcon, ChevronRightIcon, XMarkIcon } from '@heroicons/react/24/outline'
-import type { WooImage } from '@/lib/woocommerce/types'
+import type { StorefrontImage } from '@/lib/storefront/client-product'
 
-export function ProductGallery({ images, productName }: { images: WooImage[]; productName: string }) {
+export function ProductGallery({ images, productName }: { images: StorefrontImage[]; productName: string }) {
   const gallery = images.slice(0, 12)
   const [active, setActive] = useState(0)
   const [expanded, setExpanded] = useState(false)

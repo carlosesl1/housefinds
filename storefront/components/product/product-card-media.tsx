@@ -4,9 +4,9 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
 import { ArrowUpRightIcon, PhotoIcon } from '@heroicons/react/24/outline'
-import type { WooImage } from '@/lib/woocommerce/types'
+import type { StorefrontImage } from '@/lib/storefront/client-product'
 
-export function ProductCardMedia({ images, name, href }: { images: WooImage[]; name: string; href: string }) {
+export function ProductCardMedia({ images, imageCount, name, href }: { images: StorefrontImage[]; imageCount: number; name: string; href: string }) {
   const previewImages = images.slice(0, 3)
   const [active, setActive] = useState(0)
   const image = previewImages[active] || previewImages[0]
@@ -29,9 +29,9 @@ export function ProductCardMedia({ images, name, href }: { images: WooImage[]; n
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/26 via-black/[.04] to-transparent opacity-70 transition group-hover:opacity-100" />
       <Link href={href} aria-label={`View ${name}`} className="absolute inset-0 z-10 focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-white" />
 
-      {images.length > 1 && (
+      {imageCount > 1 && (
         <span className="pointer-events-none absolute left-3 top-3 z-20 inline-flex items-center gap-1.5 rounded-full border border-white/50 bg-white/88 px-2.5 py-1.5 text-[10px] font-semibold text-black/55 shadow-sm backdrop-blur">
-          <PhotoIcon className="size-3.5" /> {images.length} photos
+          <PhotoIcon className="size-3.5" /> {imageCount} photos
         </span>
       )}
 

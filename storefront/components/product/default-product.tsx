@@ -8,7 +8,7 @@ import { ProductReviews } from '@/components/product/product-reviews'
 import { RelatedProducts } from '@/components/product/related-products'
 import { displayProductName, displayProductTagline, getProductStory } from '@/lib/woocommerce/presentation'
 import { isOperationalAttribute, storefrontAttributeName, storefrontTermName } from '@/lib/storefront/catalog'
-import { toPurchaseProduct, toPurchaseVariations } from '@/lib/storefront/client-product'
+import { toPurchaseProduct, toPurchaseVariations, toStorefrontImages } from '@/lib/storefront/client-product'
 
 export function DefaultProduct({
   product,
@@ -27,6 +27,7 @@ export function DefaultProduct({
   const visibleAttributes = product.attributes.filter((attribute) => attribute.terms.length > 0 && !isOperationalAttribute(attribute))
   const purchaseProduct = toPurchaseProduct(product)
   const purchaseVariations = toPurchaseVariations(variations)
+  const storefrontImages = toStorefrontImages(product.images || []).slice(0, 12)
 
   return (
     <main className="bg-[#fbfaf7]">
@@ -41,7 +42,7 @@ export function DefaultProduct({
 
         <div className="grid gap-10 xl:grid-cols-[1.08fr_.92fr] xl:gap-16">
           <section className="min-w-0" aria-label={`${name} product gallery`}>
-            <ProductGallery images={product.images || []} productName={name} />
+            <ProductGallery images={storefrontImages} productName={name} />
           </section>
 
           <aside className="xl:sticky xl:top-28 xl:self-start">

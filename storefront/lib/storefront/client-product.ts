@@ -1,4 +1,4 @@
-import type { WooProduct, WooPrice, WooProductAttribute, WooVariationSummary } from '@/lib/woocommerce/types'
+import type { WooImage, WooProduct, WooPrice, WooProductAttribute, WooVariationSummary } from '@/lib/woocommerce/types'
 import { isOperationalAttribute, isOperationalAttributeName } from '@/lib/storefront/catalog'
 
 export type PurchaseVariation = {
@@ -17,6 +17,13 @@ export type PurchaseProduct = {
   is_purchasable: boolean
   is_in_stock: boolean
   add_to_cart?: WooProduct['add_to_cart']
+}
+
+export type StorefrontImage = {
+  id: number
+  src: string
+  thumbnail: string
+  alt: string
 }
 
 export type RecentlyViewedProductInput = {
@@ -59,6 +66,17 @@ function safeAttribute(attribute: WooProductAttribute): WooProductAttribute {
       default: Boolean(term.default),
     })),
   }
+}
+
+export function toStorefrontImages(images: WooImage[] = []): StorefrontImage[] {
+  return images
+    .filter((image) => Boolean(image?.src))
+    .map((image) => ({
+      id: image.id,
+      src: image.src,
+      thumbnail: image.thumbnail || image.src,
+      alt: image.alt || '',
+    }))
 }
 
 export function toPurchaseProduct(product: WooProduct): PurchaseProduct {
