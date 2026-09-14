@@ -126,7 +126,7 @@ export function SiteHeader() {
               <div className="absolute right-0 top-[52px] w-[440px] overflow-hidden rounded-[26px] border border-black/[.07] bg-white shadow-[0_24px_80px_rgba(26,36,30,.14)]" onMouseDown={(event) => event.preventDefault()}>
                 {query.trim().length < 2 ? (
                   <div className="p-5">
-                    <p className="text-[10px] font-semibold uppercase tracking-[.22em] text-black/35">Popular product searches</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-[.22em] text-black/35">Try searching for</p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       {popularSearches.map((value) => <button key={value} type="button" onClick={() => choosePopularSearch(value)} className="rounded-full border border-black/[.08] bg-[#f7f7f3] px-3 py-2 text-xs font-semibold text-black/58 transition hover:border-[#557562]/35 hover:bg-[#edf3ee]">{value}</button>)}
                     </div>
