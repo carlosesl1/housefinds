@@ -10,6 +10,7 @@ import { formatMoney } from '@/lib/woocommerce/money'
 import { displayProductName } from '@/lib/woocommerce/presentation'
 
 const UK_LAUNCH_ORDER_LIMIT_MINOR = 13_500
+const DELIVERY_ESTIMATE = 'around 14 days'
 
 const emptyAddress: CheckoutAddress = {
   first_name: '',
@@ -60,12 +61,6 @@ function validUKPostcode(value: string) {
   return /^(GIR\s?0AA|[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2})$/i.test(value.trim())
 }
 
-function estimateLabel() {
-  const date = new Date()
-  date.setDate(date.getDate() + 14)
-  return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long' }).format(date)
-}
-
 export default function CheckoutPage() {
   const cart = useCart((state) => state.cart)
   const loading = useCart((state) => state.loading)
@@ -100,7 +95,6 @@ export default function CheckoutPage() {
   const addressReady = Object.keys(addressErrors).length === 0
   const exceedsLaunchLimit = Number(cart?.totals.total_price || 0) >= UK_LAUNCH_ORDER_LIMIT_MINOR
   const paymentReady = Boolean(addressReady && !exceedsLaunchLimit && (!cart?.needs_shipping || (cart.has_calculated_shipping && selectedShipping)))
-  const deliveryEstimate = estimateLabel()
 
   const money = (amount?: string) => formatMoney(amount || '0', cart?.totals.currency_minor_unit ?? 2, cart?.totals.currency_symbol || '£')
   const setField = (field: keyof CheckoutAddress, value: string) => setAddress((current) => ({ ...current, [field]: value }))
@@ -172,12 +166,12 @@ export default function CheckoutPage() {
               {!cart.needs_shipping ? (
                 <p className="mt-4 rounded-2xl bg-[#edf3ee] p-4 text-sm text-[#355f4a]">No delivery is required for this order.</p>
               ) : !cart.has_calculated_shipping ? (
-                <div className="mt-4 rounded-2xl bg-[#f5f5f1] p-4 text-sm leading-6 text-black/48"><strong className="text-[#172018]">Free standard UK delivery</strong><p className="mt-1">Current estimate: around {deliveryEstimate}. Complete your address above to confirm the available WooCommerce shipping method.</p></div>
+                <div className="mt-4 rounded-2xl bg-[#f5f5f1] p-4 text-sm leading-6 text-black/48"><strong className="text-[#172018]">Free standard UK delivery</strong><p className="mt-1">Current delivery estimate: {DELIVERY_ESTIMATE}. Complete your address above to confirm delivery availability for your postcode.</p></div>
               ) : shippingRates.length ? (
                 <div className="mt-5 space-y-3">
                   {shippingRates.map((rate) => (
                     <button type="button" key={`${rate.packageId}-${rate.rate_id}`} onClick={() => void selectShipping(rate.packageId, rate.rate_id)} disabled={loading} className={`flex w-full items-center justify-between gap-5 rounded-2xl border p-4 text-left transition ${rate.selected ? 'border-[#557562] bg-[#edf3ee]' : 'border-black/10 bg-white hover:border-black/20'}`}>
-                      <div><p className="font-semibold text-[#172018]">{rate.name || 'Standard UK delivery'}</p><p className="mt-1 text-sm text-black/45">{rate.delivery_time || `Current estimate: around ${deliveryEstimate}`}</p>{rate.description && <p className="mt-1 text-xs text-black/38">{rate.description}</p>}</div>
+                      <div><p className="font-semibold text-[#172018]">{rate.name || 'Standard UK delivery'}</p><p className="mt-1 text-sm text-black/45">{rate.delivery_time || `Current delivery estimate: ${DELIVERY_ESTIMATE}`}</p>{rate.description && <p className="mt-1 text-xs text-black/38">{rate.description}</p>}</div>
                       <div className="flex items-center gap-3"><strong className={Number(rate.price) === 0 ? 'text-[#355f4a]' : ''}>{Number(rate.price) === 0 ? 'FREE' : money(rate.price)}</strong>{rate.selected && <CheckCircleIcon className="size-5 text-[#456b55]" />}</div>
                     </button>
                   ))}
@@ -225,7 +219,7 @@ export default function CheckoutPage() {
                 <div className="flex items-end justify-between gap-4 border-t border-black/[.07] pt-4"><div><span className="text-sm text-black/48">Total</span><p className="mt-1 text-xs text-black/35">GBP</p></div><strong className="text-2xl tracking-[-.04em]">{money(cart.totals.total_price)}</strong></div>
               </div>
 
-              <div className="mt-6 rounded-2xl bg-[#f0f2ed] p-4 text-xs leading-5 text-black/48"><div className="flex items-center gap-2 font-semibold text-[#355f4a]"><TruckIcon className="size-4" /> Free UK delivery</div><p className="mt-1">Current estimate: around {deliveryEstimate}. Free 14-day returns apply to eligible online orders.</p></div>
+              <div className="mt-6 rounded-2xl bg-[#f0f2ed] p-4 text-xs leading-5 text-black/48"><div className="flex items-center gap-2 font-semibold text-[#355f4a]"><TruckIcon className="size-4" /> Free UK delivery</div><p className="mt-1">Current delivery estimate: {DELIVERY_ESTIMATE}. Free 14-day returns apply to eligible online orders.</p></div>
             </div>
           </aside>
         </div>
