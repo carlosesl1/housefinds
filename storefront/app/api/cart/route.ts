@@ -88,7 +88,12 @@ function sanitizeCartResponse(text: string) {
 
     const items = cart.items.map((item) => {
       const variation = Array.isArray(item.variation)
-        ? (item.variation as Array<{ attribute?: string; value?: string }>).filter((entry) => !isOperationalAttributeName(String(entry.attribute || '')))
+        ? (item.variation as Array<{ attribute?: string; value?: string }>)
+            .filter((entry) => !isOperationalAttributeName(String(entry.attribute || '')))
+            .map((entry) => ({
+              attribute: String(entry.attribute || ''),
+              value: String(entry.value || ''),
+            }))
         : []
 
       // Keep the browser payload intentionally small. In particular, do not
