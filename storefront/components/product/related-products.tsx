@@ -16,7 +16,7 @@ export function RelatedProducts({ products }: { products: WooProduct[] }) {
             <p className="hf-eyebrow text-[var(--hf-brand-muted)]">Keep exploring</p>
             <h2 className="hf-section-title mt-4 max-w-[760px]">More useful finds for <span className="text-[var(--hf-brand-muted)]">everyday home life.</span></h2>
           </div>
-          <Link href="/shop" className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--hf-brand)]">Browse all products <ArrowRightIcon className="size-4" /></Link>
+          <Link href="/shop" className="hf-button-tertiary w-fit">Browse all products <ArrowRightIcon className="size-4" /></Link>
         </div>
 
         <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 xl:grid-cols-4 xl:gap-x-5">
