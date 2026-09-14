@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowRightIcon } from '@heroicons/react/24/outline'
+import { ArrowRightIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import type { WooProduct } from '@/lib/woocommerce/types'
 import { formatProductPrice } from '@/lib/woocommerce/money'
 import { displayProductName, pickHeroProduct, storefrontProductSlug } from '@/lib/woocommerce/presentation'
@@ -25,9 +25,32 @@ export function Hero({ products }: { products: WooProduct[] }) {
             Clever, useful home products chosen to make everyday life simpler, tidier and a little smarter.
           </p>
 
-          <div className="mt-8 flex flex-wrap gap-3">
+          <form action="/search" method="get" role="search" className="mt-8 max-w-[620px]">
+            <label className="flex min-h-14 items-center gap-3 rounded-[var(--hf-radius-md)] border border-black/[.08] bg-white px-4 shadow-[0_12px_34px_rgba(30,42,34,.05)] transition focus-within:border-[var(--hf-brand-muted)] focus-within:ring-4 focus-within:ring-[#557562]/10">
+              <MagnifyingGlassIcon className="size-5 shrink-0 text-black/38" />
+              <span className="sr-only">Search Housefinds</span>
+              <input
+                type="search"
+                name="q"
+                autoComplete="off"
+                placeholder="What would make home life easier?"
+                className="min-w-0 flex-1 bg-transparent py-3 text-[15px] outline-none placeholder:text-black/34"
+              />
+              <button type="submit" className="hidden min-h-10 shrink-0 items-center rounded-[var(--hf-radius-sm)] bg-[var(--hf-brand)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--hf-brand-hover)] sm:inline-flex">
+                Search
+              </button>
+            </label>
+            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-black/42">
+              <span>Popular:</span>
+              <Link href="/search?q=kitchen" className="font-semibold transition hover:text-[var(--hf-brand)]">Kitchen</Link>
+              <Link href="/search?q=storage" className="font-semibold transition hover:text-[var(--hf-brand)]">Storage</Link>
+              <Link href="/search?q=motion+light" className="font-semibold transition hover:text-[var(--hf-brand)]">Motion lights</Link>
+            </div>
+          </form>
+
+          <div className="mt-7 flex flex-wrap gap-3">
             <Link href="/shop" className="hf-button-primary">Shop the collection <ArrowRightIcon className="size-4" /></Link>
-            <Link href="/search" className="hf-button-secondary">Search by need</Link>
+            <Link href="/shop?sort=popular" className="hf-button-secondary">Popular finds</Link>
           </div>
         </div>
 
