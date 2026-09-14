@@ -36,15 +36,15 @@ export function Hero({ products }: { products: WooProduct[] }) {
                 placeholder="What would make home life easier?"
                 className="min-w-0 flex-1 bg-transparent py-3 text-[15px] outline-none placeholder:text-black/34"
               />
-              <button type="submit" className="hidden min-h-10 shrink-0 items-center rounded-[var(--hf-radius-sm)] bg-[var(--hf-brand)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--hf-brand-hover)] sm:inline-flex">
+              <button type="submit" className="hf-button-primary hf-button-sm hidden shrink-0 sm:inline-flex">
                 Search
               </button>
             </label>
-            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-black/42">
-              <span>Popular:</span>
-              <Link href="/search?q=kitchen" className="font-semibold transition hover:text-[var(--hf-brand)]">Kitchen</Link>
-              <Link href="/search?q=storage" className="font-semibold transition hover:text-[var(--hf-brand)]">Storage</Link>
-              <Link href="/search?q=motion+light" className="font-semibold transition hover:text-[var(--hf-brand)]">Motion lights</Link>
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-black/42">
+              <span className="mr-1">Popular:</span>
+              <Link href="/search?q=kitchen" className="rounded-[var(--hf-radius-pill)] bg-black/[.035] px-3 py-1.5 font-semibold transition hover:bg-[var(--hf-brand-soft)] hover:text-[var(--hf-brand)]">Kitchen</Link>
+              <Link href="/search?q=storage" className="rounded-[var(--hf-radius-pill)] bg-black/[.035] px-3 py-1.5 font-semibold transition hover:bg-[var(--hf-brand-soft)] hover:text-[var(--hf-brand)]">Storage</Link>
+              <Link href="/search?q=motion+light" className="rounded-[var(--hf-radius-pill)] bg-black/[.035] px-3 py-1.5 font-semibold transition hover:bg-[var(--hf-brand-soft)] hover:text-[var(--hf-brand)]">Motion lights</Link>
             </div>
           </form>
 
@@ -70,7 +70,7 @@ export function Hero({ products }: { products: WooProduct[] }) {
               </div>
               <div className="flex items-center justify-between gap-4">
                 <span className="text-lg font-semibold">{formatProductPrice(featured)}</span>
-                <Link href={featuredHref} className="inline-flex min-h-10 items-center gap-2 rounded-[var(--hf-radius-sm)] bg-[var(--hf-brand)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--hf-brand-hover)]">
+                <Link href={featuredHref} className="hf-button-primary hf-button-sm">
                   View find <ArrowRightIcon className="size-3.5" />
                 </Link>
               </div>
