@@ -8,7 +8,7 @@ export function ProductCardMedia({ images, name, href }: { images: StorefrontIma
   const secondary = images[1]
 
   return (
-    <div className="relative aspect-[4/4.65] overflow-hidden rounded-[var(--hf-radius-md)] bg-[var(--hf-surface-soft)]">
+    <div className="relative aspect-[4/4.65] overflow-hidden rounded-[var(--hf-radius-lg)] bg-[var(--hf-surface-soft)]">
       {primary ? (
         <>
           <Image
@@ -35,7 +35,7 @@ export function ProductCardMedia({ images, name, href }: { images: StorefrontIma
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/12 to-transparent opacity-70" />
       <Link href={href} aria-label={`View ${name}`} className="absolute inset-0 z-10 focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-white" />
 
-      <span className="pointer-events-none absolute right-3 top-3 z-20 grid size-10 translate-y-1 place-items-center rounded-[var(--hf-radius-sm)] border border-white/55 bg-white/88 opacity-0 shadow-sm backdrop-blur transition duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+      <span className="hf-icon-button pointer-events-none absolute right-3 top-3 z-20 translate-y-1 opacity-0 transition duration-200 group-hover:translate-y-0 group-hover:opacity-100">
         <ArrowUpRightIcon className="size-4" />
       </span>
     </div>
