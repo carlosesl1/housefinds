@@ -1,5 +1,7 @@
 import 'server-only'
 import type { WooProduct, WooProductReview } from './types'
+import { storefrontProductSlug } from './presentation'
+import { dedupeStoreProducts } from '@/lib/storefront/catalog'
 
 const WC_URL = (process.env.WOOCOMMERCE_URL || 'https://housefindsstore.com').replace(/\/$/, '')
 const API = `${WC_URL}/wp-json/wc/store/v1`
@@ -51,6 +53,14 @@ export async function getProducts(params: {
 export async function getProductBySlug(slug: string) {
   const products = await wooFetch<WooProduct[]>(`/products?slug=${encodeURIComponent(slug)}`)
   return products[0] || null
+}
+
+export async function getProductByStorefrontSlug(slug: string) {
+  const direct = await getProductBySlug(slug)
+  if (direct) return direct
+
+  const products = dedupeStoreProducts(await getProducts({ per_page: 100 }))
+  return products.find((product) => storefrontProductSlug(product) === slug) || null
 }
 
 export async function getProductVariations(productId: number) {
