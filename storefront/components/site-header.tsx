@@ -123,19 +123,19 @@ export function SiteHeader() {
             </label>
 
             {searchOpen && (
-              <div className="absolute right-0 top-[52px] w-[440px] overflow-hidden rounded-[26px] border border-black/[.07] bg-white shadow-[0_24px_80px_rgba(26,36,30,.14)]" onMouseDown={(event) => event.preventDefault()}>
+              <div className="absolute right-0 top-[52px] w-[440px] overflow-hidden rounded-[var(--hf-radius-lg)] border border-black/[.07] bg-white shadow-[var(--hf-shadow-float)]" onMouseDown={(event) => event.preventDefault()}>
                 {query.trim().length < 2 ? (
                   <div className="p-5">
                     <p className="text-[10px] font-semibold uppercase tracking-[.22em] text-black/35">Try searching for</p>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      {popularSearches.map((value) => <button key={value} type="button" onClick={() => choosePopularSearch(value)} className="rounded-full border border-black/[.08] bg-[#f7f7f3] px-3 py-2 text-xs font-semibold text-black/58 transition hover:border-[#557562]/35 hover:bg-[#edf3ee]">{value}</button>)}
+                      {popularSearches.map((value) => <button key={value} type="button" onClick={() => choosePopularSearch(value)} className="hf-button-tertiary !min-h-9 px-3 py-2 text-xs">{value}</button>)}
                     </div>
                     <div className="mt-5 grid grid-cols-3 gap-2">
-                      <Link href="/track-order" onClick={closeSearch} className="rounded-2xl bg-[#f1f3ee] px-3 py-3 text-center text-xs font-semibold text-[#355f4a]">Track order</Link>
-                      <Link href="/returns" onClick={closeSearch} className="rounded-2xl bg-[#f1f3ee] px-3 py-3 text-center text-xs font-semibold text-[#355f4a]">Returns</Link>
-                      <Link href="/shipping" onClick={closeSearch} className="rounded-2xl bg-[#f1f3ee] px-3 py-3 text-center text-xs font-semibold text-[#355f4a]">Delivery</Link>
+                      <Link href="/track-order" onClick={closeSearch} className="rounded-[var(--hf-radius-md)] bg-[var(--hf-brand-soft)] px-3 py-3 text-center text-xs font-semibold text-[var(--hf-brand)] transition hover:bg-white hover:shadow-[var(--hf-shadow-control)]">Track order</Link>
+                      <Link href="/returns" onClick={closeSearch} className="rounded-[var(--hf-radius-md)] bg-[var(--hf-brand-soft)] px-3 py-3 text-center text-xs font-semibold text-[var(--hf-brand)] transition hover:bg-white hover:shadow-[var(--hf-shadow-control)]">Returns</Link>
+                      <Link href="/shipping" onClick={closeSearch} className="rounded-[var(--hf-radius-md)] bg-[var(--hf-brand-soft)] px-3 py-3 text-center text-xs font-semibold text-[var(--hf-brand)] transition hover:bg-white hover:shadow-[var(--hf-shadow-control)]">Delivery</Link>
                     </div>
-                    <Link href="/shop" onClick={closeSearch} className="mt-4 flex items-center justify-between rounded-2xl bg-[#e7eee9] px-4 py-3 text-sm font-semibold text-[#355f4a]">Browse the full collection <ArrowRightIcon className="size-4" /></Link>
+                    <Link href="/shop" onClick={closeSearch} className="hf-button-tertiary mt-4 w-full !justify-between">Browse the full collection <ArrowRightIcon className="size-4" /></Link>
                   </div>
                 ) : (
                   <div>
@@ -166,25 +166,25 @@ export function SiteHeader() {
                     ) : null)}
 
                     {supportIntent && helpSuggestions.length > 0 && <div className="px-5 py-3 text-xs leading-5 text-black/42">Showing customer-care results instead of unrelated products.</div>}
-                    <button type="submit" className="flex w-full items-center justify-between border-t border-black/[.06] bg-[#f7f7f3] px-5 py-3 text-sm font-semibold text-[#355f4a]">See all results for “{query.trim()}” <ArrowRightIcon className="size-4" /></button>
+                    <button type="submit" className="flex w-full items-center justify-between border-t border-black/[.06] bg-[#f7f7f3] px-5 py-3 text-sm font-semibold text-[var(--hf-brand)] transition hover:bg-[var(--hf-brand-soft)]">See all results for “{query.trim()}” <ArrowRightIcon className="size-4" /></button>
                   </div>
                 )}
               </div>
             )}
           </form>
 
-          <Link href="/search" className="grid size-10 place-items-center rounded-full transition hover:bg-black/5 xl:hidden" aria-label="Search"><MagnifyingGlassIcon className="size-5" /></Link>
+          <Link href="/search" className="hf-icon-button !size-10 !border-transparent !bg-transparent !shadow-none hover:!bg-black/5" aria-label="Search"><MagnifyingGlassIcon className="size-5" /></Link>
           <CartButton />
-          <button type="button" onClick={() => setMenuOpen((value) => !value)} className="grid size-10 place-items-center rounded-full border border-black/10 bg-white transition hover:bg-stone-50 lg:hidden" aria-expanded={menuOpen} aria-label={menuOpen ? 'Close menu' : 'Open menu'}>{menuOpen ? <XMarkIcon className="size-5" /> : <Bars3Icon className="size-5" />}</button>
+          <button type="button" onClick={() => setMenuOpen((value) => !value)} className="hf-icon-button !size-10 !shadow-none lg:hidden" aria-expanded={menuOpen} aria-label={menuOpen ? 'Close menu' : 'Open menu'}>{menuOpen ? <XMarkIcon className="size-5" /> : <Bars3Icon className="size-5" />}</button>
         </div>
       </div>
 
       {menuOpen && (
         <div className="border-t border-black/[.06] bg-[#fbfaf7] px-5 pb-6 pt-4 lg:hidden">
           <form onSubmit={submitSearch} role="search">
-            <label className="flex h-12 items-center gap-3 rounded-2xl border border-black/10 bg-white px-4 focus-within:border-[#557562]/45 focus-within:ring-4 focus-within:ring-[#557562]/10"><MagnifyingGlassIcon className="size-[18px] text-black/45" /><span className="sr-only">Search Housefinds</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Products, orders, returns, delivery…" className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-black/35" /></label>
+            <label className="flex h-12 items-center gap-3 rounded-[var(--hf-radius-md)] border border-black/10 bg-white px-4 focus-within:border-[#557562]/45 focus-within:ring-4 focus-within:ring-[#557562]/10"><MagnifyingGlassIcon className="size-[18px] text-black/45" /><span className="sr-only">Search Housefinds</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Products, orders, returns, delivery…" className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-black/35" /></label>
           </form>
-          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">{popularSearches.slice(0, 4).map((value) => <button key={value} type="button" onClick={() => { setMenuOpen(false); choosePopularSearch(value) }} className="shrink-0 rounded-full border border-black/[.08] bg-white px-3 py-2 text-xs font-semibold text-black/52">{value}</button>)}</div>
+          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">{popularSearches.slice(0, 4).map((value) => <button key={value} type="button" onClick={() => { setMenuOpen(false); choosePopularSearch(value) }} className="hf-button-tertiary !min-h-9 shrink-0 px-3 py-2 text-xs">{value}</button>)}</div>
           <nav className="mt-4 grid" aria-label="Mobile navigation">
             {navItems.map((item) => <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)} className={`border-b border-black/[.05] py-4 text-base font-semibold ${isActive(item.href, item.exact) ? 'text-[#355f4a]' : 'text-[#172018]'}`}>{item.label}</Link>)}
             <Link href="/track-order" onClick={() => setMenuOpen(false)} className="border-b border-black/[.05] py-4 text-base font-semibold text-[#172018]">Track an order</Link>
