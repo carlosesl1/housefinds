@@ -141,7 +141,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         <>
           <AuroraProjectorExperience product={product} variations={variations} />
           <ProductFAQ product={product} />
-          <ProductReviews product={product} reviews={reviews} />
+          <ProductReviews summary={{ average_rating: product.average_rating, review_count: product.review_count }} reviews={reviews} />
           <RelatedProducts products={relatedProducts} />
         </>
       ) : (
