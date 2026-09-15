@@ -28,7 +28,10 @@ jobs:
             .github/refinement/chunk-02b \
             .github/refinement/chunk-02c \
             .github/refinement/chunk-02d \
-            .github/refinement/chunk-03 \
+            .github/refinement/chunk-03a \
+            .github/refinement/chunk-03b \
+            .github/refinement/chunk-03c \
+            .github/refinement/chunk-03d \
             > /tmp/storefront-remaining.b64
           base64 -d /tmp/storefront-remaining.b64 > /tmp/storefront-remaining.tar.gz
           echo "aec2bd7876de0157fb7eff50667badfb25d96d2fe914d904e197ca4424eec842  /tmp/storefront-remaining.tar.gz" | sha256sum -c -
