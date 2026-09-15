@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowRightIcon, MagnifyingGlassIcon, EnvelopeIcon } from '@heroicons/react/24/outline'
 
@@ -24,7 +25,9 @@ export function SiteFooter() {
     <footer className="border-t border-black/[.06] bg-[var(--hf-surface-soft)]">
       <div className="hf-container grid gap-12 py-16 lg:grid-cols-[1.05fr_1.45fr_.95fr] lg:py-20">
         <div>
-          <Link href="/" className="text-3xl font-bold tracking-[-.045em] text-[var(--hf-ink)]">Housefinds</Link>
+          <Link href="/" className="inline-flex items-center" aria-label="Housefinds home">
+            <Image src="/housefinds-logo.svg" alt="Housefinds" width={720} height={210} className="h-11 w-auto" />
+          </Link>
           <p className="mt-4 max-w-sm text-lg leading-7 text-black/56">Clever, useful products for a happier home.</p>
           <p className="mt-4 max-w-sm text-sm leading-6 text-black/44">A UK-focused edit of practical home gadgets, organisation tools and small everyday upgrades.</p>
 
