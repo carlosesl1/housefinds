@@ -125,7 +125,11 @@ export function Hero({ products }: { products: WooProduct[] }) {
             <Link href={featuredHref} aria-label={`View ${featuredName}`} className="absolute inset-0 z-10" />
 
             {featured && (
-              <div className="absolute inset-x-4 bottom-4 z-20 grid gap-3 rounded-[var(--hf-radius-md)] border border-white/45 bg-white/92 p-4 shadow-[var(--hf-shadow-float)] backdrop-blur-xl sm:inset-x-auto sm:bottom-6 sm:left-6 sm:w-[390px] sm:p-5">
+              <Link
+                href={featuredHref}
+                aria-label={`View ${featuredName}`}
+                className="absolute inset-x-4 bottom-4 z-20 grid cursor-pointer gap-3 rounded-[var(--hf-radius-md)] border border-white/45 bg-white/92 p-4 shadow-[var(--hf-shadow-float)] backdrop-blur-xl transition hover:-translate-y-0.5 hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--hf-brand-muted)] sm:inset-x-auto sm:bottom-6 sm:left-6 sm:w-[390px] sm:p-5"
+              >
                 <div>
                   <p className="hf-eyebrow text-[var(--hf-brand-muted)]">Featured find</p>
                   <h2 className="mt-2 text-xl font-semibold leading-tight tracking-[-.025em] text-[var(--hf-ink)]">{featuredName}</h2>
@@ -136,7 +140,7 @@ export function Hero({ products }: { products: WooProduct[] }) {
                     View find <ArrowRightIcon className="size-3.5" />
                   </span>
                 </div>
-              </div>
+              </Link>
             )}
           </div>
 
