@@ -21,7 +21,15 @@ jobs:
       - name: Rebuild refinement payload
         shell: bash
         run: |
-          cat .github/refinement/chunk-* > /tmp/storefront-remaining.b64
+          cat \
+            .github/refinement/chunk-00 \
+            .github/refinement/chunk-01 \
+            .github/refinement/chunk-02a \
+            .github/refinement/chunk-02b \
+            .github/refinement/chunk-02c \
+            .github/refinement/chunk-02d \
+            .github/refinement/chunk-03 \
+            > /tmp/storefront-remaining.b64
           base64 -d /tmp/storefront-remaining.b64 > /tmp/storefront-remaining.tar.gz
           echo "aec2bd7876de0157fb7eff50667badfb25d96d2fe914d904e197ca4424eec842  /tmp/storefront-remaining.tar.gz" | sha256sum -c -
           tar -xzf /tmp/storefront-remaining.tar.gz -C .
