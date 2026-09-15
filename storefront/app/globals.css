@@ -223,6 +223,21 @@ summary::-webkit-details-marker { display: none; }
   .hf-section-title { font-size: clamp(2.5rem, 11vw, 3.6rem); }
 }
 
+/* .hf-icon-button declares its own display mode, so responsive Tailwind hidden
+   utilities can lose the cascade. Enforce the header breakpoints explicitly. */
+@media (min-width: 1024px) {
+  header .hf-icon-button[aria-label="Open menu"],
+  header .hf-icon-button[aria-label="Close menu"] {
+    display: none !important;
+  }
+}
+
+@media (min-width: 1280px) {
+  header a.hf-icon-button[aria-label="Search"] {
+    display: none !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after {
