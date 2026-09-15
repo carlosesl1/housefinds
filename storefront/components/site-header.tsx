@@ -7,13 +7,14 @@ import { usePathname, useRouter } from 'next/navigation'
 import { Bars3Icon, MagnifyingGlassIcon, XMarkIcon, ArrowRightIcon } from '@heroicons/react/24/outline'
 import { CartButton } from '@/components/cart/cart-button'
 import { isSupportIntent, searchHelp } from '@/lib/storefront/help'
+import { STORE_CATEGORIES } from '@/lib/storefront/categories'
 
 const navItems = [
-  { href: '/', label: 'Home', exact: true },
-  { href: '/shop', label: 'Shop' },
-  { href: '/shop?sort=new', label: 'New In' },
-  { href: '/shop?sort=popular', label: 'Popular Finds' },
-  { href: '/about', label: 'About' },
+  { href: '/shop', label: 'Shop all' },
+  ...STORE_CATEGORIES.map((category) => ({
+    href: `/shop?category=${category.slug}`,
+    label: category.title,
+  })),
 ]
 
 const popularSearches = ['door closer', 'storage', 'kitchen', 'motion light', 'bathroom', 'mosquito']
@@ -85,10 +86,10 @@ export function SiteHeader() {
     setQuery('')
   }
 
-  const isActive = (href: string, exact?: boolean) => {
-    const base = href.split('?')[0]
+  const isActive = (href: string) => {
     if (href.includes('?')) return false
-    return exact ? pathname === base : pathname === base || pathname.startsWith(`${base}/`)
+    if (href === '/shop') return pathname === '/shop' || pathname.startsWith('/product/')
+    return pathname === href || pathname.startsWith(`${href}/`)
   }
 
   return (
@@ -102,11 +103,11 @@ export function SiteHeader() {
           Housefinds
         </Link>
 
-        <nav className="hidden items-center gap-6 text-[13px] font-semibold lg:flex" aria-label="Primary navigation">
+        <nav className="hidden items-center gap-5 text-[13px] font-semibold lg:flex" aria-label="Shop navigation">
           {navItems.map((item) => {
-            const active = isActive(item.href, item.exact)
+            const active = isActive(item.href)
             return (
-              <Link key={item.href} href={item.href} className={`relative py-2 transition ${active ? 'text-[#294b3a]' : 'text-black/55 hover:text-black'}`}>
+              <Link key={item.href} href={item.href} className={`relative whitespace-nowrap py-2 transition ${active ? 'text-[#294b3a]' : 'text-black/55 hover:text-black'}`}>
                 {item.label}
                 {active && <span className="absolute inset-x-0 -bottom-1 mx-auto h-0.5 w-5 rounded-full bg-[#557562]" />}
               </Link>
@@ -116,26 +117,21 @@ export function SiteHeader() {
 
         <div className="ml-auto flex items-center gap-2">
           <form onSubmit={submitSearch} className="relative hidden xl:block" role="search">
-            <label className="flex h-11 min-w-[350px] items-center gap-3 rounded-full border border-black/[.05] bg-black/[.035] px-4 transition focus-within:border-[#557562]/40 focus-within:bg-white focus-within:ring-4 focus-within:ring-[#557562]/10">
+            <label className="flex h-11 min-w-[340px] items-center gap-3 rounded-full border border-black/[.05] bg-black/[.035] px-4 transition focus-within:border-[#557562]/40 focus-within:bg-white focus-within:ring-4 focus-within:ring-[#557562]/10">
               <MagnifyingGlassIcon className="size-[18px] shrink-0 text-black/45" />
-              <span className="sr-only">Search Housefinds</span>
-              <input value={query} onChange={(event) => setQuery(event.target.value)} onFocus={() => setSearchOpen(true)} onBlur={() => window.setTimeout(() => setSearchOpen(false), 120)} autoComplete="off" placeholder="Search products, orders or help…" className="min-w-0 flex-1 bg-transparent text-sm text-black outline-none placeholder:text-black/38" />
+              <span className="sr-only">Search products</span>
+              <input value={query} onChange={(event) => setQuery(event.target.value)} onFocus={() => setSearchOpen(true)} onBlur={() => window.setTimeout(() => setSearchOpen(false), 120)} autoComplete="off" placeholder="Search products…" className="min-w-0 flex-1 bg-transparent text-sm text-black outline-none placeholder:text-black/38" />
             </label>
 
             {searchOpen && (
               <div className="absolute right-0 top-[52px] w-[440px] overflow-hidden rounded-[var(--hf-radius-lg)] border border-black/[.07] bg-white shadow-[var(--hf-shadow-float)]" onMouseDown={(event) => event.preventDefault()}>
                 {query.trim().length < 2 ? (
                   <div className="p-5">
-                    <p className="text-[10px] font-semibold uppercase tracking-[.22em] text-black/35">Try searching for</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-[.22em] text-black/35">Popular searches</p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       {popularSearches.map((value) => <button key={value} type="button" onClick={() => choosePopularSearch(value)} className="hf-button-tertiary !min-h-9 px-3 py-2 text-xs">{value}</button>)}
                     </div>
-                    <div className="mt-5 grid grid-cols-3 gap-2">
-                      <Link href="/track-order" onClick={closeSearch} className="rounded-[var(--hf-radius-md)] bg-[var(--hf-brand-soft)] px-3 py-3 text-center text-xs font-semibold text-[var(--hf-brand)] transition hover:bg-white hover:shadow-[var(--hf-shadow-control)]">Track order</Link>
-                      <Link href="/returns" onClick={closeSearch} className="rounded-[var(--hf-radius-md)] bg-[var(--hf-brand-soft)] px-3 py-3 text-center text-xs font-semibold text-[var(--hf-brand)] transition hover:bg-white hover:shadow-[var(--hf-shadow-control)]">Returns</Link>
-                      <Link href="/shipping" onClick={closeSearch} className="rounded-[var(--hf-radius-md)] bg-[var(--hf-brand-soft)] px-3 py-3 text-center text-xs font-semibold text-[var(--hf-brand)] transition hover:bg-white hover:shadow-[var(--hf-shadow-control)]">Delivery</Link>
-                    </div>
-                    <Link href="/shop" onClick={closeSearch} className="hf-button-tertiary mt-4 w-full !justify-between">Browse the full collection <ArrowRightIcon className="size-4" /></Link>
+                    <Link href="/shop" onClick={closeSearch} className="hf-button-tertiary mt-5 w-full !justify-between">Browse all products <ArrowRightIcon className="size-4" /></Link>
                   </div>
                 ) : (
                   <div>
@@ -162,7 +158,7 @@ export function SiteHeader() {
                         </div>
                       </>
                     ) : helpSuggestions.length === 0 ? (
-                      <div className="p-5"><p className="text-sm font-semibold text-[#172018]">No quick match yet.</p><p className="mt-1 text-xs leading-5 text-black/42">Try a broader term or search all products and help information.</p></div>
+                      <div className="p-5"><p className="text-sm font-semibold text-[#172018]">No quick match yet.</p><p className="mt-1 text-xs leading-5 text-black/42">Try a broader product name or describe what you want to solve.</p></div>
                     ) : null)}
 
                     {supportIntent && helpSuggestions.length > 0 && <div className="px-5 py-3 text-xs leading-5 text-black/42">Showing customer-care results instead of unrelated products.</div>}
@@ -173,7 +169,7 @@ export function SiteHeader() {
             )}
           </form>
 
-          <Link href="/search" className="hf-icon-button !size-10 !border-transparent !bg-transparent !shadow-none hover:!bg-black/5" aria-label="Search"><MagnifyingGlassIcon className="size-5" /></Link>
+          <Link href="/search" className="hf-icon-button !size-10 !border-transparent !bg-transparent !shadow-none hover:!bg-black/5 xl:hidden" aria-label="Search"><MagnifyingGlassIcon className="size-5" /></Link>
           <CartButton />
           <button type="button" onClick={() => setMenuOpen((value) => !value)} className="hf-icon-button !size-10 !shadow-none lg:hidden" aria-expanded={menuOpen} aria-label={menuOpen ? 'Close menu' : 'Open menu'}>{menuOpen ? <XMarkIcon className="size-5" /> : <Bars3Icon className="size-5" />}</button>
         </div>
@@ -182,16 +178,22 @@ export function SiteHeader() {
       {menuOpen && (
         <div className="border-t border-black/[.06] bg-[#fbfaf7] px-5 pb-6 pt-4 lg:hidden">
           <form onSubmit={submitSearch} role="search">
-            <label className="flex h-12 items-center gap-3 rounded-[var(--hf-radius-md)] border border-black/10 bg-white px-4 focus-within:border-[#557562]/45 focus-within:ring-4 focus-within:ring-[#557562]/10"><MagnifyingGlassIcon className="size-[18px] text-black/45" /><span className="sr-only">Search Housefinds</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Products, orders, returns, delivery…" className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-black/35" /></label>
+            <label className="flex h-12 items-center gap-3 rounded-[var(--hf-radius-md)] border border-black/10 bg-white px-4 focus-within:border-[#557562]/45 focus-within:ring-4 focus-within:ring-[#557562]/10"><MagnifyingGlassIcon className="size-[18px] text-black/45" /><span className="sr-only">Search products</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search products…" className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-black/35" /></label>
           </form>
           <div className="mt-3 flex gap-2 overflow-x-auto pb-1">{popularSearches.slice(0, 4).map((value) => <button key={value} type="button" onClick={() => { setMenuOpen(false); choosePopularSearch(value) }} className="hf-button-tertiary !min-h-9 shrink-0 px-3 py-2 text-xs">{value}</button>)}</div>
-          <nav className="mt-4 grid" aria-label="Mobile navigation">
-            {navItems.map((item) => <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)} className={`border-b border-black/[.05] py-4 text-base font-semibold ${isActive(item.href, item.exact) ? 'text-[#355f4a]' : 'text-[#172018]'}`}>{item.label}</Link>)}
-            <Link href="/track-order" onClick={() => setMenuOpen(false)} className="border-b border-black/[.05] py-4 text-base font-semibold text-[#172018]">Track an order</Link>
-            <Link href="/shipping" onClick={() => setMenuOpen(false)} className="border-b border-black/[.05] py-4 text-base font-semibold text-[#172018]">Shipping & delivery</Link>
-            <Link href="/returns" onClick={() => setMenuOpen(false)} className="border-b border-black/[.05] py-4 text-base font-semibold text-[#172018]">Returns</Link>
-            <Link href="/contact" onClick={() => setMenuOpen(false)} className="border-b border-black/[.05] py-4 text-base font-semibold text-[#172018]">Contact</Link>
+
+          <nav className="mt-4 grid" aria-label="Mobile shop navigation">
+            {navItems.map((item) => <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)} className={`border-b border-black/[.05] py-4 text-base font-semibold ${isActive(item.href) ? 'text-[#355f4a]' : 'text-[#172018]'}`}>{item.label}</Link>)}
           </nav>
+
+          <div className="mt-5 border-t border-black/[.07] pt-4">
+            <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-black/35">Customer care</p>
+            <div className="mt-2 grid grid-cols-3 gap-2">
+              <Link href="/track-order" onClick={() => setMenuOpen(false)} className="rounded-[var(--hf-radius-md)] bg-[var(--hf-brand-soft)] px-3 py-3 text-center text-xs font-semibold text-[var(--hf-brand)]">Track order</Link>
+              <Link href="/returns" onClick={() => setMenuOpen(false)} className="rounded-[var(--hf-radius-md)] bg-[var(--hf-brand-soft)] px-3 py-3 text-center text-xs font-semibold text-[var(--hf-brand)]">Returns</Link>
+              <Link href="/contact" onClick={() => setMenuOpen(false)} className="rounded-[var(--hf-radius-md)] bg-[var(--hf-brand-soft)] px-3 py-3 text-center text-xs font-semibold text-[var(--hf-brand)]">Contact</Link>
+            </div>
+          </div>
         </div>
       )}
     </header>
