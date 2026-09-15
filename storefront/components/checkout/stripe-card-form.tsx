@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { CreditCardIcon, LockClosedIcon } from '@heroicons/react/24/outline'
 import type { CheckoutAddress } from '@/store/cart'
@@ -70,12 +71,12 @@ function paymentDetailsToRecord(details: PaymentDetails) {
   return {}
 }
 
-function checkoutErrorMessage(text: string, fallback: string) {
+function checkoutErrorDetails(text: string, fallback: string) {
   try {
-    const parsed = JSON.parse(text) as { message?: string; data?: { message?: string } }
-    return parsed.message || parsed.data?.message || fallback
+    const parsed = JSON.parse(text) as { code?: string; message?: string; data?: { message?: string } }
+    return { code: parsed.code || '', message: parsed.message || parsed.data?.message || fallback }
   } catch {
-    return fallback
+    return { code: '', message: fallback }
   }
 }
 
@@ -84,7 +85,7 @@ function paymentLabel(totalMinor: string) {
   return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(amount)
 }
 
-export function StripeCardForm({ address, expectedTotal, disabled }: { address: CheckoutAddress; expectedTotal: string; disabled: boolean }) {
+export function StripeCardForm({ address, expectedTotal, disabled, onCartRefresh }: { address: CheckoutAddress; expectedTotal: string; disabled: boolean; onCartRefresh?: () => Promise<void> }) {
   const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ''
   const mountRef = useRef<HTMLDivElement | null>(null)
   const cardRef = useRef<StripeCardElement | null>(null)
@@ -169,7 +170,14 @@ export function StripeCardForm({ address, expectedTotal, disabled }: { address: 
         body: JSON.stringify({ billing_address: address, shipping_address: shippingAddress, payment_method: 'stripe', payment_data: paymentData, expected_total: expectedTotal }),
       })
       const text = await checkoutResponse.text()
-      if (!checkoutResponse.ok) throw new Error(checkoutErrorMessage(text, `Payment could not be processed (${checkoutResponse.status}).`))
+      if (!checkoutResponse.ok) {
+        const details = checkoutErrorDetails(text, `Payment could not be processed (${checkoutResponse.status}).`)
+        if (details.code === 'housefinds_total_changed') await onCartRefresh?.()
+        if (details.code === 'housefinds_checkout_outcome_uncertain') {
+          throw new Error('We could not confirm the payment result. Check order tracking or your confirmation email before trying again.')
+        }
+        throw new Error(details.message)
+      }
 
       const checkout = JSON.parse(text) as CheckoutResponse
       const paymentResult = checkout.payment_result || {}
@@ -227,7 +235,7 @@ export function StripeCardForm({ address, expectedTotal, disabled }: { address: 
       {error && <p role="alert" aria-live="assertive" className="mt-3 rounded-xl bg-rose-50 px-3 py-2.5 text-sm text-rose-800">{error}</p>}
 
       <button type="button" disabled={disabled || processing || !ready || !complete || exceedsLaunchLimit} onClick={() => void submitPayment()} className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[#355f4a] px-7 font-semibold text-white transition hover:bg-[#294b3a] disabled:cursor-not-allowed disabled:opacity-45"><LockClosedIcon className="size-4" />{processing ? 'Processing securely…' : `Pay ${paymentLabel(expectedTotal)}`}</button>
-      <p className="mt-3 text-center text-xs leading-5 text-black/38">Your card details are handled by our secure payment provider and are not stored by Housefinds.</p>
+      <p className="mt-3 text-center text-xs leading-5 text-black/42">Your card details are handled by our secure payment provider and are not stored by Housefinds. By placing an order you agree to the <Link href="/terms" className="font-semibold text-[var(--hf-brand)] underline underline-offset-3">Terms of sale</Link> and acknowledge the <Link href="/privacy-policy" className="font-semibold text-[var(--hf-brand)] underline underline-offset-3">Privacy policy</Link>.</p>
     </div>
   )
 }

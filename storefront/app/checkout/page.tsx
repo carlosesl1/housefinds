@@ -2,13 +2,14 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { CheckCircleIcon, ChevronDownIcon, LockClosedIcon, TruckIcon } from '@heroicons/react/24/outline'
 import { StripeCardForm } from '@/components/checkout/stripe-card-form'
 import { useCart, type CheckoutAddress } from '@/store/cart'
 import type { WooCart } from '@/lib/woocommerce/types'
 import { formatMoney } from '@/lib/woocommerce/money'
 import { displayProductName } from '@/lib/woocommerce/presentation'
+import { moneyValue, trackStorefrontEvent } from '@/lib/storefront/analytics'
 
 const UK_LAUNCH_ORDER_LIMIT_MINOR = 13_500
 const DELIVERY_ESTIMATE = 'around 14 days'
@@ -24,6 +25,29 @@ const emptyAddress: CheckoutAddress = {
   country: 'GB',
   email: '',
   phone: '',
+}
+
+function cartAddress(cart: WooCart | null): CheckoutAddress {
+  const source = cart?.shipping_address || cart?.billing_address || {}
+  const billing = cart?.billing_address || {}
+  return {
+    first_name: source.first_name || '',
+    last_name: source.last_name || '',
+    address_1: source.address_1 || '',
+    address_2: source.address_2 || '',
+    city: source.city || '',
+    state: source.state || '',
+    postcode: source.postcode || '',
+    country: source.country || 'GB',
+    email: billing.email || source.email || '',
+    phone: source.phone || billing.phone || '',
+  }
+}
+
+function addressFingerprint(address: CheckoutAddress) {
+  return [address.first_name, address.last_name, address.address_1, address.address_2, address.city, address.state, address.postcode, address.country, address.email, address.phone]
+    .map((value) => String(value || '').trim().toLowerCase())
+    .join('|')
 }
 
 function fieldId(name: keyof CheckoutAddress) {
@@ -65,7 +89,7 @@ function Field({ name, label, value, onChange, placeholder, type = 'text', autoC
         aria-required={required}
         aria-invalid={Boolean(error)}
         aria-describedby={describedBy}
-        className={`h-13 w-full rounded-2xl border bg-white px-4 text-[15px] outline-none transition placeholder:text-black/28 focus:ring-4 ${error ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-100' : 'border-black/10 focus:border-[#557562] focus:ring-[#557562]/10'}`}
+        className={`h-13 w-full rounded-[var(--hf-radius-sm)] border bg-white px-4 text-[15px] outline-none transition placeholder:text-black/28 focus:ring-4 ${error ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-100' : 'border-black/10 focus:border-[#557562] focus:ring-[#557562]/10'}`}
       />
       {hint && !error && <span id={`${id}-hint`} className="sr-only">{hint}</span>}
       {error && <span id={`${id}-error`} className="mt-2 block text-xs font-medium leading-5 text-rose-700">{error}</span>}
@@ -95,7 +119,7 @@ function OrderSummaryBody({ cart, money, coupon, setCoupon, loading, applyCoupon
       <div className="space-y-5">
         {cart.items.map((item) => (
           <div key={item.key} className="grid grid-cols-[72px_1fr_auto] gap-3">
-            <div className="relative aspect-square overflow-hidden rounded-2xl bg-[#f0efe9]">
+            <div className="relative aspect-square overflow-hidden rounded-[var(--hf-radius-sm)] bg-[#f0efe9]">
               {item.images?.[0]?.src && <Image src={item.images[0].src} alt={displayProductName(item.name)} fill sizes="72px" className="object-cover" />}
               <span className="absolute right-1 top-1 grid size-5 place-items-center rounded-full bg-[#172018] text-[10px] font-bold text-white">{item.quantity}</span>
             </div>
@@ -130,7 +154,7 @@ function OrderSummaryBody({ cart, money, coupon, setCoupon, loading, applyCoupon
         </div>
       </div>
 
-      <div className="mt-6 rounded-2xl bg-[#f0f2ed] p-4 text-xs leading-5 text-black/48">
+      <div className="mt-6 rounded-[var(--hf-radius-sm)] bg-[#f0f2ed] p-4 text-xs leading-5 text-black/48">
         <div className="flex items-center gap-2 font-semibold text-[#355f4a]"><TruckIcon className="size-4" /> Free UK delivery</div>
         <p className="mt-1">Current delivery estimate: {DELIVERY_ESTIMATE}. <Link href="/returns" className="font-semibold text-[#355f4a] underline underline-offset-3">Free 14-day returns</Link> apply to eligible online orders.</p>
       </div>
@@ -147,10 +171,47 @@ export default function CheckoutPage() {
   const selectShipping = useCart((state) => state.selectShipping)
   const applyCoupon = useCart((state) => state.applyCoupon)
   const removeCoupon = useCart((state) => state.removeCoupon)
+  const refreshCart = useCart((state) => state.refresh)
 
   const [address, setAddress] = useState<CheckoutAddress>(emptyAddress)
+  const [confirmedAddress, setConfirmedAddress] = useState('')
+  const [hydratedAddress, setHydratedAddress] = useState(false)
   const [coupon, setCoupon] = useState('')
   const [deliveryAttempted, setDeliveryAttempted] = useState(false)
+
+  useEffect(() => {
+    if (!cart || hydratedAddress) return
+    const restored = cartAddress(cart)
+    const hasStoredAddress = Boolean(restored.first_name || restored.address_1 || restored.postcode || restored.email)
+    if (hasStoredAddress) {
+      setAddress(restored)
+      if (cart.has_calculated_shipping) setConfirmedAddress(addressFingerprint(restored))
+    }
+    setHydratedAddress(true)
+  }, [cart, hydratedAddress])
+
+  useEffect(() => {
+    if (!cart?.items?.length) return
+    const key = `hf_begin_checkout_${cart.items.map((item) => `${item.id}:${item.quantity}`).join('|')}_${cart.totals.total_price}`
+    try {
+      if (window.sessionStorage.getItem(key)) return
+      trackStorefrontEvent({
+        event: 'begin_checkout',
+        ecommerce: {
+          currency: cart.totals.currency_code || 'GBP',
+          value: moneyValue(cart.totals.total_price, cart.totals.currency_minor_unit),
+          items: cart.items.map((item) => ({
+            item_id: String(item.id),
+            item_name: displayProductName(item.name),
+            item_variant: item.variation?.map((entry) => entry.value).filter(Boolean).join(' · ') || undefined,
+            quantity: item.quantity,
+            price: moneyValue(item.totals.line_total, item.totals.currency_minor_unit) / Math.max(1, item.quantity),
+          })),
+        },
+      })
+      window.sessionStorage.setItem(key, '1')
+    } catch {}
+  }, [cart])
 
   const shippingRates = useMemo(() => cart?.shipping_rates.flatMap((pkg) => pkg.shipping_rates.map((rate) => ({ ...rate, packageId: pkg.package_id }))) || [], [cart])
   const selectedShipping = shippingRates.some((rate) => rate.selected)
@@ -172,7 +233,9 @@ export default function CheckoutPage() {
   const errorEntries = Object.entries(addressErrors) as Array<[keyof CheckoutAddress, string]>
   const addressReady = errorEntries.length === 0
   const exceedsLaunchLimit = Number(cart?.totals.total_price || 0) >= UK_LAUNCH_ORDER_LIMIT_MINOR
-  const deliveryReady = Boolean(cart && (!cart.needs_shipping || (cart.has_calculated_shipping && selectedShipping)))
+  const currentAddressFingerprint = addressFingerprint(address)
+  const deliveryAddressConfirmed = !cart?.needs_shipping || (Boolean(confirmedAddress) && confirmedAddress === currentAddressFingerprint)
+  const deliveryReady = Boolean(cart && deliveryAddressConfirmed && (!cart.needs_shipping || (cart.has_calculated_shipping && selectedShipping)))
   const paymentReady = Boolean(addressReady && !exceedsLaunchLimit && deliveryReady)
 
   const money = (amount?: string) => formatMoney(amount || '0', cart?.totals.currency_minor_unit ?? 2, cart?.totals.currency_symbol || '£')
@@ -185,7 +248,8 @@ export default function CheckoutPage() {
       if (firstInvalid) window.requestAnimationFrame(() => document.getElementById(fieldId(firstInvalid))?.focus())
       return
     }
-    await updateCustomer(address)
+    const updated = await updateCustomer(address)
+    if (updated) setConfirmedAddress(addressFingerprint(address))
   }
 
   if (!cart?.items?.length) {
@@ -193,21 +257,21 @@ export default function CheckoutPage() {
       <main className="min-h-[70vh] bg-[#fbfaf7] px-5 py-12 lg:px-8">
         <div className="mx-auto max-w-[1100px]">
           <header className="mb-10 flex items-center justify-between border-b border-black/[.07] pb-6">
-            <Link href="/" className="text-2xl font-bold tracking-[-.05em] text-[#172018]">Housefinds</Link>
+            <Link href="/" className="inline-flex items-center" aria-label="Housefinds home"><Image src="/housefinds-logo.svg" alt="Housefinds" width={720} height={210} className="h-9 w-auto sm:h-10" priority /></Link>
             <div className="inline-flex items-center gap-2 text-sm font-medium text-black/45"><LockClosedIcon className="size-4" /> Secure checkout</div>
           </header>
-          <div className="mx-auto max-w-2xl rounded-[34px] border border-black/[.06] bg-white p-8 text-center shadow-[0_22px_80px_rgba(34,45,37,.05)] sm:p-12">
+          <div className="mx-auto max-w-2xl rounded-[var(--hf-radius-lg)] border border-black/[.06] bg-white p-8 text-center shadow-[0_22px_80px_rgba(34,45,37,.05)] sm:p-12">
             <p className="text-[11px] font-semibold uppercase tracking-[.28em] text-[#557562]">Checkout</p>
             <h1 className="mt-4 text-5xl font-semibold tracking-[-.06em]">Your cart is empty.</h1>
             <p className="mx-auto mt-5 max-w-md text-black/50">Add a clever find first, then come back here to arrange delivery and payment.</p>
-            <Link href="/shop" className="mt-8 inline-flex h-13 items-center rounded-full bg-[#355f4a] px-6 font-semibold text-white">Browse products</Link>
+            <Link href="/shop" className="hf-button-primary mt-8">Browse products</Link>
           </div>
         </div>
       </main>
     )
   }
 
-  const currentStep = !cart.has_calculated_shipping ? 1 : !deliveryReady ? 2 : 3
+  const currentStep = !addressReady || !deliveryAddressConfirmed ? 1 : !deliveryReady ? 2 : 3
   const progressSteps = [
     { number: 1, label: 'Details', complete: currentStep > 1 },
     { number: 2, label: 'Delivery', complete: currentStep > 2 },
@@ -218,14 +282,14 @@ export default function CheckoutPage() {
     <main className="bg-[#f5f4ef] px-5 py-7 lg:px-8 lg:py-10">
       <div className="mx-auto max-w-[1320px]">
         <header className="flex flex-col gap-4 border-b border-black/[.07] pb-5 sm:flex-row sm:items-center sm:justify-between">
-          <Link href="/" className="text-2xl font-bold tracking-[-.05em] text-[#172018]">Housefinds</Link>
+          <Link href="/" className="inline-flex items-center" aria-label="Housefinds home"><Image src="/housefinds-logo.svg" alt="Housefinds" width={720} height={210} className="h-9 w-auto sm:h-10" priority /></Link>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs sm:text-sm">
             <span className="font-semibold text-[#355f4a]">Guest checkout · no account required</span>
             <span className="inline-flex items-center gap-2 font-medium text-black/45"><LockClosedIcon className="size-4" /> Secure checkout</span>
           </div>
         </header>
 
-        <nav aria-label="Checkout progress" className="mb-7 mt-5 grid grid-cols-3 overflow-hidden rounded-2xl border border-black/[.07] bg-white sm:mb-8">
+        <nav aria-label="Checkout progress" className="mb-7 mt-5 grid grid-cols-3 overflow-hidden rounded-[var(--hf-radius-sm)] border border-black/[.07] bg-white sm:mb-8">
           {progressSteps.map((step) => {
             const active = currentStep === step.number
             return (
@@ -237,7 +301,7 @@ export default function CheckoutPage() {
           })}
         </nav>
 
-        <details className="group mb-5 rounded-[24px] border border-black/[.06] bg-white shadow-[0_14px_44px_rgba(34,45,37,.035)] lg:hidden">
+        <details className="group mb-5 rounded-[var(--hf-radius-md)] border border-black/[.06] bg-white shadow-[0_14px_44px_rgba(34,45,37,.035)] lg:hidden">
           <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-4 px-5 py-4">
             <div><span className="text-sm font-semibold">Order summary</span><span className="ml-2 text-xs text-black/40">{cart.items_count} item{cart.items_count === 1 ? '' : 's'}</span></div>
             <div className="flex items-center gap-2"><strong>{money(cart.totals.total_price)}</strong><ChevronDownIcon className="size-4 text-black/42 transition group-open:rotate-180" /></div>
@@ -251,24 +315,24 @@ export default function CheckoutPage() {
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_400px] xl:gap-12">
           <section className="space-y-5">
             {exceedsLaunchLimit && (
-              <div className="rounded-[26px] border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-950">
+              <div className="rounded-[var(--hf-radius-md)] border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-950">
                 <strong>Keep this order below £135 to continue.</strong>
                 <p className="mt-1">Reduce the quantity or remove an item from your cart. Housefinds is limiting launch orders to baskets below £135.</p>
               </div>
             )}
 
-            <form noValidate onSubmit={(event) => { event.preventDefault(); void calculateDelivery() }} className="rounded-[32px] border border-black/[.06] bg-white p-6 shadow-[0_20px_70px_rgba(34,45,37,.04)] sm:p-8">
+            <form noValidate onSubmit={(event) => { event.preventDefault(); void calculateDelivery() }} className="rounded-[var(--hf-radius-lg)] border border-black/[.06] bg-white p-6 shadow-[0_20px_70px_rgba(34,45,37,.04)] sm:p-8">
               <div className="flex items-start justify-between gap-6">
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-[.28em] text-[#557562]">Step 1 · Guest checkout</p>
                   <h1 className="mt-3 text-4xl font-semibold tracking-[-.055em] sm:text-5xl">Contact & delivery</h1>
                   <p className="mt-3 max-w-xl text-sm leading-6 text-black/48">UK delivery is free. Fields marked Required are needed to deliver your order; everything else is optional.</p>
                 </div>
-                <span className="hidden size-12 place-items-center rounded-2xl bg-[#e7eee9] text-[#456b55] sm:grid"><TruckIcon className="size-6" /></span>
+                <span className="hidden size-12 place-items-center rounded-[var(--hf-radius-sm)] bg-[#e7eee9] text-[#456b55] sm:grid"><TruckIcon className="size-6" /></span>
               </div>
 
               {deliveryAttempted && !addressReady && (
-                <div role="alert" aria-live="assertive" className="mt-6 max-w-[680px] rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">
+                <div role="alert" aria-live="assertive" className="mt-6 max-w-[680px] rounded-[var(--hf-radius-sm)] border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">
                   <p className="font-semibold">Check {errorEntries.length} highlighted detail{errorEntries.length === 1 ? '' : 's'} before continuing.</p>
                   <ul className="mt-2 space-y-1.5 text-xs leading-5">
                     {errorEntries.map(([field, message]) => <li key={field}><a href={`#${fieldId(field)}`} className="underline underline-offset-2">{message}</a></li>)}
@@ -284,7 +348,7 @@ export default function CheckoutPage() {
                   <Field name="last_name" label="Last name" autoComplete="shipping family-name" value={address.last_name} onChange={(value) => setField('last_name', value)} required error={deliveryAttempted ? addressErrors.last_name : undefined} />
                 </div>
                 <Field name="address_1" label="Address" autoComplete="shipping address-line1" value={address.address_1} onChange={(value) => setField('address_1', value)} placeholder="House number and street" required error={deliveryAttempted ? addressErrors.address_1 : undefined} />
-                <details className="group rounded-2xl border border-black/[.07] bg-[#faf9f6] px-4 py-3">
+                <details className="group rounded-[var(--hf-radius-sm)] border border-black/[.07] bg-[#faf9f6] px-4 py-3">
                   <summary className="cursor-pointer list-none text-sm font-semibold text-black/48">+ Add flat, apartment, suite or county</summary>
                   <div className="mt-4 space-y-4 border-t border-black/[.06] pt-4">
                     <Field name="address_2" label="Flat, apartment or suite" autoComplete="shipping address-line2" value={address.address_2 || ''} onChange={(value) => setField('address_2', value)} />
@@ -297,52 +361,52 @@ export default function CheckoutPage() {
                 </div>
                 <div>
                   <div className="mb-2 flex items-baseline justify-between gap-3"><span className="text-sm font-semibold text-[#172018]">Country</span><span className="text-[11px] text-black/38">UK checkout</span></div>
-                  <div className="flex h-13 items-center rounded-2xl border border-black/10 bg-[#f7f7f4] px-4 text-[15px] text-black/65">United Kingdom</div>
+                  <div className="flex h-13 items-center rounded-[var(--hf-radius-sm)] border border-black/10 bg-[#f7f7f4] px-4 text-[15px] text-black/65">United Kingdom</div>
                 </div>
                 <Field name="phone" label="Phone" type="tel" inputMode="tel" autoComplete="shipping tel" value={address.phone || ''} onChange={(value) => setField('phone', value)} hint="Only used if there is a delivery issue" />
               </fieldset>
 
-              <button type="submit" disabled={loading || exceedsLaunchLimit} className="mt-7 inline-flex h-13 items-center justify-center rounded-full bg-[#355f4a] px-7 font-semibold text-white transition hover:bg-[#294b3a] disabled:opacity-50">{loading ? 'Checking…' : cart.has_calculated_shipping ? 'Update delivery details' : 'Continue to delivery'}</button>
+              <button type="submit" disabled={loading || exceedsLaunchLimit} className="hf-button-primary mt-7 disabled:opacity-50">{loading ? 'Checking…' : cart.has_calculated_shipping ? 'Update delivery details' : 'Continue to delivery'}</button>
             </form>
 
-            <div className="rounded-[32px] border border-black/[.06] bg-white p-6 shadow-[0_20px_70px_rgba(34,45,37,.04)] sm:p-8">
+            <div className="rounded-[var(--hf-radius-lg)] border border-black/[.06] bg-white p-6 shadow-[0_20px_70px_rgba(34,45,37,.04)] sm:p-8">
               <p className="text-[11px] font-semibold uppercase tracking-[.28em] text-[#557562]">Step 2</p>
               <h2 className="mt-3 text-3xl font-semibold tracking-[-.045em]">Delivery</h2>
               {!cart.needs_shipping ? (
-                <p className="mt-4 rounded-2xl bg-[#edf3ee] p-4 text-sm text-[#355f4a]">No delivery is required for this order.</p>
-              ) : !cart.has_calculated_shipping ? (
-                <div className="mt-4 rounded-2xl bg-[#f5f5f1] p-4 text-sm leading-6 text-black/48"><strong className="text-[#172018]">Free standard UK delivery</strong><p className="mt-1">Current delivery estimate: {DELIVERY_ESTIMATE}. Complete your address above to confirm delivery availability for your postcode.</p></div>
+                <p className="mt-4 rounded-[var(--hf-radius-sm)] bg-[#edf3ee] p-4 text-sm text-[#355f4a]">No delivery is required for this order.</p>
+              ) : !cart.has_calculated_shipping || !deliveryAddressConfirmed ? (
+                <div className="mt-4 rounded-[var(--hf-radius-md)] bg-[#f5f5f1] p-4 text-sm leading-6 text-black/48"><strong className="text-[#172018]">Free standard UK delivery</strong><p className="mt-1">{cart.has_calculated_shipping ? 'Your address changed. Confirm the updated delivery details above before paying.' : `Current delivery estimate: ${DELIVERY_ESTIMATE}. Complete your address above to confirm delivery availability for your postcode.`}</p></div>
               ) : shippingRates.length ? (
                 <div className="mt-5 space-y-3">
                   {shippingRates.map((rate) => (
-                    <button type="button" key={`${rate.packageId}-${rate.rate_id}`} onClick={() => void selectShipping(rate.packageId, rate.rate_id)} disabled={loading} className={`flex min-h-16 w-full items-center justify-between gap-5 rounded-2xl border p-4 text-left transition ${rate.selected ? 'border-[#557562] bg-[#edf3ee]' : 'border-black/10 bg-white hover:border-black/20'}`}>
+                    <button type="button" key={`${rate.packageId}-${rate.rate_id}`} onClick={() => void selectShipping(rate.packageId, rate.rate_id)} disabled={loading} className={`flex min-h-16 w-full items-center justify-between gap-5 rounded-[var(--hf-radius-sm)] border p-4 text-left transition ${rate.selected ? 'border-[#557562] bg-[#edf3ee]' : 'border-black/10 bg-white hover:border-black/20'}`}>
                       <div><p className="font-semibold text-[#172018]">{rate.name || 'Standard UK delivery'}</p><p className="mt-1 text-sm text-black/45">{rate.delivery_time || `Current delivery estimate: ${DELIVERY_ESTIMATE}`}</p>{rate.description && <p className="mt-1 text-xs text-black/38">{rate.description}</p>}</div>
                       <div className="flex items-center gap-3"><strong className={Number(rate.price) === 0 ? 'text-[#355f4a]' : ''}>{Number(rate.price) === 0 ? 'FREE' : money(rate.price)}</strong>{rate.selected && <CheckCircleIcon className="size-5 text-[#456b55]" />}</div>
                     </button>
                   ))}
                 </div>
               ) : (
-                <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">We could not confirm delivery for this postcode. Check the address or contact Housefinds support before paying.</div>
+                <div className="mt-4 rounded-[var(--hf-radius-sm)] border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">We could not confirm delivery for this postcode. Check the address or contact Housefinds support before paying.</div>
               )}
             </div>
 
-            <div className="rounded-[32px] border border-black/[.06] bg-white p-6 shadow-[0_20px_70px_rgba(34,45,37,.04)] sm:p-8">
+            <div className="rounded-[var(--hf-radius-lg)] border border-black/[.06] bg-white p-6 shadow-[0_20px_70px_rgba(34,45,37,.04)] sm:p-8">
               <p className="text-[11px] font-semibold uppercase tracking-[.28em] text-[#557562]">Step 3</p>
               <h2 className="mt-3 text-3xl font-semibold tracking-[-.045em]">Payment</h2>
               <p className="mt-2 text-sm leading-6 text-black/48">Payment is processed securely by Stripe. Housefinds does not store your card number or security code.</p>
-              <div className="mt-5 flex items-end justify-between gap-5 rounded-2xl border border-black/[.07] bg-[#faf9f6] p-4">
+              <div className="mt-5 flex items-end justify-between gap-5 rounded-[var(--hf-radius-sm)] border border-black/[.07] bg-[#faf9f6] p-4">
                 <div><p className="text-xs font-semibold uppercase tracking-[.12em] text-black/38">Amount due now</p><p className="mt-1 text-xs text-black/38">GBP · delivery included</p></div>
                 <strong className="text-2xl tracking-[-.04em]">{money(cart.totals.total_price)}</strong>
               </div>
-              {!paymentReady && !exceedsLaunchLimit && <div className="mt-5 rounded-2xl bg-[#f5f5f1] p-4 text-sm leading-6 text-black/48">Complete your delivery details{cart.needs_shipping ? ' and choose the delivery method' : ''} to unlock payment.</div>}
-              <div className="mt-5"><StripeCardForm address={address} expectedTotal={cart.totals.total_price} disabled={!paymentReady || loading} /></div>
+              {!paymentReady && !exceedsLaunchLimit && <div className="mt-5 rounded-[var(--hf-radius-sm)] bg-[#f5f5f1] p-4 text-sm leading-6 text-black/48">Complete your delivery details{cart.needs_shipping ? ' and choose the delivery method' : ''} to unlock payment.</div>}
+              <div className="mt-5"><StripeCardForm address={address} expectedTotal={cart.totals.total_price} disabled={!paymentReady || loading} onCartRefresh={refreshCart} /></div>
             </div>
 
-            {error && <div role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-950"><div className="flex items-start justify-between gap-4"><span>{error}</span><button type="button" className="font-semibold underline" onClick={clearError}>Dismiss</button></div></div>}
+            {error && <div role="alert" className="rounded-[var(--hf-radius-sm)] border border-rose-200 bg-rose-50 p-4 text-sm text-rose-950"><div className="flex items-start justify-between gap-4"><span>{error}</span><button type="button" className="font-semibold underline" onClick={clearError}>Dismiss</button></div></div>}
           </section>
 
           <aside className="hidden h-fit lg:sticky lg:top-8 lg:block">
-            <div className="rounded-[32px] border border-black/[.06] bg-white p-6 shadow-[0_22px_80px_rgba(34,45,37,.055)]">
+            <div className="rounded-[var(--hf-radius-lg)] border border-black/[.06] bg-white p-6 shadow-[0_22px_80px_rgba(34,45,37,.055)]">
               <div className="flex items-center justify-between gap-4">
                 <div><h2 className="text-xl font-semibold tracking-[-.03em]">Order summary</h2><span className="text-sm text-black/42">{cart.items_count} item{cart.items_count === 1 ? '' : 's'}</span></div>
                 <Link href="/cart" className="text-xs font-semibold text-[#355f4a] underline underline-offset-3">Edit cart</Link>

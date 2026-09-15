@@ -5,6 +5,7 @@ import { displayProductName } from '@/lib/woocommerce/presentation'
 import { formatMoney } from '@/lib/woocommerce/money'
 import { getLastStoreOrder, orderStatusCopy } from '@/lib/woocommerce/order-session'
 import { isOperationalAttributeName } from '@/lib/storefront/catalog'
+import { PurchaseTracker } from '@/components/analytics/purchase-tracker'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Order confirmation', robots: { index: false, follow: false } }
@@ -21,13 +22,13 @@ export default async function OrderConfirmationPage() {
   if (!session || !order) {
     return (
       <main className="min-h-[72vh] bg-[#fbfaf7] px-5 py-20 lg:px-8">
-        <div className="mx-auto max-w-2xl rounded-[34px] border border-black/[.06] bg-white p-8 text-center shadow-[0_22px_80px_rgba(34,45,37,.05)] sm:p-12">
+        <div className="mx-auto max-w-2xl rounded-[var(--hf-radius-lg)] border border-black/[.06] bg-white p-8 text-center shadow-[0_22px_80px_rgba(34,45,37,.05)] sm:p-12">
           <p className="text-[11px] font-semibold uppercase tracking-[.28em] text-[#557562]">Housefinds order</p>
           <h1 className="mt-4 text-5xl font-semibold tracking-[-.06em]">We can’t restore this receipt here.</h1>
           <p className="mx-auto mt-5 max-w-lg text-sm leading-7 text-black/50">If you have already placed an order, use order tracking from the same browser or contact Housefinds with your order number and email address.</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link href="/track-order" className="rounded-full bg-[#355f4a] px-6 py-3.5 text-sm font-semibold text-white">Track an order</Link>
-            <a href="mailto:contact@housefindsstore.com" className="rounded-full border border-black/10 bg-white px-6 py-3.5 text-sm font-semibold">Contact support</a>
+            <Link href="/track-order" className="hf-button-primary">Track an order</Link>
+            <a href="mailto:contact@housefindsstore.com" className="hf-button-secondary">Contact support</a>
           </div>
         </div>
       </main>
@@ -44,9 +45,10 @@ export default async function OrderConfirmationPage() {
   const orderNumber = order.order_number || session.order_number || String(order.id)
 
   return (
-    <main className="bg-[#f5f4ef] px-5 py-10 lg:px-8 lg:py-16">
+    <main className="bg-[var(--hf-surface-soft)] px-5 py-10 lg:px-8 lg:py-16">
+      {order.totals?.total_price && <PurchaseTracker transactionId={String(orderNumber)} total={order.totals.total_price} currency={order.totals.currency_code || 'GBP'} minorUnit={order.totals.currency_minor_unit ?? 2} items={(order.items || []).map((item) => ({ id: item.id, name: displayProductName(item.name), quantity: item.quantity, lineTotal: item.totals?.line_total }))} />}
       <div className="mx-auto max-w-[1180px]">
-        <section className="overflow-hidden rounded-[38px] border border-black/[.06] bg-white shadow-[0_28px_100px_rgba(34,45,37,.055)]">
+        <section className="overflow-hidden rounded-[var(--hf-radius-lg)] border border-black/[.06] bg-white shadow-[0_28px_100px_rgba(34,45,37,.055)]">
           <div className="bg-[#172018] px-7 py-10 text-white sm:px-10 lg:px-14 lg:py-14">
             <span className="grid size-14 place-items-center rounded-full bg-[#dce8df] text-[#355f4a]"><CheckCircleIcon className="size-8" /></span>
             <p className="mt-7 text-[11px] font-semibold uppercase tracking-[.28em] text-white/42">Order #{orderNumber}</p>
@@ -58,14 +60,14 @@ export default async function OrderConfirmationPage() {
             <div className="p-7 sm:p-10 lg:p-14">
               <div className="grid gap-4 sm:grid-cols-2">
                 {showDeliveryEstimate && (
-                  <div className="rounded-[26px] bg-[#edf3ee] p-6">
+                  <div className="rounded-[var(--hf-radius-md)] bg-[#edf3ee] p-6">
                     <ClockIcon className="size-5 text-[#456b55]" />
                     <p className="mt-4 text-xs font-semibold uppercase tracking-[.16em] text-black/38">Estimated delivery</p>
                     <p className="mt-1 text-xl font-semibold tracking-[-.03em]">Around 14 days</p>
                     <p className="mt-2 text-xs leading-5 text-black/42">This is the current standard UK delivery estimate, not a guaranteed arrival date.</p>
                   </div>
                 )}
-                <div className="rounded-[26px] bg-[#f3f1eb] p-6">
+                <div className="rounded-[var(--hf-radius-md)] bg-[#f3f1eb] p-6">
                   <EnvelopeIcon className="size-5 text-[#557562]" />
                   <p className="mt-4 text-xs font-semibold uppercase tracking-[.16em] text-black/38">Confirmation</p>
                   <p className="mt-1 text-xl font-semibold tracking-[-.03em]">Email sent</p>
@@ -89,7 +91,7 @@ export default async function OrderConfirmationPage() {
                     const details = variationDetails.length ? variationDetails : itemDataDetails
                     return (
                       <div key={item.key || `${item.id}-${index}`} className="grid grid-cols-[78px_1fr_auto] gap-4 py-5">
-                        <div className="relative aspect-square overflow-hidden rounded-2xl bg-[#efeee8]">{image?.src && <Image src={image.src} alt={displayProductName(item.name)} fill sizes="78px" className="object-cover" />}</div>
+                        <div className="relative aspect-square overflow-hidden rounded-[var(--hf-radius-sm)] bg-[#efeee8]">{image?.src && <Image src={image.src} alt={displayProductName(item.name)} fill sizes="78px" className="object-cover" />}</div>
                         <div className="min-w-0 self-center"><p className="font-semibold leading-5">{displayProductName(item.name)}</p>{details.length > 0 && <p className="mt-1 text-xs text-black/42">{details.join(' · ')}</p>}<p className="mt-1 text-xs text-black/38">Qty {item.quantity}</p></div>
                         {item.totals?.line_total && <p className="self-center text-sm font-semibold">{formatMoney(item.totals.line_total, item.totals.currency_minor_unit ?? order.totals?.currency_minor_unit ?? 2, item.totals.currency_symbol || order.totals?.currency_symbol || '£')}</p>}
                       </div>
@@ -119,8 +121,8 @@ export default async function OrderConfirmationPage() {
               )}
 
               <div className="mt-9 grid gap-3 border-t border-black/[.07] pt-8">
-                <Link href="/track-order" className="flex h-13 items-center justify-center rounded-full bg-[#355f4a] px-6 text-sm font-semibold text-white">Track this order</Link>
-                <Link href="/shop" className="flex h-13 items-center justify-center rounded-full border border-black/10 bg-white px-6 text-sm font-semibold">Continue shopping</Link>
+                <Link href="/track-order" className="hf-button-primary">Track this order</Link>
+                <Link href="/shop" className="hf-button-secondary">Continue shopping</Link>
                 <p className="text-center text-xs leading-5 text-black/38">Need help? <a className="underline underline-offset-3" href="mailto:contact@housefindsstore.com">contact@housefindsstore.com</a></p>
               </div>
             </aside>

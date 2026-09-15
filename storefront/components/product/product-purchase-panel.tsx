@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import {
   ArrowUturnLeftIcon,
   CheckIcon,
@@ -17,6 +18,7 @@ import { storefrontAttributeName, storefrontTermName } from '@/lib/storefront/ca
 import { colourForceTerms, parseColourForceTerm } from '@/lib/storefront/product-attributes'
 import { useCart } from '@/store/cart'
 import { formatProductPrice } from '@/lib/woocommerce/money'
+import { moneyValue, trackStorefrontEvent } from '@/lib/storefront/analytics'
 
 function normalize(value: string | null | undefined) {
   return (value || '').trim().toLowerCase()
@@ -190,6 +192,10 @@ export function ProductPurchasePanel({ product, variations = [], dark = false }:
   const [compoundSelections, setCompoundSelections] = useState<Record<string, CompoundChoice>>(initialCompoundSelections)
   const [colourForceSelections, setColourForceSelections] = useState<Record<string, ColourForceChoice>>(initialColourForceSelections)
   const [quantity, setQuantity] = useState(Math.max(1, product.add_to_cart?.minimum || 1))
+  const panelRef = useRef<HTMLDivElement | null>(null)
+  const seenPanel = useRef(false)
+  const [showSticky, setShowSticky] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const add = useCart((state) => state.add)
   const loading = useCart((state) => state.loading)
 
@@ -216,13 +222,50 @@ export function ProductPurchasePanel({ product, variations = [], dark = false }:
   const canAdd = isPurchasable && isInStock && allSelected && selectionIsValid && !loading
   const displayPrice = formatProductPrice(exactProduct)
 
+  useEffect(() => setMounted(true), [])
+
+  useEffect(() => {
+    const node = panelRef.current
+    if (!node || typeof IntersectionObserver === 'undefined') return
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        seenPanel.current = true
+        setShowSticky(false)
+      } else if (seenPanel.current) {
+        setShowSticky(true)
+      }
+    }, { threshold: 0.2 })
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    if (!selectedVariation?.image?.src) return
+    window.dispatchEvent(new CustomEvent('housefinds:variation-image', { detail: selectedVariation.image }))
+  }, [selectedVariation?.id, selectedVariation?.image?.src])
+
   const labelClass = dark ? 'text-white/62' : 'text-black/52'
   const optionIdle = dark ? 'border-white/15 bg-white/[.04] text-white/78 hover:bg-white/[.08]' : 'border-black/10 bg-white text-black/68 hover:border-[#557562]/45 hover:bg-[#fbfcfa]'
   const optionActive = dark ? 'border-[#a8c6b0] bg-[#dce8df] text-[#172018]' : 'border-[#557562] bg-[#e4ede7] text-[#294b3a] shadow-[0_5px_16px_rgba(53,95,74,.08)]'
 
   async function handleAdd() {
     if (!canAdd) return
-    await add(variationId || product.id, quantity)
+    const added = await add(variationId || product.id, quantity)
+    if (!added) return
+    trackStorefrontEvent({
+      event: 'add_to_cart',
+      ecommerce: {
+        currency: exactProduct.prices.currency_code || 'GBP',
+        value: moneyValue(exactProduct.prices.price, exactProduct.prices.currency_minor_unit) * quantity,
+        items: [{
+          item_id: String(variationId || product.id),
+          item_name: product.name,
+          item_variant: selectionSummary || undefined,
+          price: moneyValue(exactProduct.prices.price, exactProduct.prices.currency_minor_unit),
+          quantity,
+        }],
+      },
+    })
   }
 
   function handleStickyAction() {
@@ -310,7 +353,7 @@ export function ProductPurchasePanel({ product, variations = [], dark = false }:
   }
 
   return (
-    <div className="space-y-6" id="purchase-panel">
+    <div ref={panelRef} className="space-y-6" id="purchase-panel">
       <div
         aria-live="polite"
         className={`rounded-[var(--hf-radius-md)] border p-4 sm:p-5 ${dark ? 'border-white/10 bg-white/[.045]' : 'border-black/[.065] bg-white shadow-[0_12px_34px_rgba(34,48,39,.045)]'}`}
@@ -326,7 +369,7 @@ export function ProductPurchasePanel({ product, variations = [], dark = false }:
         </div>
         {allSelected && variations.length > 0 && !selectedVariation && <p className="mt-3 text-xs font-medium text-amber-700">Select another combination to see exact availability.</p>}
         {selectedVariation && !selectedVariation.is_in_stock && <p className="mt-3 text-xs font-semibold text-rose-700">This option is currently out of stock.</p>}
-        {selectionSummary && <p className={`mt-3 text-xs font-medium ${dark ? 'text-white/58' : 'text-black/48'}`}>{selectionSummary}</p>}
+        {selectionSummary && <p className={`mt-3 text-xs font-medium ${dark ? 'text-white/58' : 'text-black/58'}`}>{selectionSummary}</p>}
         <p className={`mt-3 flex items-center gap-2 text-xs leading-5 ${labelClass}`}><TruckIcon className="size-4 shrink-0" /> Free UK delivery · current estimate around 14 days.</p>
       </div>
 
@@ -502,12 +545,15 @@ export function ProductPurchasePanel({ product, variations = [], dark = false }:
         </div>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-black/10 bg-[#fbfaf7]/96 p-3 shadow-[0_-12px_36px_rgba(20,30,24,.08)] backdrop-blur-xl lg:hidden" style={{ paddingBottom: 'max(.75rem, env(safe-area-inset-bottom))' }}>
-        <div className="mx-auto flex max-w-xl items-center gap-3">
-          <div className="min-w-0 flex-1"><p className="text-sm font-semibold text-[#172018]">{displayPrice}</p><p className="truncate text-[11px] text-black/42">{selectionSummary || (variableAttributes.length ? 'Choose product options' : 'Free UK delivery')}</p></div>
-          <button type="button" disabled={!isPurchasable || !isInStock || loading || (allSelected && !selectionIsValid)} onClick={handleStickyAction} className="inline-flex h-12 shrink-0 items-center gap-2 rounded-[var(--hf-radius-pill)] bg-[var(--hf-brand)] px-5 text-sm font-semibold text-white disabled:opacity-45"><ShoppingBagIcon className="size-4" />{loading ? 'Adding…' : variableAttributes.length && !allSelected ? 'Choose options' : !isInStock ? 'Out of stock' : 'Add to cart'}</button>
-        </div>
-      </div>
+      {mounted && showSticky && createPortal(
+        <div className="fixed inset-x-0 bottom-0 z-[140] border-t border-black/10 bg-[#fbfaf7]/96 p-3 shadow-[0_-12px_36px_rgba(20,30,24,.08)] backdrop-blur-xl lg:hidden" style={{ paddingBottom: 'max(.75rem, env(safe-area-inset-bottom))' }}>
+          <div className="mx-auto flex max-w-xl items-center gap-3">
+            <div className="min-w-0 flex-1"><p className="text-sm font-semibold text-[#172018]">{displayPrice}</p><p className="truncate text-[11px] text-black/55">{selectionSummary || (variableAttributes.length ? 'Choose product options' : 'Free UK delivery')}</p></div>
+            <button type="button" disabled={!isPurchasable || !isInStock || loading || (allSelected && !selectionIsValid)} onClick={handleStickyAction} className="inline-flex h-12 shrink-0 items-center gap-2 rounded-[var(--hf-radius-pill)] bg-[var(--hf-brand)] px-5 text-sm font-semibold text-white disabled:opacity-45"><ShoppingBagIcon className="size-4" />{loading ? 'Adding…' : variableAttributes.length && !allSelected ? 'Choose options' : !isInStock ? 'Out of stock' : 'Add to cart'}</button>
+          </div>
+        </div>,
+        document.body,
+      )}
     </div>
   )
 }

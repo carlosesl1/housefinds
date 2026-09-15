@@ -8,13 +8,14 @@ import type { StorefrontImage } from '@/lib/storefront/client-product'
 export function ProductGallery({ images, productName }: { images: StorefrontImage[]; productName: string }) {
   const gallery = images.slice(0, 12)
   const [active, setActive] = useState(0)
+  const [variationImage, setVariationImage] = useState<StorefrontImage | null>(null)
   const [expanded, setExpanded] = useState(false)
   const openerRef = useRef<HTMLButtonElement | null>(null)
   const closeRef = useRef<HTMLButtonElement | null>(null)
   const touchStartX = useRef<number | null>(null)
 
-  const previous = () => setActive((value) => (value - 1 + gallery.length) % gallery.length)
-  const next = () => setActive((value) => (value + 1) % gallery.length)
+  const previous = () => { setVariationImage(null); setActive((value) => (value - 1 + gallery.length) % gallery.length) }
+  const next = () => { setVariationImage(null); setActive((value) => (value + 1) % gallery.length) }
 
   const closeExpanded = () => {
     setExpanded(false)
@@ -35,6 +36,22 @@ export function ProductGallery({ images, productName }: { images: StorefrontImag
     if (distance > 0) previous()
     else next()
   }
+
+  useEffect(() => {
+    const handleVariationImage = (event: Event) => {
+      const detail = (event as CustomEvent<StorefrontImage>).detail
+      if (!detail?.src) return
+      const matched = gallery.findIndex((image) => image.src === detail.src || image.thumbnail === detail.src)
+      if (matched >= 0) {
+        setVariationImage(null)
+        setActive(matched)
+      } else {
+        setVariationImage(detail)
+      }
+    }
+    window.addEventListener('housefinds:variation-image', handleVariationImage)
+    return () => window.removeEventListener('housefinds:variation-image', handleVariationImage)
+  }, [gallery])
 
   useEffect(() => {
     if (!expanded) return
@@ -83,7 +100,7 @@ export function ProductGallery({ images, productName }: { images: StorefrontImag
     return <div className="grid aspect-[4/3] place-items-center rounded-[var(--hf-radius-lg)] bg-[var(--hf-surface-soft)] text-sm text-black/35">Product imagery coming soon</div>
   }
 
-  const current = gallery[Math.min(active, gallery.length - 1)]
+  const current = variationImage || gallery[Math.min(active, gallery.length - 1)]
   const desktopThumbs = gallery.slice(0, 5)
   const remaining = Math.max(0, gallery.length - desktopThumbs.length)
 
@@ -94,16 +111,16 @@ export function ProductGallery({ images, productName }: { images: StorefrontImag
         <Image
           key={current.id || current.src}
           src={current.src}
-          alt={current.alt || `${productName} product photo ${active + 1}`}
+          alt={current.alt || (variationImage ? `${productName} selected option` : `${productName} product photo ${active + 1}`)}
           fill
-          priority={active === 0}
+          priority={!variationImage && active === 0}
           sizes="(max-width:1280px) 100vw, 58vw"
           className="object-contain p-2 sm:p-4"
         />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/12 to-transparent" />
 
         <div className="pointer-events-none absolute left-4 top-4 z-20 rounded-[var(--hf-radius-pill)] border border-white/55 bg-white/90 px-3.5 py-2 text-xs font-semibold text-black/55 shadow-[var(--hf-shadow-control)] backdrop-blur">
-          {active + 1} / {gallery.length}
+          {variationImage ? 'Selected option' : `${active + 1} / ${gallery.length}`}
         </div>
         <div className="hf-icon-button pointer-events-none absolute right-4 top-4 z-20" aria-hidden="true">
           <ArrowsPointingOutIcon className="size-4" />
@@ -126,7 +143,7 @@ export function ProductGallery({ images, productName }: { images: StorefrontImag
             <button
               key={image.id || `${image.src}-${index}`}
               type="button"
-              onClick={() => setActive(index)}
+              onClick={() => { setVariationImage(null); setActive(index) }}
               aria-label={`Show ${productName} image ${index + 1}`}
               aria-current={active === index ? 'true' : undefined}
               className={`relative aspect-square w-[76px] shrink-0 overflow-hidden rounded-[var(--hf-radius-md)] border bg-[#efede7] transition lg:w-[84px] ${active === index ? 'border-[var(--hf-brand-muted)] ring-2 ring-[#557562]/12 shadow-sm' : 'border-black/[.07] opacity-72 hover:opacity-100'}`}
@@ -146,7 +163,7 @@ export function ProductGallery({ images, productName }: { images: StorefrontImag
         <div data-product-gallery-dialog className="fixed inset-0 z-[160] bg-[#0d100e]/96 p-3 text-white sm:p-6" role="dialog" aria-modal="true" aria-label={`${productName} image viewer`}>
           <div className="relative mx-auto flex h-full max-w-[1500px] flex-col">
             <div className="flex items-center justify-between gap-4 pb-3">
-              <div><p className="text-xs font-semibold uppercase tracking-[.2em] text-white/38">{productName}</p><p className="mt-1 text-sm text-white/60">Image {active + 1} of {gallery.length}</p></div>
+              <div><p className="text-xs font-semibold uppercase tracking-[.2em] text-white/38">{productName}</p><p className="mt-1 text-sm text-white/60">{variationImage ? 'Selected option image' : `Image ${active + 1} of ${gallery.length}`}</p></div>
               <button ref={closeRef} type="button" onClick={closeExpanded} className="grid size-11 place-items-center rounded-full border border-white/15 bg-white/10 transition hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-white" aria-label="Close image viewer"><XMarkIcon className="size-5" /></button>
             </div>
 
@@ -166,7 +183,7 @@ export function ProductGallery({ images, productName }: { images: StorefrontImag
             {gallery.length > 1 && (
               <div className="mt-3 hidden justify-center gap-2 overflow-x-auto pb-1 sm:flex">
                 {gallery.map((image, index) => (
-                  <button key={`expanded-thumb-${image.id || index}`} type="button" onClick={() => setActive(index)} className={`relative aspect-square w-14 shrink-0 overflow-hidden rounded-[12px] border ${active === index ? 'border-white' : 'border-white/15 opacity-45 hover:opacity-80'}`} aria-label={`Show image ${index + 1}`}>
+                  <button key={`expanded-thumb-${image.id || index}`} type="button" onClick={() => { setVariationImage(null); setActive(index) }} className={`relative aspect-square w-14 shrink-0 overflow-hidden rounded-[12px] border ${active === index ? 'border-white' : 'border-white/15 opacity-45 hover:opacity-80'}`} aria-label={`Show image ${index + 1}`}>
                     <Image src={image.thumbnail || image.src} alt="" fill sizes="56px" className="object-cover" />
                   </button>
                 ))}

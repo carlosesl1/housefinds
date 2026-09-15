@@ -66,7 +66,7 @@ summary::-webkit-details-marker { display: none; }
 }
 
 .hf-eyebrow {
-  color: color-mix(in srgb, var(--hf-ink) 46%, transparent);
+  color: color-mix(in srgb, var(--hf-ink) 58%, transparent);
   font-size: 0.69rem;
   font-weight: 700;
   letter-spacing: 0.22em;
@@ -92,9 +92,40 @@ summary::-webkit-details-marker { display: none; }
 }
 
 .hf-copy-lg {
-  color: color-mix(in srgb, var(--hf-ink) 55%, transparent);
+  color: color-mix(in srgb, var(--hf-ink) 62%, transparent);
   font-size: clamp(1rem, 1.25vw, 1.18rem);
   line-height: 1.75;
+}
+
+
+.hf-page {
+  min-height: 70vh;
+  background: var(--hf-background);
+  color: var(--hf-ink);
+}
+
+.hf-panel {
+  border: 1px solid var(--hf-border);
+  border-radius: var(--hf-radius-lg);
+  background: rgba(255,255,255,.9);
+  box-shadow: var(--hf-shadow-soft);
+}
+
+.hf-field {
+  width: 100%;
+  min-height: 52px;
+  border: 1px solid var(--hf-border-strong);
+  border-radius: var(--hf-radius-sm);
+  background: #fff;
+  padding-inline: 1rem;
+  color: var(--hf-ink);
+  outline: none;
+  transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+}
+
+.hf-field:focus {
+  border-color: var(--hf-brand-muted);
+  box-shadow: 0 0 0 4px rgba(85,117,98,.1);
 }
 
 /* Interaction system

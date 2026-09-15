@@ -78,7 +78,7 @@ export function Hero({ products }: { products: WooProduct[] }) {
 
           <form action="/search" method="get" role="search" className="mt-7 max-w-[610px] xl:hidden">
             <label className="flex min-h-14 items-center gap-3 rounded-[var(--hf-radius-md)] border border-black/[.08] bg-white/92 px-4 shadow-[0_12px_34px_rgba(30,42,34,.05)] backdrop-blur transition focus-within:border-[var(--hf-brand-muted)] focus-within:ring-4 focus-within:ring-[#557562]/10">
-              <MagnifyingGlassIcon className="size-5 shrink-0 text-black/38" />
+              <MagnifyingGlassIcon className="size-5 shrink-0 text-black/52" />
               <span className="sr-only">Search products</span>
               <input
                 type="search"
@@ -101,7 +101,7 @@ export function Hero({ products }: { products: WooProduct[] }) {
           </div>
 
           <div className="mt-9 max-w-[650px] border-t border-black/[.08] pt-5">
-            <p className="text-xs font-medium text-black/42">Shop by</p>
+            <p className="text-xs font-medium text-black/55">Shop by</p>
             <div className="mt-3 flex flex-wrap gap-2">
               <Link href="/shop?category=kitchen-tools" className="hf-button-tertiary !min-h-10 gap-2 px-3.5 py-2 text-xs sm:text-sm">
                 <Squares2X2Icon className="size-4" /> Kitchen
@@ -120,7 +120,7 @@ export function Hero({ products }: { products: WooProduct[] }) {
         </div>
 
         <div className="grid gap-3 xl:grid-cols-[1.05fr_.95fr]">
-          <div className="group relative min-h-[510px] overflow-hidden rounded-[var(--hf-radius-lg)] bg-[#e4e5df] shadow-[0_28px_80px_rgba(40,54,44,.12)] sm:min-h-[590px] xl:min-h-[600px]">
+          <div className="group relative min-h-[420px] overflow-hidden rounded-[var(--hf-radius-lg)] bg-[#e4e5df] shadow-[0_28px_80px_rgba(40,54,44,.12)] sm:min-h-[520px] xl:min-h-[600px]">
             {featuredImage ? (
               <Image
                 src={featuredImage.src}
@@ -139,7 +139,6 @@ export function Hero({ products }: { products: WooProduct[] }) {
             {featured && (
               <Link
                 href={featuredHref}
-                aria-label={`View ${featuredName}`}
                 className="absolute inset-x-4 bottom-4 z-20 grid cursor-pointer gap-3 rounded-[var(--hf-radius-md)] border border-white/45 bg-white/92 p-4 shadow-[var(--hf-shadow-float)] backdrop-blur-xl transition hover:-translate-y-0.5 hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--hf-brand-muted)] sm:inset-x-auto sm:bottom-6 sm:left-6 sm:w-[390px] sm:p-5"
               >
                 <div>
@@ -156,12 +155,12 @@ export function Hero({ products }: { products: WooProduct[] }) {
             )}
           </div>
 
-          <div className="grid gap-3 sm:grid-rows-[1.03fr_.97fr]">
+          <div className="hidden gap-3 sm:grid sm:grid-cols-2 xl:grid-cols-1 xl:grid-rows-[1.03fr_.97fr]">
             <Link
-              href={productHref(kitchenProduct, '/shop?category=kitchen-tools')}
-              className="group overflow-hidden rounded-[var(--hf-radius-lg)] border border-black/[.06] bg-white/94 shadow-[0_18px_48px_rgba(40,54,44,.08)] backdrop-blur transition hover:-translate-y-1"
+              href="/shop?category=kitchen-tools"
+              className="group overflow-hidden rounded-[var(--hf-radius-lg)] sm:col-span-2 xl:col-span-1 border border-black/[.06] bg-white/94 shadow-[0_18px_48px_rgba(40,54,44,.08)] backdrop-blur transition hover:-translate-y-1"
             >
-              <div className="relative min-h-[260px] overflow-hidden bg-[#ece9e1] sm:min-h-[300px]">
+              <div className="relative min-h-[220px] overflow-hidden bg-[#ece9e1] sm:min-h-[260px] xl:min-h-[300px]">
                 {kitchenImage ? (
                   <Image src={kitchenImage.src} alt="Kitchen Tools" fill sizes="(max-width: 1279px) 100vw, 28vw" className="object-cover transition duration-700 group-hover:scale-[1.025]" />
                 ) : (
@@ -177,12 +176,12 @@ export function Hero({ products }: { products: WooProduct[] }) {
               </div>
             </Link>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 sm:col-span-2 xl:col-span-1">
               <Link
-                href={productHref(spaceProduct, '/shop?category=space-saving')}
+                href="/shop?category=space-saving"
                 className="group overflow-hidden rounded-[var(--hf-radius-lg)] border border-black/[.06] bg-white/94 shadow-[0_16px_40px_rgba(40,54,44,.07)] backdrop-blur transition hover:-translate-y-1"
               >
-                <div className="relative min-h-[205px] overflow-hidden bg-[#e8e7df] sm:min-h-[235px]">
+                <div className="relative min-h-[180px] overflow-hidden bg-[#e8e7df] sm:min-h-[210px] xl:min-h-[235px]">
                   {spaceImage ? (
                     <Image src={spaceImage.src} alt="Space Saving" fill sizes="(max-width: 1279px) 50vw, 14vw" className="object-cover transition duration-700 group-hover:scale-[1.025]" />
                   ) : (
@@ -199,10 +198,10 @@ export function Hero({ products }: { products: WooProduct[] }) {
               </Link>
 
               <Link
-                href={productHref(dailyProduct, '/shop?category=daily-helpers')}
+                href="/shop?category=daily-helpers"
                 className="group overflow-hidden rounded-[var(--hf-radius-lg)] border border-black/[.06] bg-white/94 shadow-[0_16px_40px_rgba(40,54,44,.07)] backdrop-blur transition hover:-translate-y-1"
               >
-                <div className="relative min-h-[205px] overflow-hidden bg-[#e5e7e1] sm:min-h-[235px]">
+                <div className="relative min-h-[180px] overflow-hidden bg-[#e5e7e1] sm:min-h-[210px] xl:min-h-[235px]">
                   {dailyImage ? (
                     <Image src={dailyImage.src} alt="Daily Helpers" fill sizes="(max-width: 1279px) 50vw, 14vw" className="object-cover transition duration-700 group-hover:scale-[1.025]" />
                   ) : (
@@ -238,7 +237,7 @@ export function Hero({ products }: { products: WooProduct[] }) {
             </span>
             <div>
               <p className="text-sm font-semibold text-[var(--hf-ink)]">Free UK delivery</p>
-              <p className="mt-1 text-xs leading-5 text-black/43">Included as standard.</p>
+              <p className="mt-1 text-xs leading-5 text-black/55">Included as standard.</p>
             </div>
           </div>
           <div className="flex items-center gap-4 py-5 md:px-7">
@@ -247,7 +246,7 @@ export function Hero({ products }: { products: WooProduct[] }) {
             </span>
             <div>
               <p className="text-sm font-semibold text-[var(--hf-ink)]">Free 14-day returns</p>
-              <p className="mt-1 text-xs leading-5 text-black/43">On eligible online orders.</p>
+              <p className="mt-1 text-xs leading-5 text-black/55">On eligible online orders.</p>
             </div>
           </div>
           <div className="flex items-center gap-4 py-5 md:px-7 last:md:pr-0">
@@ -256,7 +255,7 @@ export function Hero({ products }: { products: WooProduct[] }) {
             </span>
             <div>
               <p className="text-sm font-semibold text-[var(--hf-ink)]">Secure checkout</p>
-              <p className="mt-1 text-xs leading-5 text-black/43">Protected card payment.</p>
+              <p className="mt-1 text-xs leading-5 text-black/55">Protected card payment.</p>
             </div>
           </div>
         </div>

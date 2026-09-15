@@ -68,7 +68,11 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
   const activePriceMeta = priceFilters.find((item) => item.value === activePrice)
   const activeSortMeta = sorts.find((item) => item.value === activeSort) || sorts[0]
   const query = sortQuery(activeSort)
-  const allProducts = dedupeStoreProducts(await getProducts({ per_page: 100, ...query }))
+  let catalogUnavailable = false
+  const allProducts = dedupeStoreProducts(await getProducts({ per_page: 100, ...query }).catch(() => {
+    catalogUnavailable = true
+    return []
+  }))
   const categoryScopedProducts = filterProductsByStoreCategory(allProducts, activeCategorySlug)
   const products = filterByPrice(categoryScopedProducts, activePrice)
   const hasFilters = Boolean(activeCategory || activePrice)
@@ -102,7 +106,7 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
   return (
     <main className="bg-[#fbfaf7] px-5 pb-24 pt-9 lg:px-8">
       <div className="mx-auto max-w-[1540px]">
-        <nav className="flex items-center gap-2 text-sm text-black/42" aria-label="Breadcrumb">
+        <nav className="flex items-center gap-2 text-sm text-black/55" aria-label="Breadcrumb">
           <Link href="/" className="hover:text-black">Home</Link><ChevronRightIcon className="size-3.5" />
           <span className="text-black/65">Shop</span>
           {activeCategory && <><ChevronRightIcon className="size-3.5" /><span className="text-black/65">{activeCategory.title}</span></>}
@@ -110,16 +114,25 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
 
         <div className="mt-10 max-w-[1050px]">
           <p className="text-[11px] font-semibold uppercase tracking-[.28em] text-[#557562]">Housefinds collection</p>
-          <h1 className="mt-4 text-[clamp(3.7rem,6vw,7.2rem)] font-semibold leading-[.9] tracking-[-.065em]">
+          <h1 className="mt-4 text-[clamp(3.2rem,5vw,5.8rem)] font-semibold leading-[.9] tracking-[-.065em]">
             {activeCategory ? activeCategory.title : 'Clever finds'}<br />
             <span className="text-[#557562]">for everyday living.</span>
           </h1>
-          <p className="mt-5 max-w-2xl text-lg leading-8 text-black/48">
+          <p className="mt-5 max-w-2xl text-lg leading-8 text-black/58">
             {activeCategory?.copy || 'Browse useful home products by category, narrow the results and open any product for full details before adding it to your cart.'}
           </p>
         </div>
 
-        <section className="mt-12" aria-label="Product filters and sorting">
+        {catalogUnavailable && (
+          <section className="mt-10 rounded-[var(--hf-radius-lg)] border border-amber-200 bg-amber-50 p-6 sm:p-8" role="status">
+            <p className="hf-eyebrow text-amber-700">Collection reconnecting</p>
+            <h2 className="mt-3 text-2xl font-semibold tracking-[-.035em] text-amber-950">The product catalogue is taking longer than usual to respond.</h2>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-amber-900/75">Your cart is separate. Refresh this page in a moment, or use customer support if you were checking an existing order.</p>
+            <div className="mt-5 flex flex-wrap gap-2"><Link href="/shop" className="hf-button-primary hf-button-sm">Try again</Link><Link href="/track-order" className="hf-button-secondary hf-button-sm">Track an order</Link></div>
+          </section>
+        )}
+
+        {!catalogUnavailable && <section className="mt-12" aria-label="Product filters and sorting">
           <div className="overflow-visible rounded-[var(--hf-radius-lg)] border border-black/[.07] bg-white/82 shadow-[0_14px_42px_rgba(29,42,34,.045)]">
             <div className="flex flex-col gap-4 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex flex-wrap items-center gap-2.5">
@@ -139,9 +152,9 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
                     {activeCategory && <span className="max-w-[150px] truncate">· {activeCategory.title}</span>}
                     <ChevronDownIcon className="size-3.5 transition-transform group-open:rotate-180" />
                   </summary>
-                  <div className="absolute left-0 top-[calc(100%+8px)] z-40 w-[300px] overflow-hidden rounded-[var(--hf-radius-md)] border border-black/[.08] bg-white p-2 shadow-[var(--hf-shadow-float)]">
+                  <div className="absolute left-0 top-[calc(100%+8px)] z-40 w-[min(300px,calc(100vw-2.5rem))] overflow-hidden rounded-[var(--hf-radius-md)] border border-black/[.08] bg-white p-2 shadow-[var(--hf-shadow-float)]">
                     <div className="px-3 pb-2 pt-2">
-                      <p className="text-[10px] font-bold uppercase tracking-[.18em] text-black/38">Choose a category</p>
+                      <p className="text-[10px] font-bold uppercase tracking-[.18em] text-black/52">Choose a category</p>
                     </div>
                     <div className="space-y-1">
                       <Link href={makeHref({ category: '' })} className={`flex min-h-11 items-center justify-between gap-3 rounded-[var(--hf-radius-sm)] px-3 text-sm transition ${!activeCategory ? 'bg-[var(--hf-brand-soft)] font-semibold text-[var(--hf-brand)]' : 'text-black/62 hover:bg-black/[.035]'}`}>
@@ -151,7 +164,7 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
                           </span>
                           All products
                         </span>
-                        <span className="text-xs tabular-nums text-black/38">{allCategoryCount}</span>
+                        <span className="text-xs tabular-nums text-black/52">{allCategoryCount}</span>
                       </Link>
                       {STORE_CATEGORIES.map((category) => {
                         const selected = activeCategory?.slug === category.slug
@@ -163,7 +176,7 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
                               </span>
                               <span className="truncate">{category.title}</span>
                             </span>
-                            <span className="text-xs tabular-nums text-black/38">{categoryCounts.get(category.slug) || 0}</span>
+                            <span className="text-xs tabular-nums text-black/52">{categoryCounts.get(category.slug) || 0}</span>
                           </Link>
                         )
                       })}
@@ -178,9 +191,9 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
                     {activePriceMeta && <span>· {activePriceMeta.label}</span>}
                     <ChevronDownIcon className="size-3.5 transition-transform group-open:rotate-180" />
                   </summary>
-                  <div className="absolute left-0 top-[calc(100%+8px)] z-40 w-[270px] overflow-hidden rounded-[var(--hf-radius-md)] border border-black/[.08] bg-white p-2 shadow-[var(--hf-shadow-float)]">
+                  <div className="absolute left-0 top-[calc(100%+8px)] z-40 w-[min(270px,calc(100vw-2.5rem))] overflow-hidden rounded-[var(--hf-radius-md)] border border-black/[.08] bg-white p-2 shadow-[var(--hf-shadow-float)]">
                     <div className="px-3 pb-2 pt-2">
-                      <p className="text-[10px] font-bold uppercase tracking-[.18em] text-black/38">Price range</p>
+                      <p className="text-[10px] font-bold uppercase tracking-[.18em] text-black/52">Price range</p>
                     </div>
                     <div className="space-y-1">
                       <Link href={makeHref({ price: '' })} className={`flex min-h-11 items-center justify-between gap-3 rounded-[var(--hf-radius-sm)] px-3 text-sm transition ${!activePrice ? 'bg-[var(--hf-brand-soft)] font-semibold text-[var(--hf-brand)]' : 'text-black/62 hover:bg-black/[.035]'}`}>
@@ -190,7 +203,7 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
                           </span>
                           Any price
                         </span>
-                        <span className="text-xs tabular-nums text-black/38">{categoryScopedProducts.length}</span>
+                        <span className="text-xs tabular-nums text-black/52">{categoryScopedProducts.length}</span>
                       </Link>
                       {priceFilters.map((item) => {
                         const selected = activePrice === item.value
@@ -202,7 +215,7 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
                               </span>
                               {item.label}
                             </span>
-                            <span className="text-xs tabular-nums text-black/38">{priceCounts.get(item.value) || 0}</span>
+                            <span className="text-xs tabular-nums text-black/52">{priceCounts.get(item.value) || 0}</span>
                           </Link>
                         )
                       })}
@@ -217,9 +230,9 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
                   <span className="ml-auto">{activeSortMeta.label}</span>
                   <ChevronDownIcon className="size-3.5 transition-transform group-open:rotate-180" />
                 </summary>
-                <div className="absolute right-0 top-[calc(100%+8px)] z-40 w-full min-w-[270px] overflow-hidden rounded-[var(--hf-radius-md)] border border-black/[.08] bg-white p-2 shadow-[var(--hf-shadow-float)] sm:w-[290px]">
+                <div className="absolute right-0 top-[calc(100%+8px)] z-40 w-full min-w-[min(270px,calc(100vw-2.5rem))] overflow-hidden rounded-[var(--hf-radius-md)] border border-black/[.08] bg-white p-2 shadow-[var(--hf-shadow-float)] sm:w-[290px]">
                   <div className="px-3 pb-2 pt-2">
-                    <p className="text-[10px] font-bold uppercase tracking-[.18em] text-black/38">Sort products</p>
+                    <p className="text-[10px] font-bold uppercase tracking-[.18em] text-black/52">Sort products</p>
                   </div>
                   <div className="space-y-1">
                     {sorts.map((item) => {
@@ -249,7 +262,7 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
                     {activePriceMeta.label}<XMarkIcon className="size-3.5" />
                   </Link>
                 )}
-                <Link href={clearFiltersHref} className="ml-auto inline-flex min-h-9 items-center rounded-[var(--hf-radius-pill)] px-3 text-xs font-semibold text-black/45 transition hover:bg-black/[.04] hover:text-black">
+                <Link href={clearFiltersHref} className="ml-auto inline-flex min-h-9 items-center rounded-[var(--hf-radius-pill)] px-3 text-xs font-semibold text-black/55 transition hover:bg-black/[.04] hover:text-black">
                   Clear all
                 </Link>
               </div>
@@ -261,23 +274,26 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
               <p className="text-sm font-semibold text-[var(--hf-ink)]">
                 {products.length} product{products.length === 1 ? '' : 's'}
               </p>
-              {hasFilters && <p className="mt-1 text-xs text-black/40">Filtered from the Housefinds collection.</p>}
+              {hasFilters && <p className="mt-1 text-xs text-black/52">Filtered from the Housefinds collection.</p>}
             </div>
-            <p className="hidden text-xs text-black/38 sm:block">Sorted by <strong className="font-semibold text-black/55">{activeSortMeta.label}</strong></p>
+            <p className="hidden text-xs text-black/52 sm:block">Sorted by <strong className="font-semibold text-black/55">{activeSortMeta.label}</strong></p>
           </div>
-        </section>
+        </section>}
 
-        {products.length > 0 ? (
-          <div className="mt-8 grid grid-cols-2 gap-x-4 gap-y-12 md:grid-cols-3 xl:grid-cols-4">
-            {products.map((product) => <ProductCard key={product.id} product={product} />)}
-          </div>
+        {!catalogUnavailable && (products.length > 0 ? (
+          <section className="mt-8" aria-labelledby="shop-products-heading">
+            <h2 id="shop-products-heading" className="sr-only">Products</h2>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-12 md:grid-cols-3 xl:grid-cols-4">
+              {products.map((product) => <ProductCard key={product.id} product={product} />)}
+            </div>
+          </section>
         ) : (
-          <div className="mt-12 rounded-[32px] bg-[#f0f1eb] p-10 text-center">
+          <div className="mt-12 rounded-[var(--hf-radius-lg)] bg-[#f0f1eb] p-10 text-center">
             <h2 className="text-3xl font-semibold tracking-[-.04em]">No products match those filters.</h2>
-            <p className="mx-auto mt-3 max-w-lg text-black/48">Broaden the price range, remove a filter or search by the problem you are trying to solve.</p>
-            <div className="mt-6 flex justify-center gap-3"><Link href={clearFiltersHref} className="rounded-full bg-[#355f4a] px-5 py-3 text-sm font-semibold text-white">Clear filters</Link><Link href="/search" className="rounded-full border border-black/10 bg-white px-5 py-3 text-sm font-semibold">Search</Link></div>
+            <p className="mx-auto mt-3 max-w-lg text-black/58">Broaden the price range, remove a filter or search by the problem you are trying to solve.</p>
+            <div className="mt-6 flex justify-center gap-3"><Link href={clearFiltersHref} className="hf-button-primary hf-button-sm">Clear filters</Link><Link href="/search" className="hf-button-secondary hf-button-sm">Search</Link></div>
           </div>
-        )}
+        ))}
       </div>
     </main>
   )

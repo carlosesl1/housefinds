@@ -8,13 +8,13 @@ export const metadata = {
 
 export default function ShippingPage() {
   return (
-    <main className="bg-[#fbfaf7] px-5 py-14 lg:px-8 lg:py-20">
+    <main className="bg-[var(--hf-background)] px-5 py-14 lg:px-8 lg:py-20">
       <div className="mx-auto max-w-[1240px]">
         <Link href="/shop" className="inline-flex items-center gap-2 text-sm text-black/45 transition hover:text-black"><ArrowLeftIcon className="size-4" /> Back to shop</Link>
 
         <div className="mt-10 max-w-4xl">
-          <p className="text-[11px] font-semibold uppercase tracking-[.28em] text-[#557562]">Shipping & delivery</p>
-          <h1 className="mt-4 text-[clamp(3.8rem,6vw,7rem)] font-semibold leading-[.88] tracking-[-.065em]">Free UK delivery.<br /><span className="text-[#557562]">No surprise shipping fee.</span></h1>
+          <p className="text-[11px] font-semibold uppercase tracking-[.28em] text-[var(--hf-brand-muted)]">Shipping & delivery</p>
+          <h1 className="mt-4 text-[clamp(3.8rem,6vw,7rem)] font-semibold leading-[.88] tracking-[-.065em]">Free UK delivery.<br /><span className="text-[var(--hf-brand-muted)]">No surprise shipping fee.</span></h1>
           <p className="mt-6 max-w-2xl text-lg leading-8 text-black/50">Housefinds currently delivers to the United Kingdom. Standard delivery is free, and our current estimate is around 14 days from order confirmation. Any updated delivery information is shown with the order as it progresses.</p>
         </div>
 
@@ -34,17 +34,17 @@ export default function ShippingPage() {
         </div>
 
         <div className="mt-12 grid gap-6 lg:grid-cols-[1fr_.8fr]">
-          <section className="rounded-[32px] bg-[#edf1ec] p-7 sm:p-9">
+          <section className="rounded-[var(--hf-radius-lg)] bg-[#edf1ec] p-7 sm:p-9">
             <h2 className="text-3xl font-semibold tracking-[-.045em]">Order tracking and updates</h2>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-black/52">Housefinds keeps the customer-facing order status in one place. When carrier tracking becomes available, it is linked to your order so you can follow the latest delivery information from the Housefinds tracking page.</p>
             <p className="mt-4 text-sm leading-7 text-black/52">Keep your order confirmation until every item has arrived. It contains the Housefinds order reference used for delivery support.</p>
           </section>
 
-          <section className="rounded-[32px] bg-[#172018] p-7 text-white sm:p-9">
+          <section className="rounded-[var(--hf-radius-lg)] bg-[#172018] p-7 text-white sm:p-9">
             <p className="text-xs font-semibold uppercase tracking-[.22em] text-white/40">Need delivery help?</p>
             <h2 className="mt-4 text-3xl font-semibold tracking-[-.045em]">Talk to Housefinds.</h2>
             <p className="mt-4 text-sm leading-7 text-white/55">For an order update, include your Housefinds order number so we can identify the shipment quickly.</p>
-            <a href="mailto:contact@housefindsstore.com" className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#dce8df] px-5 py-3 text-sm font-semibold text-[#172018]"><EnvelopeIcon className="size-4" /> contact@housefindsstore.com</a>
+            <a href="mailto:contact@housefindsstore.com" className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#dce8df] px-5 py-3 text-sm font-semibold text-[var(--hf-ink)]"><EnvelopeIcon className="size-4" /> contact@housefindsstore.com</a>
           </section>
         </div>
       </div>

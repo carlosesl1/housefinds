@@ -55,13 +55,13 @@ const faqs = [
 
 export default function FAQPage() {
   return (
-    <main className="bg-[#fbfaf7] px-5 py-14 lg:px-8 lg:py-20">
+    <main className="bg-[var(--hf-background)] px-5 py-14 lg:px-8 lg:py-20">
       <div className="mx-auto max-w-[1120px]">
         <Link href="/shop" className="inline-flex items-center gap-2 text-sm text-black/45 transition hover:text-black"><ArrowLeftIcon className="size-4" /> Back to shop</Link>
 
         <div className="mt-10 max-w-3xl">
-          <p className="text-[11px] font-semibold uppercase tracking-[.28em] text-[#557562]">Help centre</p>
-          <h1 className="mt-4 text-[clamp(3.8rem,6vw,6.8rem)] font-semibold leading-[.88] tracking-[-.065em]">Questions before<br /><span className="text-[#557562]">or after you order.</span></h1>
+          <p className="text-[11px] font-semibold uppercase tracking-[.28em] text-[var(--hf-brand-muted)]">Help centre</p>
+          <h1 className="mt-4 text-[clamp(3.8rem,6vw,6.8rem)] font-semibold leading-[.88] tracking-[-.065em]">Questions before<br /><span className="text-[var(--hf-brand-muted)]">or after you order.</span></h1>
           <p className="mt-6 max-w-2xl text-lg leading-8 text-black/50">The useful details without making you hunt through fine print.</p>
         </div>
 
@@ -69,7 +69,7 @@ export default function FAQPage() {
           {faqs.map((item, index) => (
             <details key={item.q} className="group py-1">
               <summary className="flex cursor-pointer list-none items-start justify-between gap-6 py-6 text-left">
-                <span className="flex gap-5"><span className="pt-1 text-xs font-semibold tracking-[.16em] text-black/28">{String(index + 1).padStart(2, '0')}</span><span className="text-xl font-semibold tracking-[-.025em] text-[#172018]">{item.q}</span></span>
+                <span className="flex gap-5"><span className="pt-1 text-xs font-semibold tracking-[.16em] text-black/28">{String(index + 1).padStart(2, '0')}</span><span className="text-xl font-semibold tracking-[-.025em] text-[var(--hf-ink)]">{item.q}</span></span>
                 <span className="grid size-8 shrink-0 place-items-center rounded-full border border-black/10 text-lg text-black/45 transition group-open:rotate-45">+</span>
               </summary>
               <div className="max-w-3xl pb-7 pl-10 text-[15px] leading-7 text-black/52 sm:pl-[52px]">{item.a}</div>
@@ -78,10 +78,10 @@ export default function FAQPage() {
         </div>
 
         <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Link href="/track-order" className="group rounded-[28px] bg-[#e5ece6] p-6 transition hover:-translate-y-1"><p className="text-xs font-semibold uppercase tracking-[.18em] text-black/38">Orders</p><h2 className="mt-3 text-2xl font-semibold tracking-[-.04em]">Track order</h2><span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#355f4a]">Check status <ArrowRightIcon className="size-4 transition group-hover:translate-x-1" /></span></Link>
-          <Link href="/shipping" className="group rounded-[28px] bg-[#eef1ec] p-6 transition hover:-translate-y-1"><p className="text-xs font-semibold uppercase tracking-[.18em] text-black/38">Delivery</p><h2 className="mt-3 text-2xl font-semibold tracking-[-.04em]">Shipping</h2><span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#355f4a]">Delivery information <ArrowRightIcon className="size-4 transition group-hover:translate-x-1" /></span></Link>
-          <Link href="/returns" className="group rounded-[28px] bg-[#eee9df] p-6 transition hover:-translate-y-1"><p className="text-xs font-semibold uppercase tracking-[.18em] text-black/38">After purchase</p><h2 className="mt-3 text-2xl font-semibold tracking-[-.04em]">Returns</h2><span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#355f4a]">Returns & problems <ArrowRightIcon className="size-4 transition group-hover:translate-x-1" /></span></Link>
-          <Link href="/contact" className="group rounded-[28px] bg-[#f0f1eb] p-6 transition hover:-translate-y-1"><p className="text-xs font-semibold uppercase tracking-[.18em] text-black/38">Support</p><h2 className="mt-3 text-2xl font-semibold tracking-[-.04em]">Contact</h2><span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#355f4a]">Get help <ArrowRightIcon className="size-4 transition group-hover:translate-x-1" /></span></Link>
+          <Link href="/track-order" className="group rounded-[var(--hf-radius-lg)] bg-[#e5ece6] p-6 transition hover:-translate-y-1"><p className="text-xs font-semibold uppercase tracking-[.18em] text-black/38">Orders</p><h2 className="mt-3 text-2xl font-semibold tracking-[-.04em]">Track order</h2><span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[var(--hf-brand)]">Check status <ArrowRightIcon className="size-4 transition group-hover:translate-x-1" /></span></Link>
+          <Link href="/shipping" className="group rounded-[var(--hf-radius-lg)] bg-[#eef1ec] p-6 transition hover:-translate-y-1"><p className="text-xs font-semibold uppercase tracking-[.18em] text-black/38">Delivery</p><h2 className="mt-3 text-2xl font-semibold tracking-[-.04em]">Shipping</h2><span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[var(--hf-brand)]">Delivery information <ArrowRightIcon className="size-4 transition group-hover:translate-x-1" /></span></Link>
+          <Link href="/returns" className="group rounded-[var(--hf-radius-lg)] bg-[#eee9df] p-6 transition hover:-translate-y-1"><p className="text-xs font-semibold uppercase tracking-[.18em] text-black/38">After purchase</p><h2 className="mt-3 text-2xl font-semibold tracking-[-.04em]">Returns</h2><span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[var(--hf-brand)]">Returns & problems <ArrowRightIcon className="size-4 transition group-hover:translate-x-1" /></span></Link>
+          <Link href="/contact" className="group rounded-[var(--hf-radius-lg)] bg-[#f0f1eb] p-6 transition hover:-translate-y-1"><p className="text-xs font-semibold uppercase tracking-[.18em] text-black/38">Support</p><h2 className="mt-3 text-2xl font-semibold tracking-[-.04em]">Contact</h2><span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[var(--hf-brand)]">Get help <ArrowRightIcon className="size-4 transition group-hover:translate-x-1" /></span></Link>
         </div>
       </div>
     </main>

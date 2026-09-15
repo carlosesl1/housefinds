@@ -17,7 +17,7 @@ import { ProductCard } from '@/components/product/product-card'
 
 export default async function HomePage() {
   const [rawProducts, reviews] = await Promise.all([
-    getProducts({ per_page: 16 }),
+    getProducts({ per_page: 16 }).catch(() => []),
     getProductReviews(undefined, 8).catch(() => []),
   ])
   const products = dedupeStoreProducts(rawProducts)
@@ -27,7 +27,7 @@ export default async function HomePage() {
     findProductByKeywords(products, ['motion sensor led']) ||
     products[0]
 
-  const showcaseProducts = products.filter((product) => product.id !== featuredProduct?.id).slice(0, 8)
+  const showcaseProducts = products.filter((product) => product.id !== featuredProduct?.id).slice(0, 6)
 
   return (
     <main className="overflow-hidden bg-[var(--hf-background)]">
@@ -100,7 +100,7 @@ export default async function HomePage() {
                   <Icon className="size-5" />
                 </span>
                 <h3 className="mt-5 text-xl font-semibold tracking-[-.03em]">{title}</h3>
-                <p className="mt-3 text-sm leading-6 text-black/48">{copy}</p>
+                <p className="mt-3 text-sm leading-6 text-black/58">{copy}</p>
               </article>
             ))}
           </div>
