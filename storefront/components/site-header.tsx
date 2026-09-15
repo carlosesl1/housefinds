@@ -95,12 +95,15 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-black/[.06] bg-[#fbfaf7]/94 backdrop-blur-2xl">
       <div className="mx-auto flex h-[76px] max-w-[1600px] items-center gap-7 px-5 lg:px-10">
-        <Link href="/" className="flex shrink-0 items-center gap-2.5 text-[1.55rem] font-bold tracking-[-.055em] text-[#101622]" aria-label="Housefinds home">
-          <span className="relative grid size-9 place-items-center overflow-hidden rounded-[13px] bg-[#dfe9e2] text-[#355f4a]">
-            <span className="absolute bottom-1.5 h-4 w-4 rounded-t-[5px] border-[2.5px] border-[#557562] border-b-0" />
-            <span className="absolute bottom-1.5 h-2.5 w-1.5 bg-[#dfe9e2]" />
-          </span>
-          Housefinds
+        <Link href="/" className="flex shrink-0 items-center" aria-label="Housefinds home">
+          <Image
+            src="/housefinds-logo.svg"
+            alt="Housefinds"
+            width={720}
+            height={210}
+            priority
+            className="h-[38px] w-auto sm:h-[42px]"
+          />
         </Link>
 
         <nav className="hidden items-center gap-5 text-[13px] font-semibold lg:flex" aria-label="Shop navigation">
