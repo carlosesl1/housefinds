@@ -25,13 +25,23 @@ type CartStore = {
   setOpen: (open: boolean) => void
   clearError: () => void
   refresh: () => Promise<void>
-  add: (id: number, quantity?: number, variation?: Array<{ attribute: string; value: string }>) => Promise<void>
+  add: (id: number, quantity?: number, variation?: Array<{ attribute: string; value: string }>) => Promise<boolean>
   remove: (key: string) => Promise<void>
   update: (key: string, quantity: number) => Promise<void>
   updateCustomer: (address: CheckoutAddress) => Promise<boolean>
   selectShipping: (packageId: number, rateId: string) => Promise<boolean>
   applyCoupon: (code: string) => Promise<boolean>
   removeCoupon: (code: string) => Promise<boolean>
+}
+
+function cartErrorDetails(error: unknown) {
+  if (!(error instanceof Error)) return { message: 'Something went wrong with the cart.', refreshCart: false }
+  try {
+    const parsed = JSON.parse(error.message) as { message?: string; refresh_cart?: boolean }
+    return { message: parsed.message || error.message, refreshCart: Boolean(parsed.refresh_cart) }
+  } catch {
+    return { message: error.message, refreshCart: false }
+  }
 }
 
 function messageFromError(error: unknown) {
@@ -82,8 +92,14 @@ export const useCart = create<CartStore>((set, get) => ({
       const payload = variation?.length ? { id, quantity, variation } : { id, quantity }
       const cart = await callCart('add-item', payload)
       set({ cart, open: true })
+      return true
     } catch (error) {
-      set({ error: messageFromError(error), open: true })
+      const details = cartErrorDetails(error)
+      set({ error: details.message, open: true })
+      if (details.refreshCart) {
+        try { set({ cart: await callCart() }) } catch {}
+      }
+      return false
     } finally {
       set({ loading: false })
     }
@@ -93,7 +109,9 @@ export const useCart = create<CartStore>((set, get) => ({
     try {
       set({ cart: await callCart('remove-item', { key }) })
     } catch (error) {
-      set({ error: messageFromError(error) })
+      const details = cartErrorDetails(error)
+      set({ error: details.message })
+      if (details.refreshCart) { try { set({ cart: await callCart() }) } catch {} }
     } finally {
       set({ loading: false })
     }
@@ -104,7 +122,9 @@ export const useCart = create<CartStore>((set, get) => ({
     try {
       set({ cart: await callCart('update-item', { key, quantity }) })
     } catch (error) {
-      set({ error: messageFromError(error) })
+      const details = cartErrorDetails(error)
+      set({ error: details.message })
+      if (details.refreshCart) { try { set({ cart: await callCart() }) } catch {} }
     } finally {
       set({ loading: false })
     }

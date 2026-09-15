@@ -4,6 +4,7 @@ import { isOperationalAttribute, isOperationalAttributeName } from '@/lib/storef
 export type PurchaseVariation = {
   id: number
   prices: WooPrice
+  image?: StorefrontImage
   is_purchasable: boolean
   is_in_stock: boolean
   add_to_cart?: WooProduct['add_to_cart']
@@ -11,6 +12,8 @@ export type PurchaseVariation = {
 
 export type PurchaseProduct = {
   id: number
+  name: string
+  slug: string
   prices: WooPrice
   attributes: WooProductAttribute[]
   variations: WooVariationSummary[]
@@ -82,6 +85,8 @@ export function toStorefrontImages(images: WooImage[] = []): StorefrontImage[] {
 export function toPurchaseProduct(product: WooProduct): PurchaseProduct {
   return {
     id: product.id,
+    name: product.name,
+    slug: product.slug,
     prices: safePrice(product.prices),
     attributes: product.attributes.filter((attribute) => !isOperationalAttribute(attribute)).map(safeAttribute),
     variations: (product.variations || []).map((variation) => ({
@@ -107,6 +112,7 @@ export function toPurchaseVariations(variations: WooProduct[]): PurchaseVariatio
   return variations.map((variation) => ({
     id: variation.id,
     prices: safePrice(variation.prices),
+    image: variation.images?.[0] ? toStorefrontImages([variation.images[0]])[0] : undefined,
     is_purchasable: variation.is_purchasable,
     is_in_stock: variation.is_in_stock,
     add_to_cart: variation.add_to_cart

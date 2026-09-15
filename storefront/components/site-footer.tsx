@@ -69,7 +69,7 @@ export function SiteFooter() {
       <div className="border-t border-black/[.06]">
         <div className="hf-container flex flex-col gap-3 py-6 text-xs text-black/44 sm:flex-row sm:items-center sm:justify-between">
           <span>© 2026 Housefinds. All rights reserved.</span>
-          <div className="flex flex-wrap gap-x-4 gap-y-2"><Link href="/track-order" className="hover:text-black">Track order</Link><Link href="/shipping" className="hover:text-black">Shipping</Link><Link href="/returns" className="hover:text-black">Returns</Link><Link href="/faq" className="hover:text-black">FAQ</Link><Link href="/contact" className="hover:text-black">Contact</Link><span>Small changes. Bigger living.</span></div>
+          <div className="flex flex-wrap gap-x-4 gap-y-2"><Link href="/track-order" className="hover:text-black">Track order</Link><Link href="/shipping" className="hover:text-black">Shipping</Link><Link href="/returns" className="hover:text-black">Returns</Link><Link href="/faq" className="hover:text-black">FAQ</Link><Link href="/contact" className="hover:text-black">Contact</Link><Link href="/privacy-policy" className="hover:text-black">Privacy</Link><Link href="/terms" className="hover:text-black">Terms</Link><span>Small changes. Bigger living.</span></div>
         </div>
       </div>
     </footer>

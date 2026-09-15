@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { CART_COOKIE, getCartToken } from '@/lib/woocommerce/cart-token'
+import { CommerceConnectionError, commerceFetch } from '@/lib/woocommerce/transport'
 import { displayProductName } from '@/lib/woocommerce/presentation'
 import { isOperationalAttributeName } from '@/lib/storefront/catalog'
 
@@ -50,12 +51,16 @@ function describeUpstreamError(text: string) {
 }
 
 async function getStoreProduct(id: number): Promise<StoreProduct | null> {
-  const response = await fetch(`${STORE_API}/products/${id}`, {
-    headers: { Accept: 'application/json' },
-    next: { revalidate: 300 },
-  })
-  if (!response.ok) return null
-  return response.json() as Promise<StoreProduct>
+  try {
+    const response = await commerceFetch(`${STORE_API}/products/${id}`, {
+      headers: { Accept: 'application/json' },
+      next: { revalidate: 300 },
+    })
+    if (!response.ok) return null
+    return response.json() as Promise<StoreProduct>
+  } catch {
+    return null
+  }
 }
 
 async function resolveVariationPayload(variationId: number) {
@@ -159,10 +164,30 @@ function sanitizeCartResponse(text: string) {
         }))
       : []
 
+    const safeAddress = (value: unknown) => {
+      if (!value || typeof value !== 'object') return undefined
+      const address = value as Record<string, unknown>
+      return {
+        first_name: String(address.first_name || ''),
+        last_name: String(address.last_name || ''),
+        company: String(address.company || ''),
+        address_1: String(address.address_1 || ''),
+        address_2: String(address.address_2 || ''),
+        city: String(address.city || ''),
+        state: String(address.state || ''),
+        postcode: String(address.postcode || ''),
+        country: String(address.country || ''),
+        email: String(address.email || ''),
+        phone: String(address.phone || ''),
+      }
+    }
+
     return JSON.stringify({
       items,
       coupons,
       totals: cart.totals,
+      billing_address: safeAddress(cart.billing_address),
+      shipping_address: safeAddress(cart.shipping_address),
       needs_payment: cart.needs_payment,
       needs_shipping: cart.needs_shipping,
       has_calculated_shipping: cart.has_calculated_shipping,
@@ -196,26 +221,30 @@ function cartErrorPayload(action: string, upstreamStatus: number) {
 }
 
 async function createCartToken() {
-  const initial = await fetch(CART_URL, {
-    method: 'GET',
-    headers: { Accept: 'application/json' },
-    cache: 'no-store',
-  })
-
-  if (!initial.ok) {
-    const body = await initial.text()
-    console.error('[housefinds-cart] cart initialization failed', {
-      status: initial.status,
-      detail: describeUpstreamError(body),
+  try {
+    const initial = await commerceFetch(CART_URL, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+      cache: 'no-store',
     })
+
+    if (!initial.ok) {
+      const body = await initial.text()
+      console.error('[housefinds-cart] cart initialization failed', {
+        status: initial.status,
+        detail: describeUpstreamError(body),
+      })
+      return ''
+    }
+
+    return getCartToken(initial.headers)
+  } catch {
     return ''
   }
-
-  return getCartToken(initial.headers)
 }
 
 async function refreshCart(token: string) {
-  return fetch(CART_URL, {
+  return commerceFetch(CART_URL, {
     method: 'GET',
     headers: { Accept: 'application/json', 'Cart-Token': token },
     cache: 'no-store',
@@ -246,18 +275,39 @@ async function proxy(req: NextRequest, method: 'GET' | 'POST') {
 
   if (method === 'POST' && !token) {
     token = await createCartToken()
+    if (!token) {
+      return NextResponse.json(
+        { code: 'housefinds_cart_unavailable', message: 'We could not start a secure cart session. Refresh the page and try again.' },
+        { status: 503, headers: { 'Cache-Control': 'no-store', 'Retry-After': '2' } },
+      )
+    }
   }
 
-  const upstream = await fetch(url, {
-    method,
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-      ...(token ? { 'Cart-Token': token } : {}),
-    },
-    body,
-    cache: 'no-store',
-  })
+  let upstream: Response
+  try {
+    upstream = await commerceFetch(url, {
+      method,
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        ...(token ? { 'Cart-Token': token } : {}),
+      },
+      body,
+      cache: 'no-store',
+    })
+  } catch (error) {
+    const uncertain = error instanceof CommerceConnectionError && error.uncertain
+    return NextResponse.json(
+      {
+        code: uncertain ? 'housefinds_cart_outcome_uncertain' : 'housefinds_cart_unavailable',
+        message: uncertain
+          ? 'We could not confirm that cart change. Refreshing the cart before trying again avoids duplicate changes.'
+          : 'The shop is taking longer than usual to respond. Please refresh and try again.',
+        refresh_cart: true,
+      },
+      { status: 503, headers: { 'Cache-Control': 'no-store', 'Retry-After': '2' } },
+    )
+  }
 
   const upstreamText = await upstream.text()
   let text: string
@@ -275,7 +325,15 @@ async function proxy(req: NextRequest, method: 'GET' | 'POST') {
       action,
       detail: describeUpstreamError(upstreamText),
     })
-    const refreshed = await refreshCart(token)
+    let refreshed: Response
+    try {
+      refreshed = await refreshCart(token)
+    } catch {
+      return NextResponse.json(
+        { code: 'housefinds_cart_unavailable', message: 'Your cart changed in another session and could not be refreshed. Reload the page before trying again.' },
+        { status: 503, headers: { 'Cache-Control': 'no-store', 'Retry-After': '2' } },
+      )
+    }
     const refreshedText = await refreshed.text()
     if (refreshed.ok) {
       text = sanitizeCartResponse(refreshedText)

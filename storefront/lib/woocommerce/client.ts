@@ -2,6 +2,7 @@ import 'server-only'
 import type { WooProduct, WooProductReview } from './types'
 import { storefrontProductSlug } from './presentation'
 import { dedupeStoreProducts } from '@/lib/storefront/catalog'
+import { commerceFetch } from './transport'
 
 const WC_URL = (process.env.WOOCOMMERCE_URL || 'https://housefindsstore.com').replace(/\/$/, '')
 const API = `${WC_URL}/wp-json/wc/store/v1`
@@ -12,7 +13,7 @@ async function wooFetch<T>(path: string, init?: RequestInit & { revalidate?: num
   const isMutation = Boolean(request.method && request.method !== 'GET')
   const noCache = isMutation || revalidate === 0
 
-  const response = await fetch(`${API}${path}`, {
+  const response = await commerceFetch(`${API}${path}`, {
     ...request,
     headers: { Accept: 'application/json', ...(request.headers || {}) },
     next: noCache ? undefined : { revalidate },

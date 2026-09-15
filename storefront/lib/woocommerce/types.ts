@@ -113,6 +113,8 @@ export type WooCartItem = {
 
 export type WooCart = {
   items: WooCartItem[]
+  billing_address?: { first_name?: string; last_name?: string; company?: string; address_1?: string; address_2?: string; city?: string; state?: string; postcode?: string; country?: string; email?: string; phone?: string }
+  shipping_address?: { first_name?: string; last_name?: string; company?: string; address_1?: string; address_2?: string; city?: string; state?: string; postcode?: string; country?: string; email?: string; phone?: string }
   coupons: Array<{ code: string; discount_type: string; totals: { total_discount: string } }>
   totals: {
     total_items: string

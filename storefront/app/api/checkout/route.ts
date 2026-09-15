@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { CART_COOKIE, getCartToken } from '@/lib/woocommerce/cart-token'
+import { CommerceConnectionError, commerceFetch } from '@/lib/woocommerce/transport'
 
 const WC_URL = (process.env.WOOCOMMERCE_URL || 'https://housefindsstore.com').replace(/\/$/, '')
 const CART_URL = `${WC_URL}/wp-json/wc/store/v1/cart`
@@ -45,23 +46,31 @@ function encodeOrderSession(session: LastOrderSession) {
 }
 
 async function bootstrapCartToken() {
-  const response = await fetch(CART_URL, {
-    method: 'GET',
-    headers: { Accept: 'application/json' },
-    cache: 'no-store',
-  })
-  if (!response.ok) return ''
-  return getCartToken(response.headers)
+  try {
+    const response = await commerceFetch(CART_URL, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+      cache: 'no-store',
+    })
+    if (!response.ok) return ''
+    return getCartToken(response.headers)
+  } catch {
+    return ''
+  }
 }
 
 async function getServerCart(token: string) {
-  const response = await fetch(CART_URL, {
-    method: 'GET',
-    headers: { Accept: 'application/json', 'Cart-Token': token },
-    cache: 'no-store',
-  })
-  if (!response.ok) return null
-  return response.json() as Promise<CartSnapshot>
+  try {
+    const response = await commerceFetch(CART_URL, {
+      method: 'GET',
+      headers: { Accept: 'application/json', 'Cart-Token': token },
+      cache: 'no-store',
+    })
+    if (!response.ok) return null
+    return response.json() as Promise<CartSnapshot>
+  } catch {
+    return null
+  }
 }
 
 function exceedsLaunchLimit(cart: CartSnapshot | null) {
@@ -71,6 +80,13 @@ function exceedsLaunchLimit(cart: CartSnapshot | null) {
   const minorUnit = Number.isFinite(totals.currency_minor_unit) ? Number(totals.currency_minor_unit) : 2
   const total = Number(totals.total_price) / Math.pow(10, minorUnit)
   return Number.isFinite(total) && total >= UK_LAUNCH_ORDER_LIMIT_GBP
+}
+
+function totalsMatch(expected: unknown, cart: CartSnapshot | null) {
+  const actual = String(cart?.totals?.total_price || '')
+  if (expected === undefined || expected === null || !actual) return true
+  const normalized = String(expected).trim()
+  return normalized === actual
 }
 
 function describeUpstreamError(text: string) {
@@ -131,6 +147,13 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  let requestBody: CheckoutRequestBody
+  try {
+    requestBody = await req.json() as CheckoutRequestBody
+  } catch {
+    return NextResponse.json({ code: 'housefinds_invalid_checkout', message: 'Checkout details could not be read. Refresh and try again.' }, { status: 400 })
+  }
+
   if (exceedsLaunchLimit(liveCart)) {
     return NextResponse.json(
       { code: 'housefinds_order_limit', message: 'Housefinds launch orders must remain below £135. Reduce quantity or remove an item before paying.' },
@@ -138,11 +161,15 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  let requestBody: CheckoutRequestBody
-  try {
-    requestBody = await req.json() as CheckoutRequestBody
-  } catch {
-    return NextResponse.json({ code: 'housefinds_invalid_checkout', message: 'Checkout details could not be read. Refresh and try again.' }, { status: 400 })
+  if (!totalsMatch(requestBody.expected_total, liveCart)) {
+    return NextResponse.json(
+      {
+        code: 'housefinds_total_changed',
+        message: 'Your basket total changed before payment. Review the updated total, then confirm payment again.',
+        current_total: liveCart?.totals?.total_price,
+      },
+      { status: 409, headers: { 'Cache-Control': 'no-store' } },
+    )
   }
 
   const billingCountry = String(requestBody.billing_address?.country || 'GB').toUpperCase()
@@ -159,17 +186,32 @@ export async function POST(req: NextRequest) {
   delete requestBody.expected_total
   const upstreamBody = JSON.stringify(requestBody)
 
-  const upstream = await fetch(CHECKOUT_URL, {
-    method: 'POST',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-      'Cart-Token': token,
-    },
-    body: upstreamBody,
-    cache: 'no-store',
-    redirect: 'manual',
-  })
+  let upstream: Response
+  try {
+    upstream = await commerceFetch(CHECKOUT_URL, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'Cart-Token': token,
+      },
+      body: upstreamBody,
+      cache: 'no-store',
+      redirect: 'manual',
+    })
+  } catch (error) {
+    const uncertain = error instanceof CommerceConnectionError && error.uncertain
+    console.error('[housefinds-checkout] connection failure', { uncertain })
+    return NextResponse.json(
+      {
+        code: uncertain ? 'housefinds_checkout_outcome_uncertain' : 'housefinds_checkout_unavailable',
+        message: uncertain
+          ? 'We could not confirm the payment result. Check your order confirmation or track your order before trying to pay again.'
+          : 'Checkout is temporarily unavailable. Please wait a moment and try again.',
+      },
+      { status: 503, headers: { 'Cache-Control': 'no-store', 'Retry-After': '3' } },
+    )
+  }
 
   const text = await upstream.text()
   const response = upstream.ok
