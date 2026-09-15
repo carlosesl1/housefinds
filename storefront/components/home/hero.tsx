@@ -18,6 +18,7 @@ import {
   pickHeroProduct,
   storefrontProductSlug,
 } from '@/lib/woocommerce/presentation'
+import { HOME_HERO_BG, HOME_TRUST_BG, PAPER_TEXTURE } from '@/lib/storefront/home-backgrounds'
 
 function pickImage(product?: WooProduct, preferredIndex = 0) {
   const images = product?.images || []
@@ -51,8 +52,19 @@ export function Hero({ products }: { products: WooProduct[] }) {
   const featuredHref = productHref(featured)
 
   return (
-    <section className="border-b border-black/[.06] bg-[#f6f4ee]">
-      <div className="hf-container grid gap-9 py-8 xl:min-h-[650px] xl:grid-cols-[.82fr_1.18fr] xl:items-center xl:gap-12 xl:py-10">
+    <section
+      className="relative overflow-hidden border-b border-black/[.06] bg-[#f6f4ee]"
+      style={{
+        backgroundImage: `linear-gradient(rgba(246,244,238,.72), rgba(246,244,238,.84)), url("${HOME_HERO_BG}"), url("${PAPER_TEXTURE}")`,
+        backgroundPosition: 'center, center, center',
+        backgroundRepeat: 'no-repeat, no-repeat, repeat',
+        backgroundSize: 'cover, cover, 192px 192px',
+      }}
+    >
+      <div className="pointer-events-none absolute left-[-9rem] top-24 h-80 w-80 rounded-full bg-[#dfe9e2]/30 blur-[110px]" />
+      <div className="pointer-events-none absolute right-[18%] top-6 h-72 w-72 rounded-full bg-white/42 blur-[100px]" />
+
+      <div className="hf-container relative grid gap-9 py-8 xl:min-h-[650px] xl:grid-cols-[.82fr_1.18fr] xl:items-center xl:gap-12 xl:py-10">
         <div className="flex flex-col justify-center py-6 xl:py-12">
           <p className="hf-eyebrow text-[var(--hf-brand-muted)]">Small changes · Bigger living</p>
 
@@ -65,7 +77,7 @@ export function Hero({ products }: { products: WooProduct[] }) {
           </p>
 
           <form action="/search" method="get" role="search" className="mt-7 max-w-[610px] xl:hidden">
-            <label className="flex min-h-14 items-center gap-3 rounded-[var(--hf-radius-md)] border border-black/[.08] bg-white px-4 shadow-[0_12px_34px_rgba(30,42,34,.05)] transition focus-within:border-[var(--hf-brand-muted)] focus-within:ring-4 focus-within:ring-[#557562]/10">
+            <label className="flex min-h-14 items-center gap-3 rounded-[var(--hf-radius-md)] border border-black/[.08] bg-white/92 px-4 shadow-[0_12px_34px_rgba(30,42,34,.05)] backdrop-blur transition focus-within:border-[var(--hf-brand-muted)] focus-within:ring-4 focus-within:ring-[#557562]/10">
               <MagnifyingGlassIcon className="size-5 shrink-0 text-black/38" />
               <span className="sr-only">Search products</span>
               <input
@@ -108,7 +120,7 @@ export function Hero({ products }: { products: WooProduct[] }) {
         </div>
 
         <div className="grid gap-3 xl:grid-cols-[1.05fr_.95fr]">
-          <div className="group relative min-h-[510px] overflow-hidden rounded-[var(--hf-radius-lg)] bg-[#e4e5df] shadow-[var(--hf-shadow-soft)] sm:min-h-[590px] xl:min-h-[600px]">
+          <div className="group relative min-h-[510px] overflow-hidden rounded-[var(--hf-radius-lg)] bg-[#e4e5df] shadow-[0_28px_80px_rgba(40,54,44,.12)] sm:min-h-[590px] xl:min-h-[600px]">
             {featuredImage ? (
               <Image
                 src={featuredImage.src}
@@ -147,7 +159,7 @@ export function Hero({ products }: { products: WooProduct[] }) {
           <div className="grid gap-3 sm:grid-rows-[1.03fr_.97fr]">
             <Link
               href={productHref(kitchenProduct, '/shop?category=kitchen-tools')}
-              className="group overflow-hidden rounded-[var(--hf-radius-lg)] border border-black/[.06] bg-white shadow-[var(--hf-shadow-soft)] transition hover:-translate-y-1"
+              className="group overflow-hidden rounded-[var(--hf-radius-lg)] border border-black/[.06] bg-white/94 shadow-[0_18px_48px_rgba(40,54,44,.08)] backdrop-blur transition hover:-translate-y-1"
             >
               <div className="relative min-h-[260px] overflow-hidden bg-[#ece9e1] sm:min-h-[300px]">
                 {kitchenImage ? (
@@ -156,7 +168,7 @@ export function Hero({ products }: { products: WooProduct[] }) {
                   <div className="absolute inset-0 bg-[linear-gradient(135deg,#ede9df,#dde5de)]" />
                 )}
               </div>
-              <div className="flex items-end justify-between gap-4 p-5">
+              <div className="flex items-end justify-between gap-4 border-t border-white/55 bg-white/82 p-5 backdrop-blur-sm">
                 <div>
                   <p className="hf-eyebrow text-[var(--hf-brand-muted)]">Kitchen Tools</p>
                   <p className="mt-2 text-sm font-medium leading-5 text-black/58">Smarter prep, simpler living.</p>
@@ -168,7 +180,7 @@ export function Hero({ products }: { products: WooProduct[] }) {
             <div className="grid grid-cols-2 gap-3">
               <Link
                 href={productHref(spaceProduct, '/shop?category=space-saving')}
-                className="group overflow-hidden rounded-[var(--hf-radius-lg)] border border-black/[.06] bg-white shadow-[var(--hf-shadow-soft)] transition hover:-translate-y-1"
+                className="group overflow-hidden rounded-[var(--hf-radius-lg)] border border-black/[.06] bg-white/94 shadow-[0_16px_40px_rgba(40,54,44,.07)] backdrop-blur transition hover:-translate-y-1"
               >
                 <div className="relative min-h-[205px] overflow-hidden bg-[#e8e7df] sm:min-h-[235px]">
                   {spaceImage ? (
@@ -177,7 +189,7 @@ export function Hero({ products }: { products: WooProduct[] }) {
                     <div className="absolute inset-0 bg-[linear-gradient(135deg,#ece9e0,#dfe4dd)]" />
                   )}
                 </div>
-                <div className="flex items-end justify-between gap-2 p-4">
+                <div className="flex items-end justify-between gap-2 border-t border-white/55 bg-white/82 p-4 backdrop-blur-sm">
                   <div className="min-w-0">
                     <p className="hf-eyebrow text-[var(--hf-brand-muted)]">Space Saving</p>
                     <p className="mt-1.5 text-xs leading-5 text-black/52 sm:text-sm">More space. Less clutter.</p>
@@ -188,7 +200,7 @@ export function Hero({ products }: { products: WooProduct[] }) {
 
               <Link
                 href={productHref(dailyProduct, '/shop?category=daily-helpers')}
-                className="group overflow-hidden rounded-[var(--hf-radius-lg)] border border-black/[.06] bg-white shadow-[var(--hf-shadow-soft)] transition hover:-translate-y-1"
+                className="group overflow-hidden rounded-[var(--hf-radius-lg)] border border-black/[.06] bg-white/94 shadow-[0_16px_40px_rgba(40,54,44,.07)] backdrop-blur transition hover:-translate-y-1"
               >
                 <div className="relative min-h-[205px] overflow-hidden bg-[#e5e7e1] sm:min-h-[235px]">
                   {dailyImage ? (
@@ -197,7 +209,7 @@ export function Hero({ products }: { products: WooProduct[] }) {
                     <div className="absolute inset-0 bg-[linear-gradient(135deg,#e9ece7,#dfe6df)]" />
                   )}
                 </div>
-                <div className="flex items-end justify-between gap-2 p-4">
+                <div className="flex items-end justify-between gap-2 border-t border-white/55 bg-white/82 p-4 backdrop-blur-sm">
                   <div className="min-w-0">
                     <p className="hf-eyebrow text-[var(--hf-brand-muted)]">Daily Helpers</p>
                     <p className="mt-1.5 text-xs leading-5 text-black/52 sm:text-sm">Small tools. Big difference.</p>
@@ -210,8 +222,16 @@ export function Hero({ products }: { products: WooProduct[] }) {
         </div>
       </div>
 
-      <div className="border-t border-black/[.06] bg-white/76">
-        <div className="hf-container grid divide-y divide-black/[.06] md:grid-cols-3 md:divide-x md:divide-y-0">
+      <div
+        className="relative border-t border-black/[.06] bg-white/76"
+        style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,.78), rgba(255,255,255,.9)), url("${HOME_TRUST_BG}"), url("${PAPER_TEXTURE}")`,
+          backgroundPosition: 'center, center, center',
+          backgroundRepeat: 'no-repeat, no-repeat, repeat',
+          backgroundSize: 'cover, cover, 192px 192px',
+        }}
+      >
+        <div className="hf-container relative grid divide-y divide-black/[.06] md:grid-cols-3 md:divide-x md:divide-y-0">
           <div className="flex items-center gap-4 py-5 md:px-7 first:md:pl-0">
             <span className="grid size-11 shrink-0 place-items-center rounded-full bg-[var(--hf-brand-soft)] text-[var(--hf-brand)]">
               <TruckIcon className="size-5" />
