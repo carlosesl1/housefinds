@@ -1,0 +1,72 @@
+name: Storefront refinement
+on:
+  push:
+    branches: [refinement/storefront-20260915]
+    paths: [storefront-refinement.patch, '.github/workflows/storefront-refinement.yml']
+permissions:
+  contents: write
+concurrency:
+  group: storefront-refinement
+  cancel-in-progress: true
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refinement/storefront-20260915
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Apply reviewed patch to isolated branch
+        run: |
+          test "$GITHUB_REF_NAME" = 'refinement/storefront-20260915'
+          if test -f storefront-refinement.patch; then
+            if git apply --check storefront-refinement.patch; then
+              git apply storefront-refinement.patch
+            elif git apply --reverse --check storefront-refinement.patch; then
+              echo 'Patch already applied'
+            else
+              echo 'Source changed: manual reconciliation required'; exit 1
+            fi
+          fi
+      - name: Validate storefront
+        if: hashFiles('storefront-refinement.patch') != ''
+        working-directory: storefront
+        env:
+          WOOCOMMERCE_URL: http://127.0.0.1:4010
+          NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
+        run: |
+          npm install
+          node tests/mock-commerce.mjs > /tmp/mock-commerce.log 2>&1 &
+          npm test
+          npm run build
+          npm install --no-save --package-lock=false @playwright/test
+          npx playwright install --with-deps chromium
+          npm run start > /tmp/storefront.log 2>&1 &
+          node tests/browser.mjs
+      - name: Commit validated source only
+        if: hashFiles('storefront-refinement.patch') != ''
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add storefront/
+          if ! git diff --cached --quiet; then
+            git commit -m 'fix: complete tested storefront refinement'
+            git push origin HEAD:refinement/storefront-20260915
+          fi
+      - name: Export source and test evidence
+        if: always()
+        run: |
+          mkdir -p /tmp/revision-evidence
+          git archive --format=zip HEAD > /tmp/revision-evidence/source.zip
+          git diff > /tmp/revision-evidence/uncommitted.patch
+          cp /tmp/mock-commerce.log /tmp/storefront.log /tmp/revision-evidence/ 2>/dev/null || true
+          cp -r storefront/test-results /tmp/revision-evidence/ 2>/dev/null || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: storefront-revision-evidence
+          path: /tmp/revision-evidence
+          retention-days: 7
