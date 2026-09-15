@@ -72,22 +72,24 @@ export function ProductFAQ({ product }: { product: WooProduct }) {
   const faqs = [...specific, ...common]
 
   return (
-    <section className="hf-section border-t border-black/[.06] bg-white">
-      <div className="mx-auto grid max-w-[1200px] gap-10 px-5 sm:px-6 lg:grid-cols-[.68fr_1.32fr] lg:gap-20">
+    <section className="hf-section relative overflow-hidden border-t border-black/[.06] bg-[#f3f4ef]">
+      <div className="pointer-events-none -left-32 top-10 absolute size-80 rounded-full bg-white/55 blur-[110px]" />
+      <div className="pointer-events-none -right-20 bottom-4 absolute size-72 rounded-full bg-[#dfe8e1]/45 blur-[100px]" />
+      <div className="relative mx-auto grid max-w-[1200px] gap-10 px-5 sm:px-6 lg:grid-cols-[.68fr_1.32fr] lg:gap-20">
         <div>
           <p className="hf-eyebrow text-[var(--hf-brand-muted)]">Product questions</p>
-          <h2 className="mt-4 max-w-md text-[clamp(2.45rem,3.4vw,3.65rem)] font-semibold leading-[.98] tracking-[-.048em] text-[var(--hf-ink)]">Useful things to know before you order.</h2>
+          <h2 className="mt-4 max-w-md text-[clamp(2.35rem,3.2vw,3.45rem)] font-semibold leading-[.98] tracking-[-.046em] text-[var(--hf-ink)]">Useful things to know before you order.</h2>
           <p className="mt-5 max-w-sm text-sm leading-6 text-black/45">Product-specific answers for {name}, followed by the delivery and returns essentials.</p>
         </div>
 
-        <div className="divide-y divide-black/[.08] border-y border-black/[.08]">
+        <div className="space-y-2.5">
           {faqs.map((faq, index) => (
-            <details key={faq.q} className="group py-1" open={index === 0 && specific.length > 0}>
+            <details key={faq.q} className="group overflow-hidden rounded-[var(--hf-radius-md)] border border-black/[.065] bg-white/76 px-5 shadow-[0_10px_30px_rgba(38,52,42,.035)] backdrop-blur-sm sm:px-6" open={index === 0 && specific.length > 0}>
               <summary className="flex cursor-pointer list-none items-start justify-between gap-6 py-5 text-left">
                 <span className="text-[16px] font-semibold leading-6 tracking-[-.018em] text-[var(--hf-ink)] sm:text-[17px]">{faq.q}</span>
-                <span className="grid size-8 shrink-0 place-items-center rounded-[var(--hf-radius-sm)] border border-black/10 text-lg text-black/45 transition group-open:rotate-45">+</span>
+                <span className="grid size-8 shrink-0 place-items-center rounded-full border border-black/[.09] bg-[#f7f8f5] text-lg text-black/45 transition duration-200 group-open:rotate-45 group-open:bg-[var(--hf-brand-soft)] group-open:text-[var(--hf-brand)]">+</span>
               </summary>
-              <div className="max-w-3xl pb-6 pr-10 text-sm leading-7 text-black/55">{faq.a}</div>
+              <div className="max-w-3xl border-t border-black/[.055] pb-6 pt-4 pr-8 text-sm leading-7 text-black/55">{faq.a}</div>
             </details>
           ))}
         </div>
