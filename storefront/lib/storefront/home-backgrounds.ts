@@ -1,0 +1,3 @@
+// Optimized WebP backgrounds generated for the Housefinds homepage.
+// Stored as data URIs to keep the deployment self-contained while avoiding heavy PNG assets.
+export const HOME_HERO_BG = 'data:image/webp;base64,UklGRiAdAABXRUJQVlA4IBQdAAAwtwGdASqgBSoDPtVqrFK/v7KrohZJG/AaiWlu/B20GVljd+2wQLAU29ArzY856jx5I22A/xPT3pUWCf/9Rt/69fZE/v/q/AP/x6nvgH/F2hP7fL/hj13wDMOPAut6Rn4jzMeJEpUgj3+YDAYnA/PFvuJLEOPPFvuC9wXuC9wXuC9wXuC9wXuC9wXuC9wXuCmgE+fyHxZql9Brwh+v5EcjksnLfPBF6BB0yPuXf9sicSX2bLcBrohJ+7cWDcgsgEtQg...';
