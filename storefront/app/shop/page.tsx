@@ -1,5 +1,13 @@
 import Link from 'next/link'
-import { AdjustmentsHorizontalIcon, ChevronRightIcon, TagIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import {
+  AdjustmentsHorizontalIcon,
+  BarsArrowDownIcon,
+  CheckIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+  TagIcon,
+  XMarkIcon,
+} from '@heroicons/react/24/outline'
 import { getProducts } from '@/lib/woocommerce/client'
 import { ProductCard } from '@/components/product/product-card'
 import { STORE_CATEGORIES, filterProductsByStoreCategory, getStoreCategory } from '@/lib/storefront/categories'
@@ -55,16 +63,31 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
   const params = await searchParams
   const activeSort = sorts.some((item) => item.value === params.sort) ? params.sort || 'recommended' : 'recommended'
   const activePrice = priceFilters.some((item) => item.value === params.price) ? params.price : undefined
+  const activeCategory = getStoreCategory(params.category)
+  const activeCategorySlug = activeCategory?.slug
+  const activePriceMeta = priceFilters.find((item) => item.value === activePrice)
+  const activeSortMeta = sorts.find((item) => item.value === activeSort) || sorts[0]
   const query = sortQuery(activeSort)
   const allProducts = dedupeStoreProducts(await getProducts({ per_page: 100, ...query }))
-  let products = filterProductsByStoreCategory(allProducts, params.category)
-  products = filterByPrice(products, activePrice)
-  const activeCategory = getStoreCategory(params.category)
-  const hasFilters = Boolean(activeCategory || activePrice || activeSort !== 'recommended')
+  const categoryScopedProducts = filterProductsByStoreCategory(allProducts, activeCategorySlug)
+  const products = filterByPrice(categoryScopedProducts, activePrice)
+  const hasFilters = Boolean(activeCategory || activePrice)
+  const activeFilterCount = Number(Boolean(activeCategory)) + Number(Boolean(activePrice))
+
+  const categoryCounts = new Map(
+    STORE_CATEGORIES.map((category) => [
+      category.slug,
+      filterByPrice(filterProductsByStoreCategory(allProducts, category.slug), activePrice).length,
+    ]),
+  )
+  const allCategoryCount = filterByPrice(allProducts, activePrice).length
+  const priceCounts = new Map(
+    priceFilters.map((filter) => [filter.value, filterByPrice(categoryScopedProducts, filter.value).length]),
+  )
 
   const makeHref = (next: { category?: string; sort?: string; price?: string }) => {
     const url = new URLSearchParams()
-    const category = next.category === undefined ? params.category : next.category
+    const category = next.category === undefined ? activeCategorySlug : next.category
     const sort = next.sort === undefined ? activeSort : next.sort
     const price = next.price === undefined ? activePrice : next.price
     if (category) url.set('category', category)
@@ -73,6 +96,8 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
     const queryString = url.toString()
     return `/shop${queryString ? `?${queryString}` : ''}`
   }
+
+  const clearFiltersHref = makeHref({ category: '', price: '' })
 
   return (
     <main className="bg-[#fbfaf7] px-5 pb-24 pt-9 lg:px-8">
@@ -83,60 +108,174 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
           {activeCategory && <><ChevronRightIcon className="size-3.5" /><span className="text-black/65">{activeCategory.title}</span></>}
         </nav>
 
-        <div className="mt-10 flex flex-col justify-between gap-8 lg:flex-row lg:items-end">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[.28em] text-[#557562]">Housefinds collection</p>
-            <h1 className="mt-4 text-[clamp(3.7rem,6vw,7.2rem)] font-semibold leading-[.9] tracking-[-.065em]">
-              {activeCategory ? activeCategory.title : 'Clever finds'}<br />
-              <span className="text-[#557562]">for everyday living.</span>
-            </h1>
-            <p className="mt-5 max-w-2xl text-lg leading-8 text-black/48">
-              {activeCategory?.copy || 'Browse useful home products by category, narrow the results and open any product for full details before adding it to your cart.'}
-            </p>
-          </div>
-          <div className="rounded-2xl bg-[#eef1ec] px-4 py-3 text-sm text-black/55">
-            <strong className="text-[#172018]">{products.length}</strong> product{products.length === 1 ? '' : 's'} in this view
-          </div>
+        <div className="mt-10 max-w-[1050px]">
+          <p className="text-[11px] font-semibold uppercase tracking-[.28em] text-[#557562]">Housefinds collection</p>
+          <h1 className="mt-4 text-[clamp(3.7rem,6vw,7.2rem)] font-semibold leading-[.9] tracking-[-.065em]">
+            {activeCategory ? activeCategory.title : 'Clever finds'}<br />
+            <span className="text-[#557562]">for everyday living.</span>
+          </h1>
+          <p className="mt-5 max-w-2xl text-lg leading-8 text-black/48">
+            {activeCategory?.copy || 'Browse useful home products by category, narrow the results and open any product for full details before adding it to your cart.'}
+          </p>
         </div>
 
-        <section className="mt-12 border-y border-black/[.07] py-5" aria-label="Product filters">
-          <div className="space-y-4">
-            <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
-              <div className="flex min-w-0 items-center gap-2 overflow-x-auto pb-1">
-                <span className="mr-1 hidden shrink-0 items-center gap-2 text-sm font-semibold text-black/45 sm:flex"><AdjustmentsHorizontalIcon className="size-4" /> Category</span>
-                <Link href={makeHref({ category: '' })} className={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition ${!activeCategory ? 'border-[#557562] bg-[#e4ede7] text-[#294b3a]' : 'border-black/10 bg-white text-black/58 hover:border-black/20'}`}>All</Link>
-                {STORE_CATEGORIES.map((category) => (
-                  <Link key={category.slug} href={makeHref({ category: category.slug })} className={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition ${activeCategory?.slug === category.slug ? 'border-[#557562] bg-[#e4ede7] text-[#294b3a]' : 'border-black/10 bg-white text-black/58 hover:border-black/20'}`}>{category.title}</Link>
-                ))}
+        <section className="mt-12" aria-label="Product filters and sorting">
+          <div className="overflow-visible rounded-[var(--hf-radius-lg)] border border-black/[.07] bg-white/82 shadow-[0_14px_42px_rgba(29,42,34,.045)]">
+            <div className="flex flex-col gap-4 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <span className="mr-1 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-[var(--hf-ink)]">
+                  <AdjustmentsHorizontalIcon className="size-[18px] text-[var(--hf-brand-muted)]" />
+                  Filter
+                  {activeFilterCount > 0 && (
+                    <span className="grid size-6 place-items-center rounded-full bg-[var(--hf-brand)] text-[11px] font-bold text-white">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </span>
+
+                <details className="group relative">
+                  <summary className={`flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-[var(--hf-radius-pill)] border px-4 text-sm transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--hf-brand-muted)] ${activeCategory ? 'border-[#557562]/45 bg-[#e4ede7] text-[#294b3a]' : 'border-black/10 bg-white text-black/62 hover:border-black/20'}`}>
+                    <span className="font-semibold">Category</span>
+                    {activeCategory && <span className="max-w-[150px] truncate">· {activeCategory.title}</span>}
+                    <ChevronDownIcon className="size-3.5 transition-transform group-open:rotate-180" />
+                  </summary>
+                  <div className="absolute left-0 top-[calc(100%+8px)] z-40 w-[300px] overflow-hidden rounded-[var(--hf-radius-md)] border border-black/[.08] bg-white p-2 shadow-[var(--hf-shadow-float)]">
+                    <div className="px-3 pb-2 pt-2">
+                      <p className="text-[10px] font-bold uppercase tracking-[.18em] text-black/38">Choose a category</p>
+                    </div>
+                    <div className="space-y-1">
+                      <Link href={makeHref({ category: '' })} className={`flex min-h-11 items-center justify-between gap-3 rounded-[var(--hf-radius-sm)] px-3 text-sm transition ${!activeCategory ? 'bg-[var(--hf-brand-soft)] font-semibold text-[var(--hf-brand)]' : 'text-black/62 hover:bg-black/[.035]'}`}>
+                        <span className="flex items-center gap-2.5">
+                          <span className={`grid size-5 place-items-center rounded-full border ${!activeCategory ? 'border-[var(--hf-brand-muted)] bg-white' : 'border-black/10'}`}>
+                            {!activeCategory && <CheckIcon className="size-3.5" />}
+                          </span>
+                          All products
+                        </span>
+                        <span className="text-xs tabular-nums text-black/38">{allCategoryCount}</span>
+                      </Link>
+                      {STORE_CATEGORIES.map((category) => {
+                        const selected = activeCategory?.slug === category.slug
+                        return (
+                          <Link key={category.slug} href={makeHref({ category: category.slug })} className={`flex min-h-11 items-center justify-between gap-3 rounded-[var(--hf-radius-sm)] px-3 text-sm transition ${selected ? 'bg-[var(--hf-brand-soft)] font-semibold text-[var(--hf-brand)]' : 'text-black/62 hover:bg-black/[.035]'}`}>
+                            <span className="flex min-w-0 items-center gap-2.5">
+                              <span className={`grid size-5 shrink-0 place-items-center rounded-full border ${selected ? 'border-[var(--hf-brand-muted)] bg-white' : 'border-black/10'}`}>
+                                {selected && <CheckIcon className="size-3.5" />}
+                              </span>
+                              <span className="truncate">{category.title}</span>
+                            </span>
+                            <span className="text-xs tabular-nums text-black/38">{categoryCounts.get(category.slug) || 0}</span>
+                          </Link>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </details>
+
+                <details className="group relative">
+                  <summary className={`flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-[var(--hf-radius-pill)] border px-4 text-sm transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--hf-brand-muted)] ${activePriceMeta ? 'border-[#557562]/45 bg-[#e4ede7] text-[#294b3a]' : 'border-black/10 bg-white text-black/62 hover:border-black/20'}`}>
+                    <TagIcon className="size-4" />
+                    <span className="font-semibold">Price</span>
+                    {activePriceMeta && <span>· {activePriceMeta.label}</span>}
+                    <ChevronDownIcon className="size-3.5 transition-transform group-open:rotate-180" />
+                  </summary>
+                  <div className="absolute left-0 top-[calc(100%+8px)] z-40 w-[270px] overflow-hidden rounded-[var(--hf-radius-md)] border border-black/[.08] bg-white p-2 shadow-[var(--hf-shadow-float)]">
+                    <div className="px-3 pb-2 pt-2">
+                      <p className="text-[10px] font-bold uppercase tracking-[.18em] text-black/38">Price range</p>
+                    </div>
+                    <div className="space-y-1">
+                      <Link href={makeHref({ price: '' })} className={`flex min-h-11 items-center justify-between gap-3 rounded-[var(--hf-radius-sm)] px-3 text-sm transition ${!activePrice ? 'bg-[var(--hf-brand-soft)] font-semibold text-[var(--hf-brand)]' : 'text-black/62 hover:bg-black/[.035]'}`}>
+                        <span className="flex items-center gap-2.5">
+                          <span className={`grid size-5 place-items-center rounded-full border ${!activePrice ? 'border-[var(--hf-brand-muted)] bg-white' : 'border-black/10'}`}>
+                            {!activePrice && <CheckIcon className="size-3.5" />}
+                          </span>
+                          Any price
+                        </span>
+                        <span className="text-xs tabular-nums text-black/38">{categoryScopedProducts.length}</span>
+                      </Link>
+                      {priceFilters.map((item) => {
+                        const selected = activePrice === item.value
+                        return (
+                          <Link key={item.value} href={makeHref({ price: selected ? '' : item.value })} className={`flex min-h-11 items-center justify-between gap-3 rounded-[var(--hf-radius-sm)] px-3 text-sm transition ${selected ? 'bg-[var(--hf-brand-soft)] font-semibold text-[var(--hf-brand)]' : 'text-black/62 hover:bg-black/[.035]'}`}>
+                            <span className="flex items-center gap-2.5">
+                              <span className={`grid size-5 place-items-center rounded-full border ${selected ? 'border-[var(--hf-brand-muted)] bg-white' : 'border-black/10'}`}>
+                                {selected && <CheckIcon className="size-3.5" />}
+                              </span>
+                              {item.label}
+                            </span>
+                            <span className="text-xs tabular-nums text-black/38">{priceCounts.get(item.value) || 0}</span>
+                          </Link>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </details>
               </div>
 
-              <div className="flex min-w-0 items-center gap-2 overflow-x-auto pb-1 text-sm">
-                <span className="mr-1 shrink-0 font-semibold text-black/45">Sort</span>
-                {sorts.map((item) => (
-                  <Link key={item.value} href={makeHref({ sort: item.value })} className={`shrink-0 rounded-full px-3 py-2 transition ${activeSort === item.value ? 'bg-[#172018] font-semibold text-white' : 'text-black/50 hover:bg-black/5 hover:text-black'}`}>{item.label}</Link>
-                ))}
-              </div>
+              <details className="group relative w-full sm:w-auto">
+                <summary className="flex min-h-11 w-full cursor-pointer list-none items-center justify-between gap-3 rounded-[var(--hf-radius-pill)] border border-black/10 bg-[#f8f8f4] px-4 text-sm text-black/62 transition hover:border-black/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--hf-brand-muted)] sm:w-auto sm:min-w-[220px]">
+                  <span className="flex items-center gap-2 font-semibold text-[var(--hf-ink)]"><BarsArrowDownIcon className="size-[18px] text-[var(--hf-brand-muted)]" /> Sort</span>
+                  <span className="ml-auto">{activeSortMeta.label}</span>
+                  <ChevronDownIcon className="size-3.5 transition-transform group-open:rotate-180" />
+                </summary>
+                <div className="absolute right-0 top-[calc(100%+8px)] z-40 w-full min-w-[270px] overflow-hidden rounded-[var(--hf-radius-md)] border border-black/[.08] bg-white p-2 shadow-[var(--hf-shadow-float)] sm:w-[290px]">
+                  <div className="px-3 pb-2 pt-2">
+                    <p className="text-[10px] font-bold uppercase tracking-[.18em] text-black/38">Sort products</p>
+                  </div>
+                  <div className="space-y-1">
+                    {sorts.map((item) => {
+                      const selected = activeSort === item.value
+                      return (
+                        <Link key={item.value} href={makeHref({ sort: item.value })} className={`flex min-h-11 items-center justify-between rounded-[var(--hf-radius-sm)] px-3 text-sm transition ${selected ? 'bg-[var(--hf-brand-soft)] font-semibold text-[var(--hf-brand)]' : 'text-black/62 hover:bg-black/[.035]'}`}>
+                          <span>{item.label}</span>
+                          {selected && <CheckIcon className="size-4" />}
+                        </Link>
+                      )
+                    })}
+                  </div>
+                </div>
+              </details>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="mr-1 inline-flex items-center gap-2 text-sm font-semibold text-black/45"><TagIcon className="size-4" /> Price</span>
-              {priceFilters.map((item) => (
-                <Link key={item.value} href={makeHref({ price: activePrice === item.value ? '' : item.value })} className={`rounded-full border px-3.5 py-2 text-xs font-semibold transition ${activePrice === item.value ? 'border-[#557562] bg-[#e4ede7] text-[#294b3a]' : 'border-black/10 bg-white text-black/55 hover:border-black/20'}`}>{item.label}</Link>
-              ))}
-              {hasFilters && <Link href="/shop" className="ml-auto inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold text-black/45 transition hover:bg-black/5 hover:text-black"><XMarkIcon className="size-3.5" /> Clear filters</Link>}
+            {hasFilters && (
+              <div className="flex flex-wrap items-center gap-2 border-t border-black/[.06] bg-[#fafbf8] px-4 py-3 sm:px-5">
+                <span className="mr-1 text-xs font-semibold uppercase tracking-[.12em] text-black/36">Applied</span>
+                {activeCategory && (
+                  <Link href={makeHref({ category: '' })} className="inline-flex min-h-9 items-center gap-2 rounded-[var(--hf-radius-pill)] border border-[#557562]/30 bg-white px-3 text-xs font-semibold text-[#294b3a] transition hover:border-[#557562]/55 hover:bg-[#f2f6f2]">
+                    {activeCategory.title}<XMarkIcon className="size-3.5" />
+                  </Link>
+                )}
+                {activePriceMeta && (
+                  <Link href={makeHref({ price: '' })} className="inline-flex min-h-9 items-center gap-2 rounded-[var(--hf-radius-pill)] border border-[#557562]/30 bg-white px-3 text-xs font-semibold text-[#294b3a] transition hover:border-[#557562]/55 hover:bg-[#f2f6f2]">
+                    {activePriceMeta.label}<XMarkIcon className="size-3.5" />
+                  </Link>
+                )}
+                <Link href={clearFiltersHref} className="ml-auto inline-flex min-h-9 items-center rounded-[var(--hf-radius-pill)] px-3 text-xs font-semibold text-black/45 transition hover:bg-black/[.04] hover:text-black">
+                  Clear all
+                </Link>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-7 flex items-end justify-between gap-4 border-b border-black/[.07] pb-4">
+            <div>
+              <p className="text-sm font-semibold text-[var(--hf-ink)]">
+                {products.length} product{products.length === 1 ? '' : 's'}
+              </p>
+              {hasFilters && <p className="mt-1 text-xs text-black/40">Filtered from the Housefinds collection.</p>}
             </div>
+            <p className="hidden text-xs text-black/38 sm:block">Sorted by <strong className="font-semibold text-black/55">{activeSortMeta.label}</strong></p>
           </div>
         </section>
 
         {products.length > 0 ? (
-          <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-12 md:grid-cols-3 xl:grid-cols-4">
+          <div className="mt-8 grid grid-cols-2 gap-x-4 gap-y-12 md:grid-cols-3 xl:grid-cols-4">
             {products.map((product) => <ProductCard key={product.id} product={product} />)}
           </div>
         ) : (
           <div className="mt-12 rounded-[32px] bg-[#f0f1eb] p-10 text-center">
             <h2 className="text-3xl font-semibold tracking-[-.04em]">No products match those filters.</h2>
             <p className="mx-auto mt-3 max-w-lg text-black/48">Broaden the price range, remove a filter or search by the problem you are trying to solve.</p>
-            <div className="mt-6 flex justify-center gap-3"><Link href="/shop" className="rounded-full bg-[#355f4a] px-5 py-3 text-sm font-semibold text-white">Clear filters</Link><Link href="/search" className="rounded-full border border-black/10 bg-white px-5 py-3 text-sm font-semibold">Search</Link></div>
+            <div className="mt-6 flex justify-center gap-3"><Link href={clearFiltersHref} className="rounded-full bg-[#355f4a] px-5 py-3 text-sm font-semibold text-white">Clear filters</Link><Link href="/search" className="rounded-full border border-black/10 bg-white px-5 py-3 text-sm font-semibold">Search</Link></div>
           </div>
         )}
       </div>
