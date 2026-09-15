@@ -8,6 +8,7 @@ import {
 import { getProductReviews, getProducts } from '@/lib/woocommerce/client'
 import { findProductByKeywords } from '@/lib/woocommerce/presentation'
 import { dedupeStoreProducts } from '@/lib/storefront/catalog'
+import { HOME_COLLECTION_BG, PAPER_TEXTURE, SAGE_TEXTURE } from '@/lib/storefront/home-backgrounds'
 import { Hero } from '@/components/home/hero'
 import { CategoryGrid } from '@/components/home/category-grid'
 import { FeaturedFind } from '@/components/home/featured-find'
@@ -35,8 +36,19 @@ export default async function HomePage() {
       <CategoryGrid products={products} />
 
       {showcaseProducts.length > 0 && (
-        <section className="hf-section border-t border-black/[.06] bg-[var(--hf-background)]">
-          <div className="hf-container">
+        <section
+          className="hf-section relative overflow-hidden border-t border-black/[.06] bg-[var(--hf-background)]"
+          style={{
+            backgroundImage: `linear-gradient(rgba(251,250,247,.78), rgba(251,250,247,.9)), url("${HOME_COLLECTION_BG}"), url("${PAPER_TEXTURE}")`,
+            backgroundPosition: 'center, center, center',
+            backgroundRepeat: 'no-repeat, no-repeat, repeat',
+            backgroundSize: 'cover, cover, 192px 192px',
+          }}
+        >
+          <div className="pointer-events-none absolute left-[-8rem] top-24 h-72 w-72 rounded-full bg-[#dfe9e2]/28 blur-[100px]" />
+          <div className="pointer-events-none absolute right-[-6rem] top-10 h-80 w-80 rounded-full bg-[#efe7db]/36 blur-[120px]" />
+
+          <div className="hf-container relative">
             <div className="grid gap-7 lg:grid-cols-[1fr_390px] lg:items-end">
               <div>
                 <p className="hf-eyebrow">Explore the collection</p>
@@ -60,8 +72,17 @@ export default async function HomePage() {
       <FeaturedFind product={featuredProduct} />
       <ProductReviewHighlights products={products} reviews={reviews} />
 
-      <section className="hf-section border-t border-black/[.06] bg-[var(--hf-surface-soft)]">
-        <div className="hf-container grid gap-12 lg:grid-cols-[.9fr_1.1fr] lg:gap-20">
+      <section
+        className="hf-section relative overflow-hidden border-t border-black/[.06] bg-[var(--hf-surface-soft)]"
+        style={{
+          backgroundImage: `linear-gradient(rgba(240,241,235,.86), rgba(240,241,235,.94)), url("${SAGE_TEXTURE}"), url("${PAPER_TEXTURE}")`,
+          backgroundPosition: 'center, center, center',
+          backgroundRepeat: 'no-repeat, no-repeat, repeat',
+          backgroundSize: 'cover, cover, 192px 192px',
+        }}
+      >
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-black/10 to-transparent" />
+        <div className="hf-container relative grid gap-12 lg:grid-cols-[.9fr_1.1fr] lg:gap-20">
           <div>
             <p className="hf-eyebrow">The Housefinds standard</p>
             <h2 className="hf-section-title mt-5 max-w-[700px]">A smaller, smarter edit for the home.</h2>
@@ -74,7 +95,7 @@ export default async function HomePage() {
               { icon: LightBulbIcon, title: 'Easy to understand', copy: 'The best finds make sense quickly and fit naturally into everyday routines.' },
               { icon: CubeTransparentIcon, title: 'Worth the space', copy: 'Practical upgrades should feel more useful than the room they take up.' },
             ].map(({ icon: Icon, title, copy }) => (
-              <article key={title} className="border-t border-black/10 pt-5">
+              <article key={title} className="rounded-[var(--hf-radius-md)] border border-white/55 bg-white/28 p-5 backdrop-blur-[2px]">
                 <span className="grid size-10 place-items-center rounded-full bg-white text-[var(--hf-brand-muted)] shadow-sm">
                   <Icon className="size-5" />
                 </span>
