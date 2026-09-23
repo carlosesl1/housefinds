@@ -1,0 +1,26 @@
+name: Editorial campaign QA
+on:
+  push:
+    branches: [feat/editorial-campaign-art-20260923]
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: storefront
+    env:
+      WOOCOMMERCE_URL: http://127.0.0.1:9
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_qa_fixture_only
+      NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - run: npm run build
