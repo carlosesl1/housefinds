@@ -11,6 +11,7 @@ import { dedupeStoreProducts } from '@/lib/storefront/catalog'
 import { HOME_COLLECTION_BG, PAPER_TEXTURE, SAGE_TEXTURE } from '@/lib/storefront/home-backgrounds'
 import { Hero } from '@/components/home/hero'
 import { CategoryGrid } from '@/components/home/category-grid'
+import { EditorialBanners } from '@/components/home/editorial-banners'
 import { FeaturedFind } from '@/components/home/featured-find'
 import { ProductReviewHighlights } from '@/components/home/product-review-highlights'
 import { ProductCard } from '@/components/product/product-card'
@@ -32,6 +33,8 @@ export default async function HomePage() {
   return (
     <main className="overflow-hidden bg-[var(--hf-background)]">
       <Hero products={products} />
+
+      <EditorialBanners products={products} placement="discovery" />
 
       <CategoryGrid products={products} />
 
@@ -68,6 +71,8 @@ export default async function HomePage() {
           </div>
         </section>
       )}
+
+      <EditorialBanners products={products} placement="curated" />
 
       <FeaturedFind product={featuredProduct} />
       <ProductReviewHighlights products={products} reviews={reviews} />
