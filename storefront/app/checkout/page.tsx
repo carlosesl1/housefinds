@@ -2,420 +2,244 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { useEffect, useMemo, useState } from 'react'
-import { CheckCircleIcon, ChevronDownIcon, LockClosedIcon, TruckIcon } from '@heroicons/react/24/outline'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, CreditCardIcon, EnvelopeIcon, LockClosedIcon, TruckIcon } from '@heroicons/react/24/outline'
 import { StripeCardForm } from '@/components/checkout/stripe-card-form'
+import { CheckoutAddressFields, CheckoutField, checkoutFieldId } from '@/components/checkout/checkout-fields'
+import { CheckoutSummary } from '@/components/checkout/checkout-summary'
 import { useCart, type CheckoutAddress } from '@/store/cart'
-import type { WooCart } from '@/lib/woocommerce/types'
 import { formatMoney } from '@/lib/woocommerce/money'
 import { displayProductName } from '@/lib/woocommerce/presentation'
 import { moneyValue, trackStorefrontEvent } from '@/lib/storefront/analytics'
+import {
+  CHECKOUT_DRAFT_KEY, CHECKOUT_LIMIT_MINOR, DELIVERY_ESTIMATE, EMPTY_ADDRESS,
+  checkoutCartRevision, customerFingerprint, decodeCheckoutDraft, deliveryIsReady,
+  draftBasketKey, encodeCheckoutDraft, normaliseAddress, restoreCartAddresses, validateAddress,
+  type AddressErrors,
+} from '@/lib/storefront/checkout'
 
-const UK_LAUNCH_ORDER_LIMIT_MINOR = 13_500
-const DELIVERY_ESTIMATE = 'around 14 days'
+const panelClass = 'rounded-[var(--hf-radius-md)] border border-[var(--hf-border-strong)] bg-white p-5 sm:p-7 lg:rounded-[var(--hf-radius-lg)]'
 
-const emptyAddress: CheckoutAddress = {
-  first_name: '',
-  last_name: '',
-  address_1: '',
-  address_2: '',
-  city: '',
-  state: '',
-  postcode: '',
-  country: 'GB',
-  email: '',
-  phone: '',
+function focusSection(id: string) {
+  window.requestAnimationFrame(() => {
+    const element = document.getElementById(id)
+    element?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' })
+    element?.focus({ preventScroll: true })
+  })
 }
-
-function cartAddress(cart: WooCart | null): CheckoutAddress {
-  const source = cart?.shipping_address || cart?.billing_address || {}
-  const billing = cart?.billing_address || {}
-  return {
-    first_name: source.first_name || '',
-    last_name: source.last_name || '',
-    address_1: source.address_1 || '',
-    address_2: source.address_2 || '',
-    city: source.city || '',
-    state: source.state || '',
-    postcode: source.postcode || '',
-    country: source.country || 'GB',
-    email: billing.email || source.email || '',
-    phone: source.phone || billing.phone || '',
-  }
+function visibleErrors(errors: AddressErrors, touched: Set<string>, attempted: boolean): AddressErrors {
+  return Object.fromEntries(Object.entries(errors).filter(([key]) => attempted || touched.has(key)))
 }
-
-function addressFingerprint(address: CheckoutAddress) {
-  return [address.first_name, address.last_name, address.address_1, address.address_2, address.city, address.state, address.postcode, address.country, address.email, address.phone]
-    .map((value) => String(value || '').trim().toLowerCase())
-    .join('|')
-}
-
-function fieldId(name: keyof CheckoutAddress) {
-  return `checkout-${String(name).replace(/_/g, '-')}`
-}
-
-function Field({ name, label, value, onChange, placeholder, type = 'text', autoComplete, hint, error, required = false, inputMode }: {
-  name: keyof CheckoutAddress
-  label: string
-  value: string
-  onChange: (value: string) => void
-  placeholder?: string
-  type?: string
-  autoComplete?: string
-  hint?: string
-  error?: string
-  required?: boolean
-  inputMode?: 'none' | 'text' | 'tel' | 'url' | 'email' | 'numeric' | 'decimal' | 'search'
-}) {
-  const id = fieldId(name)
-  const describedBy = error ? `${id}-error` : hint ? `${id}-hint` : undefined
-
-  return (
-    <div>
-      <label htmlFor={id} className="mb-2 flex items-baseline justify-between gap-3 text-sm font-semibold text-[#172018]">
-        <span>{label}</span>
-        <span className="text-[11px] font-normal text-black/38">{required ? 'Required' : 'Optional'}{hint ? ` · ${hint}` : ''}</span>
-      </label>
-      <input
-        id={id}
-        name={String(name)}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={placeholder}
-        type={type}
-        inputMode={inputMode}
-        autoComplete={autoComplete}
-        required={required}
-        aria-required={required}
-        aria-invalid={Boolean(error)}
-        aria-describedby={describedBy}
-        className={`h-13 w-full rounded-[var(--hf-radius-sm)] border bg-white px-4 text-[15px] outline-none transition placeholder:text-black/28 focus:ring-4 ${error ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-100' : 'border-black/10 focus:border-[#557562] focus:ring-[#557562]/10'}`}
-      />
-      {hint && !error && <span id={`${id}-hint`} className="sr-only">{hint}</span>}
-      {error && <span id={`${id}-error`} className="mt-2 block text-xs font-medium leading-5 text-rose-700">{error}</span>}
+function CheckoutHeader({ locked = false }: { locked?: boolean }) {
+  return <header className="border-b border-[var(--hf-border)] bg-[var(--hf-background)]">
+    <div className="mx-auto flex min-h-[76px] max-w-[1220px] flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
+      <Link href="/" aria-label="Housefinds home" aria-disabled={locked} tabIndex={locked ? -1 : undefined} onClick={(event) => { if (locked) event.preventDefault() }}>
+        <Image src="/housefinds-logo.svg" alt="Housefinds" width={720} height={210} priority className="h-8 w-auto sm:h-10" />
+      </Link>
+      <span className="inline-flex items-center gap-2 text-xs font-medium text-[var(--hf-brand)] sm:text-sm"><LockClosedIcon className="size-4" />Secure checkout</span>
     </div>
-  )
-}
-
-function validEmail(value: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
-}
-
-function validUKPostcode(value: string) {
-  return /^(GIR\s?0AA|[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2})$/i.test(value.trim())
-}
-
-function OrderSummaryBody({ cart, money, coupon, setCoupon, loading, applyCoupon, removeCoupon }: {
-  cart: WooCart
-  money: (amount?: string) => string
-  coupon: string
-  setCoupon: (value: string) => void
-  loading: boolean
-  applyCoupon: (code: string) => Promise<boolean>
-  removeCoupon: (code: string) => Promise<boolean>
-}) {
-  return (
-    <>
-      <div className="space-y-5">
-        {cart.items.map((item) => (
-          <div key={item.key} className="grid grid-cols-[72px_1fr_auto] gap-3">
-            <div className="relative aspect-square overflow-hidden rounded-[var(--hf-radius-sm)] bg-[#f0efe9]">
-              {item.images?.[0]?.src && <Image src={item.images[0].src} alt={displayProductName(item.name)} fill sizes="72px" className="object-cover" />}
-              <span className="absolute right-1 top-1 grid size-5 place-items-center rounded-full bg-[#172018] text-[10px] font-bold text-white">{item.quantity}</span>
-            </div>
-            <div className="min-w-0 self-center">
-              <p className="line-clamp-2 text-sm font-semibold leading-5">{displayProductName(item.name)}</p>
-              {item.variation?.length > 0 && <p className="mt-1 line-clamp-2 text-xs text-black/42">{item.variation.map((value) => value.value).join(' · ')}</p>}
-            </div>
-            <p className="self-center text-sm font-semibold">{money(item.totals.line_total)}</p>
-          </div>
-        ))}
-      </div>
-
-      <details className="mt-6 border-t border-black/[.07] pt-5">
-        <summary className="cursor-pointer list-none text-sm font-semibold text-black/45">Have a discount code?</summary>
-        <div className="mt-4 flex gap-2">
-          <label htmlFor="checkout-coupon" className="sr-only">Discount code</label>
-          <input id="checkout-coupon" name="coupon" value={coupon} onChange={(event) => setCoupon(event.target.value)} placeholder="Discount code" autoComplete="off" className="h-12 min-w-0 flex-1 rounded-full border border-black/10 px-4 text-sm outline-none focus:border-[#557562] focus:ring-4 focus:ring-[#557562]/10" />
-          <button type="button" disabled={loading || !coupon.trim()} onClick={() => void applyCoupon(coupon).then((ok) => ok && setCoupon(''))} className="h-12 rounded-full bg-[#172018] px-5 text-sm font-semibold text-white disabled:opacity-40">Apply</button>
-        </div>
-      </details>
-
-      {cart.coupons.length > 0 && <div className="mt-3 flex flex-wrap gap-2">{cart.coupons.map((entry) => <button type="button" key={entry.code} onClick={() => void removeCoupon(entry.code)} className="rounded-full bg-[#edf3ee] px-3 py-1.5 text-xs font-semibold text-[#355f4a]">{entry.code} ×</button>)}</div>}
-
-      <div className="mt-6 space-y-3 border-t border-black/[.07] pt-5 text-sm">
-        <div className="flex justify-between gap-4"><span className="text-black/48">Subtotal</span><span>{money(cart.totals.total_items)}</span></div>
-        {Number(cart.totals.total_discount) > 0 && <div className="flex justify-between gap-4 text-[#456b55]"><span>Discount</span><span>−{money(cart.totals.total_discount)}</span></div>}
-        <div className="flex justify-between gap-4"><span className="text-black/48">Standard UK delivery</span><span className={cart.has_calculated_shipping && Number(cart.totals.total_shipping) > 0 ? '' : 'font-semibold text-[#355f4a]'}>{cart.has_calculated_shipping && Number(cart.totals.total_shipping) > 0 ? money(cart.totals.total_shipping) : 'FREE'}</span></div>
-        {Number(cart.totals.total_tax) > 0 && <div className="flex justify-between gap-4"><span className="text-black/48">Tax</span><span>{money(cart.totals.total_tax)}</span></div>}
-        <div className="flex items-end justify-between gap-4 border-t border-black/[.07] pt-4">
-          <div><span className="text-sm text-black/48">Total</span><p className="mt-1 text-xs text-black/35">GBP</p></div>
-          <strong className="text-2xl tracking-[-.04em]">{money(cart.totals.total_price)}</strong>
-        </div>
-      </div>
-
-      <div className="mt-6 rounded-[var(--hf-radius-sm)] bg-[#f0f2ed] p-4 text-xs leading-5 text-black/48">
-        <div className="flex items-center gap-2 font-semibold text-[#355f4a]"><TruckIcon className="size-4" /> Free UK delivery</div>
-        <p className="mt-1">Current delivery estimate: {DELIVERY_ESTIMATE}. <Link href="/returns" className="font-semibold text-[#355f4a] underline underline-offset-3">Free 14-day returns</Link> apply to eligible online orders.</p>
-      </div>
-    </>
-  )
+  </header>
 }
 
 export default function CheckoutPage() {
   const cart = useCart((state) => state.cart)
   const loading = useCart((state) => state.loading)
-  const error = useCart((state) => state.error)
-  const clearError = useCart((state) => state.clearError)
+  const storeError = useCart((state) => state.error)
   const updateCustomer = useCart((state) => state.updateCustomer)
   const selectShipping = useCart((state) => state.selectShipping)
-  const applyCoupon = useCart((state) => state.applyCoupon)
-  const removeCoupon = useCart((state) => state.removeCoupon)
-  const refreshCart = useCart((state) => state.refresh)
-
-  const [address, setAddress] = useState<CheckoutAddress>(emptyAddress)
-  const [confirmedAddress, setConfirmedAddress] = useState('')
-  const [hydratedAddress, setHydratedAddress] = useState(false)
-  const [coupon, setCoupon] = useState('')
+  const refresh = useCart((state) => state.refresh)
+  const [address, setAddress] = useState<CheckoutAddress>({ ...EMPTY_ADDRESS })
+  const [billing, setBilling] = useState<CheckoutAddress>({ ...EMPTY_ADDRESS })
+  const [sameBilling, setSameBilling] = useState(true)
+  const [hydrated, setHydrated] = useState(false)
+  const [detailsOpen, setDetailsOpen] = useState(true)
+  const [confirmedCustomer, setConfirmedCustomer] = useState('')
   const [deliveryAttempted, setDeliveryAttempted] = useState(false)
+  const [touched, setTouched] = useState<Set<string>>(new Set())
+  const [billingTouched, setBillingTouched] = useState<Set<string>>(new Set())
+  const [operationError, setOperationError] = useState<string | null>(null)
+  const [paymentStage, setPaymentStage] = useState(false)
+  const [reviewedRevision, setReviewedRevision] = useState('')
+  const [paymentBusy, setPaymentBusy] = useState(false)
+  const [restoredDraft, setRestoredDraft] = useState(false)
+  const requestInFlight = useRef(false)
+  const currentCustomerRef = useRef('')
+  const effectiveBilling = useMemo(() => sameBilling ? address : { ...billing, email: address.email, phone: address.phone }, [address, billing, sameBilling])
+  const fingerprint = customerFingerprint(address, effectiveBilling)
+  currentCustomerRef.current = fingerprint
+  const addressErrors = useMemo(() => validateAddress(address), [address])
+  const billingErrors = useMemo(() => sameBilling ? {} : validateAddress(effectiveBilling, false), [effectiveBilling, sameBilling])
+  const fieldErrors = [...Object.entries(addressErrors).map(([key, text]) => ({ prefix: 'delivery', key, text })), ...Object.entries(billingErrors).map(([key, text]) => ({ prefix: 'billing', key, text }))]
+  const validDetails = fieldErrors.length === 0
+  const savedCustomer = cart ? restoreCartAddresses(cart) : null
+  const customerConfirmed = Boolean(confirmedCustomer && confirmedCustomer === fingerprint && savedCustomer && customerFingerprint(savedCustomer.address, savedCustomer.sameBilling ? savedCustomer.address : savedCustomer.billing) === fingerprint)
+  const deliveryReady = customerConfirmed && deliveryIsReady(cart)
+  const revision = cart ? checkoutCartRevision(cart) : ''
+  const atLimit = Number(cart?.totals.total_price || 0) >= CHECKOUT_LIMIT_MINOR
+  const currencySupported = !cart || (cart.totals.currency_code === 'GBP' && cart.totals.currency_minor_unit === 2)
+  const locked = paymentBusy || loading
+  const paymentReady = validDetails && deliveryReady && paymentStage && reviewedRevision === revision && !atLimit && currencySupported && !locked
+  const money = (amount: string) => formatMoney(amount, cart?.totals.currency_minor_unit ?? 2, cart?.totals.currency_symbol || '£')
 
   useEffect(() => {
-    if (!cart || hydratedAddress) return
-    const restored = cartAddress(cart)
-    const hasStoredAddress = Boolean(restored.first_name || restored.address_1 || restored.postcode || restored.email)
-    if (hasStoredAddress) {
-      setAddress(restored)
-      if (cart.has_calculated_shipping) setConfirmedAddress(addressFingerprint(restored))
+    if (!cart || hydrated) return
+    const server = restoreCartAddresses(cart)
+    let draft = null
+    try { draft = decodeCheckoutDraft(sessionStorage.getItem(CHECKOUT_DRAFT_KEY), draftBasketKey(cart)) } catch {}
+    const restored = draft || server
+    setAddress(restored.address); setBilling(restored.billing); setSameBilling(restored.sameBilling)
+    setRestoredDraft(Boolean(draft))
+    const serverFingerprint = customerFingerprint(server.address, server.sameBilling ? server.address : server.billing)
+    const restoredFingerprint = customerFingerprint(restored.address, restored.sameBilling ? restored.address : { ...restored.billing, email: restored.address.email, phone: restored.address.phone })
+    if (deliveryIsReady(cart) && restoredFingerprint === serverFingerprint && !Object.keys(validateAddress(restored.address)).length && (restored.sameBilling || !Object.keys(validateAddress(restored.billing, false)).length)) {
+      setConfirmedCustomer(serverFingerprint); setDetailsOpen(false)
     }
-    setHydratedAddress(true)
-  }, [cart, hydratedAddress])
+    setHydrated(true)
+  }, [cart, hydrated])
+
+  const basketKey = cart ? draftBasketKey(cart) : ''
+  useEffect(() => {
+    if (!hydrated || !basketKey || paymentBusy) return
+    const timer = window.setTimeout(() => {
+      try { sessionStorage.setItem(CHECKOUT_DRAFT_KEY, encodeCheckoutDraft({ address, billing, sameBilling }, basketKey)) } catch {}
+    }, 350)
+    return () => window.clearTimeout(timer)
+  }, [address, billing, sameBilling, hydrated, basketKey, paymentBusy])
 
   useEffect(() => {
-    if (!cart?.items?.length) return
+    if (!cart?.items.length) return
     const key = `hf_begin_checkout_${cart.items.map((item) => `${item.id}:${item.quantity}`).join('|')}_${cart.totals.total_price}`
     try {
-      if (window.sessionStorage.getItem(key)) return
-      trackStorefrontEvent({
-        event: 'begin_checkout',
-        ecommerce: {
-          currency: cart.totals.currency_code || 'GBP',
-          value: moneyValue(cart.totals.total_price, cart.totals.currency_minor_unit),
-          items: cart.items.map((item) => ({
-            item_id: String(item.id),
-            item_name: displayProductName(item.name),
-            item_variant: item.variation?.map((entry) => entry.value).filter(Boolean).join(' · ') || undefined,
-            quantity: item.quantity,
-            price: moneyValue(item.totals.line_total, item.totals.currency_minor_unit) / Math.max(1, item.quantity),
-          })),
-        },
-      })
-      window.sessionStorage.setItem(key, '1')
+      if (sessionStorage.getItem(key)) return
+      trackStorefrontEvent({ event: 'begin_checkout', ecommerce: {
+        currency: cart.totals.currency_code, value: moneyValue(cart.totals.total_price, cart.totals.currency_minor_unit),
+        items: cart.items.map((item) => ({ item_id: String(item.id), item_name: displayProductName(item.name), quantity: item.quantity, price: moneyValue(item.totals.line_total, item.totals.currency_minor_unit) / Math.max(1, item.quantity) })),
+      } })
+      sessionStorage.setItem(key, '1')
     } catch {}
   }, [cart])
 
-  const shippingRates = useMemo(() => cart?.shipping_rates.flatMap((pkg) => pkg.shipping_rates.map((rate) => ({ ...rate, packageId: pkg.package_id }))) || [], [cart])
-  const selectedShipping = shippingRates.some((rate) => rate.selected)
+  const setField = (key: keyof CheckoutAddress, value: string) => setAddress((current) => ({ ...current, [key]: value }))
+  const setBillingField = (key: keyof CheckoutAddress, value: string) => setBilling((current) => ({ ...current, [key]: value }))
+  const touch = (key: keyof CheckoutAddress) => setTouched((current) => new Set([...current, key]))
+  const touchBilling = (key: keyof CheckoutAddress) => setBillingTouched((current) => new Set([...current, key]))
 
-  const addressErrors = useMemo(() => {
-    const errors: Partial<Record<keyof CheckoutAddress, string>> = {}
-    const email = address.email?.trim() || ''
-    if (!email) errors.email = 'Enter the email address you want order updates sent to.'
-    else if (!validEmail(email)) errors.email = 'Enter a valid email address, for example name@example.com.'
-    if (!address.first_name.trim()) errors.first_name = 'Enter your first name.'
-    if (!address.last_name.trim()) errors.last_name = 'Enter your last name.'
-    if (!address.address_1.trim()) errors.address_1 = 'Enter the house number and street for delivery.'
-    if (!address.city.trim()) errors.city = 'Enter the town or city for this address.'
-    if (!address.postcode.trim()) errors.postcode = 'Enter a UK postcode.'
-    else if (!validUKPostcode(address.postcode)) errors.postcode = 'Enter a UK postcode, for example SW1A 1AA.'
-    return errors
-  }, [address])
-
-  const errorEntries = Object.entries(addressErrors) as Array<[keyof CheckoutAddress, string]>
-  const addressReady = errorEntries.length === 0
-  const exceedsLaunchLimit = Number(cart?.totals.total_price || 0) >= UK_LAUNCH_ORDER_LIMIT_MINOR
-  const currentAddressFingerprint = addressFingerprint(address)
-  const deliveryAddressConfirmed = !cart?.needs_shipping || (Boolean(confirmedAddress) && confirmedAddress === currentAddressFingerprint)
-  const deliveryReady = Boolean(cart && deliveryAddressConfirmed && (!cart.needs_shipping || (cart.has_calculated_shipping && selectedShipping)))
-  const paymentReady = Boolean(addressReady && !exceedsLaunchLimit && deliveryReady)
-
-  const money = (amount?: string) => formatMoney(amount || '0', cart?.totals.currency_minor_unit ?? 2, cart?.totals.currency_symbol || '£')
-  const setField = (field: keyof CheckoutAddress, value: string) => setAddress((current) => ({ ...current, [field]: value }))
-
-  const calculateDelivery = async () => {
-    setDeliveryAttempted(true)
-    if (!addressReady) {
-      const firstInvalid = errorEntries[0]?.[0]
-      if (firstInvalid) window.requestAnimationFrame(() => document.getElementById(fieldId(firstInvalid))?.focus())
+  function editDetails() {
+    if (locked) return
+    setDetailsOpen(true); setPaymentStage(false); setConfirmedCustomer(''); setOperationError(null)
+    focusSection('checkout-details')
+  }
+  async function confirmDetails() {
+    if (locked || requestInFlight.current || atLimit || !currencySupported) return
+    setDeliveryAttempted(true); setOperationError(null)
+    if (!validDetails) {
+      const first = fieldErrors[0]
+      if (first) focusSection(checkoutFieldId(first.prefix, first.key as keyof CheckoutAddress))
       return
     }
-    const updated = await updateCustomer(address)
-    if (updated) setConfirmedAddress(addressFingerprint(address))
+    requestInFlight.current = true
+    const submittedFingerprint = fingerprint
+    const delivery = normaliseAddress(address)
+    const bill = normaliseAddress(effectiveBilling)
+    try {
+      const ok = await updateCustomer(delivery, bill)
+      if (!ok) { setOperationError(useCart.getState().error || 'We could not confirm delivery. Please try again.'); return }
+      if (currentCustomerRef.current !== submittedFingerprint) return
+      setAddress(delivery); setBilling(bill)
+      setConfirmedCustomer(customerFingerprint(delivery, bill)); setDetailsOpen(false); setPaymentStage(false)
+      focusSection('checkout-delivery')
+    } finally { requestInFlight.current = false }
+  }
+  async function chooseShipping(packageId: number, rateId: string) {
+    if (locked || requestInFlight.current) return
+    requestInFlight.current = true; setOperationError(null)
+    try {
+      const ok = await selectShipping(packageId, rateId)
+      if (!ok) setOperationError(useCart.getState().error || 'We could not update delivery. Try selecting it again.')
+    } finally { requestInFlight.current = false }
+  }
+  function continueToPayment() {
+    if (!deliveryReady || locked || atLimit || !currencySupported) return
+    setReviewedRevision(revision); setPaymentStage(true); focusSection('checkout-payment')
+  }
+  async function couponAction(code: string, remove = false): Promise<string | null> {
+    if (locked) return 'Please wait for the current update to finish.'
+    const ok = await (remove ? useCart.getState().removeCoupon(code) : useCart.getState().applyCoupon(code))
+    const message = ok ? null : useCart.getState().error || 'That code could not be applied. Check the code and try again.'
+    useCart.getState().clearError()
+    return message
   }
 
-  if (!cart?.items?.length) {
-    return (
-      <main className="min-h-[70vh] bg-[#fbfaf7] px-5 py-12 lg:px-8">
-        <div className="mx-auto max-w-[1100px]">
-          <header className="mb-10 flex items-center justify-between border-b border-black/[.07] pb-6">
-            <Link href="/" className="inline-flex items-center" aria-label="Housefinds home"><Image src="/housefinds-logo.svg" alt="Housefinds" width={720} height={210} className="h-9 w-auto sm:h-10" priority /></Link>
-            <div className="inline-flex items-center gap-2 text-sm font-medium text-black/45"><LockClosedIcon className="size-4" /> Secure checkout</div>
-          </header>
-          <div className="mx-auto max-w-2xl rounded-[var(--hf-radius-lg)] border border-black/[.06] bg-white p-8 text-center shadow-[0_22px_80px_rgba(34,45,37,.05)] sm:p-12">
-            <p className="text-[11px] font-semibold uppercase tracking-[.28em] text-[#557562]">Checkout</p>
-            <h1 className="mt-4 text-5xl font-semibold tracking-[-.06em]">Your cart is empty.</h1>
-            <p className="mx-auto mt-5 max-w-md text-black/50">Add a clever find first, then come back here to arrange delivery and payment.</p>
-            <Link href="/shop" className="hf-button-primary mt-8">Browse products</Link>
-          </div>
-        </div>
-      </main>
-    )
-  }
+  if (!cart || !cart.items.length) return <main className="min-h-screen bg-[var(--hf-background)]"><CheckoutHeader />
+    <div className="mx-auto max-w-xl px-5 py-16 text-center">
+      {!cart ? storeError ? <><h1 className="text-3xl font-semibold tracking-[-.035em]">Let’s reconnect your basket.</h1><p className="mt-4 text-sm leading-6 text-[var(--hf-ink-soft)]">Your basket could not be loaded. This is not a payment failure.</p><button type="button" onClick={() => void refresh()} disabled={loading} className="hf-button-primary mt-6 disabled:opacity-50">{loading ? 'Reconnecting…' : 'Try again'}</button></> : <div role="status" aria-live="polite"><div className="mx-auto mb-6 h-10 w-40 animate-pulse rounded-full bg-[var(--hf-brand-soft)] motion-reduce:animate-none" /><h1 className="text-2xl font-semibold">Loading your basket…</h1></div> : <><h1 className="text-3xl font-semibold tracking-[-.035em]">Your basket is empty.</h1><p className="mt-4 text-sm leading-6 text-[var(--hf-ink-soft)]">Add a useful find before checking out.</p><Link href="/shop" className="hf-button-primary mt-6">Explore the shop<ArrowRightIcon className="size-4" /></Link></>}
+      <p className="mt-7 text-sm text-[var(--hf-ink-soft)]">Need help? <a href="mailto:contact@housefindsstore.com" className="font-semibold text-[var(--hf-brand)] underline underline-offset-4">Contact Housefinds</a></p>
+    </div>
+  </main>
 
-  const currentStep = !addressReady || !deliveryAddressConfirmed ? 1 : !deliveryReady ? 2 : 3
-  const progressSteps = [
-    { number: 1, label: 'Details', complete: currentStep > 1 },
-    { number: 2, label: 'Delivery', complete: currentStep > 2 },
-    { number: 3, label: 'Payment', complete: false },
-  ]
-
-  return (
-    <main className="bg-[#f5f4ef] px-5 py-7 lg:px-8 lg:py-10">
-      <div className="mx-auto max-w-[1320px]">
-        <header className="flex flex-col gap-4 border-b border-black/[.07] pb-5 sm:flex-row sm:items-center sm:justify-between">
-          <Link href="/" className="inline-flex items-center" aria-label="Housefinds home"><Image src="/housefinds-logo.svg" alt="Housefinds" width={720} height={210} className="h-9 w-auto sm:h-10" priority /></Link>
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs sm:text-sm">
-            <span className="font-semibold text-[#355f4a]">Guest checkout · no account required</span>
-            <span className="inline-flex items-center gap-2 font-medium text-black/45"><LockClosedIcon className="size-4" /> Secure checkout</span>
-          </div>
-        </header>
-
-        <nav aria-label="Checkout progress" className="mb-7 mt-5 grid grid-cols-3 overflow-hidden rounded-[var(--hf-radius-sm)] border border-black/[.07] bg-white sm:mb-8">
-          {progressSteps.map((step) => {
-            const active = currentStep === step.number
-            return (
-              <div key={step.number} aria-current={active ? 'step' : undefined} className={`relative px-3 py-3.5 text-center text-xs sm:px-5 sm:text-sm ${step.number > 1 ? 'border-l border-black/[.06]' : ''} ${active ? 'bg-[#edf3ee]' : ''}`}>
-                <span className={`mr-1.5 font-semibold ${step.complete || active ? 'text-[#355f4a]' : 'text-black/32'}`}>{step.complete ? '✓' : `0${step.number}`}</span>
-                <span className={active ? 'font-semibold text-[#172018]' : 'text-black/48'}>{step.label}</span>
-              </div>
-            )
-          })}
-        </nav>
-
-        <details className="group mb-5 rounded-[var(--hf-radius-md)] border border-black/[.06] bg-white shadow-[0_14px_44px_rgba(34,45,37,.035)] lg:hidden">
-          <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-4 px-5 py-4">
-            <div><span className="text-sm font-semibold">Order summary</span><span className="ml-2 text-xs text-black/40">{cart.items_count} item{cart.items_count === 1 ? '' : 's'}</span></div>
-            <div className="flex items-center gap-2"><strong>{money(cart.totals.total_price)}</strong><ChevronDownIcon className="size-4 text-black/42 transition group-open:rotate-180" /></div>
-          </summary>
-          <div className="border-t border-black/[.06] px-5 pb-5 pt-5">
-            <div className="mb-5 flex justify-end"><Link href="/cart" className="text-xs font-semibold text-[#355f4a] underline underline-offset-3">Edit cart</Link></div>
-            <OrderSummaryBody cart={cart} money={money} coupon={coupon} setCoupon={setCoupon} loading={loading} applyCoupon={applyCoupon} removeCoupon={removeCoupon} />
-          </div>
-        </details>
-
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_400px] xl:gap-12">
-          <section className="space-y-5">
-            {exceedsLaunchLimit && (
-              <div className="rounded-[var(--hf-radius-md)] border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-950">
-                <strong>Keep this order below £135 to continue.</strong>
-                <p className="mt-1">Reduce the quantity or remove an item from your cart. Housefinds is limiting launch orders to baskets below £135.</p>
-              </div>
-            )}
-
-            <form noValidate onSubmit={(event) => { event.preventDefault(); void calculateDelivery() }} className="rounded-[var(--hf-radius-lg)] border border-black/[.06] bg-white p-6 shadow-[0_20px_70px_rgba(34,45,37,.04)] sm:p-8">
-              <div className="flex items-start justify-between gap-6">
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[.28em] text-[#557562]">Step 1 · Guest checkout</p>
-                  <h1 className="mt-3 text-4xl font-semibold tracking-[-.055em] sm:text-5xl">Contact & delivery</h1>
-                  <p className="mt-3 max-w-xl text-sm leading-6 text-black/48">UK delivery is free. Fields marked Required are needed to deliver your order; everything else is optional.</p>
-                </div>
-                <span className="hidden size-12 place-items-center rounded-[var(--hf-radius-sm)] bg-[#e7eee9] text-[#456b55] sm:grid"><TruckIcon className="size-6" /></span>
-              </div>
-
-              {deliveryAttempted && !addressReady && (
-                <div role="alert" aria-live="assertive" className="mt-6 max-w-[680px] rounded-[var(--hf-radius-sm)] border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">
-                  <p className="font-semibold">Check {errorEntries.length} highlighted detail{errorEntries.length === 1 ? '' : 's'} before continuing.</p>
-                  <ul className="mt-2 space-y-1.5 text-xs leading-5">
-                    {errorEntries.map(([field, message]) => <li key={field}><a href={`#${fieldId(field)}`} className="underline underline-offset-2">{message}</a></li>)}
-                  </ul>
-                </div>
-              )}
-
-              <fieldset className="mt-8 max-w-[680px] space-y-4">
-                <legend className="sr-only">Contact and UK delivery address</legend>
-                <Field name="email" label="Email" type="email" inputMode="email" autoComplete="shipping email" value={address.email || ''} onChange={(value) => setField('email', value)} placeholder="you@example.com" hint="Order updates" required error={deliveryAttempted ? addressErrors.email : undefined} />
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Field name="first_name" label="First name" autoComplete="shipping given-name" value={address.first_name} onChange={(value) => setField('first_name', value)} required error={deliveryAttempted ? addressErrors.first_name : undefined} />
-                  <Field name="last_name" label="Last name" autoComplete="shipping family-name" value={address.last_name} onChange={(value) => setField('last_name', value)} required error={deliveryAttempted ? addressErrors.last_name : undefined} />
-                </div>
-                <Field name="address_1" label="Address" autoComplete="shipping address-line1" value={address.address_1} onChange={(value) => setField('address_1', value)} placeholder="House number and street" required error={deliveryAttempted ? addressErrors.address_1 : undefined} />
-                <details className="group rounded-[var(--hf-radius-sm)] border border-black/[.07] bg-[#faf9f6] px-4 py-3">
-                  <summary className="cursor-pointer list-none text-sm font-semibold text-black/48">+ Add flat, apartment, suite or county</summary>
-                  <div className="mt-4 space-y-4 border-t border-black/[.06] pt-4">
-                    <Field name="address_2" label="Flat, apartment or suite" autoComplete="shipping address-line2" value={address.address_2 || ''} onChange={(value) => setField('address_2', value)} />
-                    <Field name="state" label="County" autoComplete="shipping address-level1" value={address.state || ''} onChange={(value) => setField('state', value)} />
-                  </div>
-                </details>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Field name="city" label="Town / City" autoComplete="shipping address-level2" value={address.city} onChange={(value) => setField('city', value)} required error={deliveryAttempted ? addressErrors.city : undefined} />
-                  <Field name="postcode" label="Postcode" autoComplete="shipping postal-code" value={address.postcode} onChange={(value) => setField('postcode', value.toUpperCase())} placeholder="SW1A 1AA" required error={deliveryAttempted ? addressErrors.postcode : undefined} />
-                </div>
-                <div>
-                  <div className="mb-2 flex items-baseline justify-between gap-3"><span className="text-sm font-semibold text-[#172018]">Country</span><span className="text-[11px] text-black/38">UK checkout</span></div>
-                  <div className="flex h-13 items-center rounded-[var(--hf-radius-sm)] border border-black/10 bg-[#f7f7f4] px-4 text-[15px] text-black/65">United Kingdom</div>
-                </div>
-                <Field name="phone" label="Phone" type="tel" inputMode="tel" autoComplete="shipping tel" value={address.phone || ''} onChange={(value) => setField('phone', value)} hint="Only used if there is a delivery issue" />
-              </fieldset>
-
-              <button type="submit" disabled={loading || exceedsLaunchLimit} className="hf-button-primary mt-7 disabled:opacity-50">{loading ? 'Checking…' : cart.has_calculated_shipping ? 'Update delivery details' : 'Continue to delivery'}</button>
-            </form>
-
-            <div className="rounded-[var(--hf-radius-lg)] border border-black/[.06] bg-white p-6 shadow-[0_20px_70px_rgba(34,45,37,.04)] sm:p-8">
-              <p className="text-[11px] font-semibold uppercase tracking-[.28em] text-[#557562]">Step 2</p>
-              <h2 className="mt-3 text-3xl font-semibold tracking-[-.045em]">Delivery</h2>
-              {!cart.needs_shipping ? (
-                <p className="mt-4 rounded-[var(--hf-radius-sm)] bg-[#edf3ee] p-4 text-sm text-[#355f4a]">No delivery is required for this order.</p>
-              ) : !cart.has_calculated_shipping || !deliveryAddressConfirmed ? (
-                <div className="mt-4 rounded-[var(--hf-radius-md)] bg-[#f5f5f1] p-4 text-sm leading-6 text-black/48"><strong className="text-[#172018]">Free standard UK delivery</strong><p className="mt-1">{cart.has_calculated_shipping ? 'Your address changed. Confirm the updated delivery details above before paying.' : `Current delivery estimate: ${DELIVERY_ESTIMATE}. Complete your address above to confirm delivery availability for your postcode.`}</p></div>
-              ) : shippingRates.length ? (
-                <div className="mt-5 space-y-3">
-                  {shippingRates.map((rate) => (
-                    <button type="button" key={`${rate.packageId}-${rate.rate_id}`} onClick={() => void selectShipping(rate.packageId, rate.rate_id)} disabled={loading} className={`flex min-h-16 w-full items-center justify-between gap-5 rounded-[var(--hf-radius-sm)] border p-4 text-left transition ${rate.selected ? 'border-[#557562] bg-[#edf3ee]' : 'border-black/10 bg-white hover:border-black/20'}`}>
-                      <div><p className="font-semibold text-[#172018]">{rate.name || 'Standard UK delivery'}</p><p className="mt-1 text-sm text-black/45">{rate.delivery_time || `Current delivery estimate: ${DELIVERY_ESTIMATE}`}</p>{rate.description && <p className="mt-1 text-xs text-black/38">{rate.description}</p>}</div>
-                      <div className="flex items-center gap-3"><strong className={Number(rate.price) === 0 ? 'text-[#355f4a]' : ''}>{Number(rate.price) === 0 ? 'FREE' : money(rate.price)}</strong>{rate.selected && <CheckCircleIcon className="size-5 text-[#456b55]" />}</div>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="mt-4 rounded-[var(--hf-radius-sm)] border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">We could not confirm delivery for this postcode. Check the address or contact Housefinds support before paying.</div>
-              )}
-            </div>
-
-            <div className="rounded-[var(--hf-radius-lg)] border border-black/[.06] bg-white p-6 shadow-[0_20px_70px_rgba(34,45,37,.04)] sm:p-8">
-              <p className="text-[11px] font-semibold uppercase tracking-[.28em] text-[#557562]">Step 3</p>
-              <h2 className="mt-3 text-3xl font-semibold tracking-[-.045em]">Payment</h2>
-              <p className="mt-2 text-sm leading-6 text-black/48">Payment is processed securely by Stripe. Housefinds does not store your card number or security code.</p>
-              <div className="mt-5 flex items-end justify-between gap-5 rounded-[var(--hf-radius-sm)] border border-black/[.07] bg-[#faf9f6] p-4">
-                <div><p className="text-xs font-semibold uppercase tracking-[.12em] text-black/38">Amount due now</p><p className="mt-1 text-xs text-black/38">GBP · delivery included</p></div>
-                <strong className="text-2xl tracking-[-.04em]">{money(cart.totals.total_price)}</strong>
-              </div>
-              {!paymentReady && !exceedsLaunchLimit && <div className="mt-5 rounded-[var(--hf-radius-sm)] bg-[#f5f5f1] p-4 text-sm leading-6 text-black/48">Complete your delivery details{cart.needs_shipping ? ' and choose the delivery method' : ''} to unlock payment.</div>}
-              <div className="mt-5"><StripeCardForm address={address} expectedTotal={cart.totals.total_price} disabled={!paymentReady || loading} onCartRefresh={refreshCart} /></div>
-            </div>
-
-            {error && <div role="alert" className="rounded-[var(--hf-radius-sm)] border border-rose-200 bg-rose-50 p-4 text-sm text-rose-950"><div className="flex items-start justify-between gap-4"><span>{error}</span><button type="button" className="font-semibold underline" onClick={clearError}>Dismiss</button></div></div>}
-          </section>
-
-          <aside className="hidden h-fit lg:sticky lg:top-8 lg:block">
-            <div className="rounded-[var(--hf-radius-lg)] border border-black/[.06] bg-white p-6 shadow-[0_22px_80px_rgba(34,45,37,.055)]">
-              <div className="flex items-center justify-between gap-4">
-                <div><h2 className="text-xl font-semibold tracking-[-.03em]">Order summary</h2><span className="text-sm text-black/42">{cart.items_count} item{cart.items_count === 1 ? '' : 's'}</span></div>
-                <Link href="/cart" className="text-xs font-semibold text-[#355f4a] underline underline-offset-3">Edit cart</Link>
-              </div>
-              <div className="mt-6"><OrderSummaryBody cart={cart} money={money} coupon={coupon} setCoupon={setCoupon} loading={loading} applyCoupon={applyCoupon} removeCoupon={removeCoupon} /></div>
-            </div>
-          </aside>
-        </div>
+  const currentStep = !customerConfirmed ? 1 : !paymentStage ? 2 : 3
+  return <main className="min-h-screen bg-[var(--hf-background)] text-[var(--hf-ink)]">
+    <CheckoutHeader locked={paymentBusy} />
+    <div className="mx-auto max-w-[1220px] px-4 pb-10 pt-5 sm:px-6 lg:pt-7">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <Link href="/cart" aria-disabled={paymentBusy} tabIndex={paymentBusy ? -1 : undefined} onClick={(event) => { if (paymentBusy) event.preventDefault() }} className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-[var(--hf-ink-soft)] hover:text-[var(--hf-brand)]"><ArrowLeftIcon className="size-4" />Back to basket</Link>
+        <a href="mailto:contact@housefindsstore.com" className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-[var(--hf-brand)]"><EnvelopeIcon className="size-4" />Need help?</a>
       </div>
-    </main>
-  )
+      <div className="mb-6"><h1 className="text-[clamp(1.8rem,3vw,2.5rem)] font-semibold tracking-[-.04em]">Checkout</h1><p className="mt-2 text-sm text-[var(--hf-ink-soft)]">You’re checking out as a guest. No account needed.</p></div>
+      <nav aria-label="Checkout progress" className="mb-6 max-w-[690px]">
+        <ol className="grid grid-cols-3 gap-2">
+          {[['Details', 'checkout-details'], ['Delivery', 'checkout-delivery'], ['Payment', 'checkout-payment']].map(([label, target], index) => <li key={label}>
+            <button type="button" disabled={paymentBusy || index + 1 > currentStep} aria-current={currentStep === index + 1 ? 'step' : undefined} onClick={() => { if (index === 0) editDetails(); else focusSection(target) }} className={`flex min-h-12 w-full items-center gap-2 rounded-full px-3 text-sm disabled:cursor-default sm:px-4 ${index + 1 === currentStep ? 'bg-[var(--hf-brand-soft)] font-semibold text-[var(--hf-brand)]' : 'text-[var(--hf-ink-soft)]'}`}>
+              <span className={`grid size-6 shrink-0 place-items-center rounded-full text-xs ${index + 1 <= currentStep ? 'bg-[var(--hf-brand)] text-white' : 'border border-[var(--hf-border-strong)]'}`}>{index + 1 < currentStep ? <CheckIcon className="size-3.5" /> : index + 1}</span>{label}
+            </button>
+          </li>)}
+        </ol>
+      </nav>
+      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-8 xl:grid-cols-[minmax(0,1fr)_390px] xl:gap-12">
+        <div className="min-w-0 space-y-5">
+          {(atLimit || !currencySupported) && <div role="alert" className="rounded-[var(--hf-radius-sm)] border border-amber-300 bg-amber-50 p-4 text-sm leading-6 text-amber-950"><strong>{atLimit ? 'Keep this order below £135 to continue.' : 'We could not confirm the currency for this order.'}</strong><p>{atLimit ? 'Edit your basket to reduce the quantity or remove an item.' : 'Refresh your basket or contact Housefinds before paying.'}</p></div>}
+          {operationError && <div role="alert" className="rounded-[var(--hf-radius-sm)] border border-rose-200 bg-rose-50 p-4 text-sm leading-6 text-rose-950">{operationError}</div>}
+          <section id="checkout-details" tabIndex={-1} className={`${panelClass} scroll-mt-5`} aria-labelledby="details-heading">
+            <div className="flex items-center justify-between gap-4"><h2 id="details-heading" className="text-xl font-semibold tracking-[-.025em]">1. Contact & address</h2>{!detailsOpen && <button type="button" onClick={editDetails} disabled={locked} className="min-h-11 text-sm font-semibold text-[var(--hf-brand)] underline underline-offset-4 disabled:opacity-50">Edit details</button>}</div>
+            {!detailsOpen ? <div className="mt-3 space-y-2 break-words text-sm leading-6 text-[var(--hf-ink-soft)]"><p className="font-medium text-[var(--hf-ink)]">{address.email}</p><p>{address.first_name} {address.last_name}<br />{[address.address_1, address.address_2, address.city, address.state, address.postcode].filter(Boolean).join(', ')}<br />United Kingdom</p><p className="text-xs">{sameBilling ? 'Billing address is the same as delivery.' : `Billing: ${[billing.first_name, billing.last_name, billing.address_1, billing.address_2, billing.city, billing.state, billing.postcode].filter(Boolean).join(' ')}`}</p></div> : <form noValidate onSubmit={(event) => { event.preventDefault(); void confirmDetails() }}>
+              <p className="mt-2 text-sm leading-6 text-[var(--hf-ink-soft)]">Fields are required unless marked optional.</p>
+              {restoredDraft && <p role="status" className="mt-3 text-xs leading-5 text-[var(--hf-brand)]">Your details were restored in this tab. Please review them before continuing.</p>}
+              {deliveryAttempted && !validDetails && <div role="alert" className="mt-4 rounded-[var(--hf-radius-sm)] bg-rose-50 p-4 text-sm text-rose-900"><p className="font-semibold">Check the highlighted details.</p><div className="mt-1 flex flex-wrap gap-x-4 gap-y-1">{fieldErrors.map(({ prefix, key, text }) => <button key={`${prefix}-${key}`} type="button" className="min-h-8 text-left text-xs underline underline-offset-2" onClick={() => focusSection(checkoutFieldId(prefix, key as keyof CheckoutAddress))}>{prefix === 'billing' ? 'Billing: ' : ''}{text}</button>)}</div></div>}
+              <fieldset disabled={locked} className="mt-5 min-w-0 space-y-5"><legend className="sr-only">Contact and delivery address</legend>
+                <CheckoutField prefix="delivery" field="email" label="Email address" type="email" autoComplete="shipping email" value={address.email || ''} onChange={(value) => setField('email', value)} onBlur={() => touch('email')} error={visibleErrors(addressErrors, touched, deliveryAttempted).email} hint="For your receipt and order updates." />
+                <CheckoutAddressFields prefix="delivery" address={address} setField={setField} onBlur={touch} errors={visibleErrors(addressErrors, touched, deliveryAttempted)} phone />
+                <div className="border-t border-[var(--hf-border)] pt-4">
+                  <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm"><input type="checkbox" checked={sameBilling} onChange={(event) => { setSameBilling(event.target.checked); if (!event.target.checked && !billing.address_1) setBilling({ ...address }) }} className="size-5 shrink-0 accent-[var(--hf-brand)]" />Billing address is the same as delivery</label>
+                  {!sameBilling && <fieldset className="mt-4"><legend className="mb-4 text-base font-semibold">Billing address</legend><CheckoutAddressFields prefix="billing" address={billing} setField={setBillingField} onBlur={touchBilling} errors={visibleErrors(billingErrors, billingTouched, deliveryAttempted)} /></fieldset>}
+                </div>
+                <button type="submit" disabled={locked || atLimit || !currencySupported} className="hf-button-primary !min-h-14 w-full disabled:opacity-50">{loading ? 'Confirming delivery…' : 'Continue to delivery'}{!loading && <ArrowRightIcon className="size-4" />}</button>
+              </fieldset>
+            </form>}
+          </section>
+          <section id="checkout-delivery" tabIndex={-1} className={`${panelClass} scroll-mt-5`} aria-labelledby="delivery-heading">
+            <h2 id="delivery-heading" className="flex items-center gap-3 text-xl font-semibold tracking-[-.025em]">2. Delivery<TruckIcon className="size-5 text-[var(--hf-brand)]" /></h2>
+            {!customerConfirmed ? <div className="mt-3 text-sm leading-6 text-[var(--hf-ink-soft)]"><p><strong className="font-semibold text-[var(--hf-brand)]">Free standard UK delivery.</strong> {DELIVERY_ESTIMATE}.</p><p className="mt-1">Confirm your address to check delivery availability.</p></div> : !cart.needs_shipping ? <p className="mt-4 text-sm">No delivery is required for this order.</p> : !cart.shipping_rates.length || cart.shipping_rates.some((pkg) => !pkg.shipping_rates.length) ? <div className="mt-4 rounded-[var(--hf-radius-sm)] bg-amber-50 p-4 text-sm leading-6 text-amber-950">We could not confirm delivery to this address. <button type="button" onClick={editDetails} disabled={locked} className="font-semibold underline underline-offset-4">Check your postcode and address</button> or contact us before paying.</div> : <div className="mt-4 space-y-4">
+              {cart.shipping_rates.map((pkg) => <fieldset key={pkg.package_id} disabled={locked} className="space-y-2"><legend className={cart.shipping_rates.length === 1 ? 'sr-only' : 'mb-2 text-sm font-semibold'}>{cart.shipping_rates.length === 1 ? 'Choose a delivery method' : pkg.name || `Delivery package ${pkg.package_id + 1}`}</legend>
+                {pkg.shipping_rates.map((rate) => <label key={rate.rate_id} className={`flex min-h-20 cursor-pointer items-start gap-3 rounded-[var(--hf-radius-sm)] border p-4 ${rate.selected ? 'border-[var(--hf-brand)] bg-[var(--hf-brand-soft)]/50' : 'border-[var(--hf-border-strong)]'}`}>
+                  <input type="radio" name={`shipping-${pkg.package_id}`} value={rate.rate_id} checked={rate.selected} onChange={() => void chooseShipping(pkg.package_id, rate.rate_id)} className="mt-1 size-4 shrink-0 accent-[var(--hf-brand)]" />
+                  <span className="min-w-0 flex-1"><span className="block text-sm font-semibold">{rate.name || 'Standard UK delivery'}</span><span className="mt-1 block text-xs leading-5 text-[var(--hf-ink-soft)]">{rate.delivery_time || DELIVERY_ESTIMATE}</span></span>
+                  <strong className="shrink-0 text-sm text-[var(--hf-brand)]">{Number(rate.price) === 0 ? 'Free' : money(rate.price)}</strong>
+                </label>)}
+              </fieldset>)}
+              <p className="text-xs leading-5 text-[var(--hf-ink-soft)]">Delivery times are estimates, not guaranteed arrival dates. <Link href="/shipping" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4">Delivery details</Link>.</p>
+            </div>}
+            {customerConfirmed && !paymentStage && <button type="button" onClick={continueToPayment} disabled={!deliveryReady || locked || atLimit || !currencySupported} className="hf-button-primary mt-5 !min-h-14 w-full disabled:opacity-50">Continue to payment<ArrowRightIcon className="size-4" /></button>}
+          </section>
+          <section id="checkout-payment" tabIndex={-1} className={`${panelClass} scroll-mt-5`} aria-labelledby="payment-heading">
+            <h2 id="payment-heading" className="flex items-center gap-3 text-xl font-semibold tracking-[-.025em]">3. Payment<CreditCardIcon className="size-5 text-[var(--hf-brand)]" /></h2>
+            {!paymentStage && <p className="mt-3 text-sm leading-6 text-[var(--hf-ink-soft)]">Confirm your details and delivery, then pay securely by card. You’ll review the final total before paying.</p>}
+            {paymentStage && deliveryReady && reviewedRevision !== revision && <div role="status" className="mt-4 rounded-[var(--hf-radius-sm)] bg-amber-50 p-4 text-sm leading-6 text-amber-950"><strong>Your basket has been updated.</strong><p>Review the new total of {money(cart.totals.total_price)} before continuing.</p><button type="button" onClick={continueToPayment} disabled={locked || atLimit} className="mt-2 min-h-11 font-semibold underline underline-offset-4">Confirm updated total</button></div>}
+            <div className="mt-4"><StripeCardForm address={address} billingAddress={normaliseAddress(effectiveBilling)} expectedTotal={cart.totals.total_price} expectedRevision={revision} requiresPayment={cart.needs_payment} disabled={!paymentReady} onCartRefresh={refresh} onBusyChange={setPaymentBusy} /></div>
+          </section>
+        </div>
+        <CheckoutSummary cart={cart} deliveryConfirmed={deliveryReady} loading={loading} locked={paymentBusy} applyCoupon={(code) => couponAction(code)} removeCoupon={(code) => couponAction(code, true)} />
+      </div>
+      <footer className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-1 border-t border-[var(--hf-border)] pt-5 text-xs text-[var(--hf-ink-soft)]"><Link href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center underline underline-offset-4">Privacy</Link><Link href="/terms" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center underline underline-offset-4">Terms of sale</Link><Link href="/returns" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center underline underline-offset-4">Returns</Link><span className="ml-auto">Housefinds · United Kingdom · GBP</span></footer>
+    </div>
+  </main>
 }

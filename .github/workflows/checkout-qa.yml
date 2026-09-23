@@ -1,0 +1,43 @@
+name: Checkout QA (isolated commerce)
+on:
+  push:
+    branches: [refine/checkout-20260923]
+permissions:
+  contents: read
+jobs:
+  checkout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    defaults:
+      run:
+        working-directory: storefront
+    env:
+      WOOCOMMERCE_URL: http://127.0.0.1:9
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_qa_fixture_only
+      NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - run: npm run test:checkout
+      - run: npm run build
+      - run: npm install --no-save --package-lock=false playwright@1.55.1
+      - run: npx playwright install --with-deps chromium
+      - name: Test in Chromium with intercepted cart and Stripe responses
+        run: |
+          npm run start -- --hostname 127.0.0.1 > /tmp/hf-checkout-next.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+          for i in $(seq 1 45); do curl -sf http://127.0.0.1:3000/checkout >/dev/null && break; sleep 1; done
+          node scripts/test-checkout-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: checkout-qa
+          path: storefront/checkout-qa/
+          if-no-files-found: ignore
+          retention-days: 3
