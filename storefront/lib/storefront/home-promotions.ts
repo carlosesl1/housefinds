@@ -2,9 +2,10 @@ import type { WooProduct } from '@/lib/woocommerce/types'
 import { filterProductsByStoreCategory } from '@/lib/storefront/categories'
 
 export type HomePromotion = {
-  id: 'kitchen' | 'storage' | 'under-20' | 'edit'
+  id: 'kitchen' | 'storage' | 'under-20'
   eyebrow: string
   title: string
+  emphasis: string
   description: string
   action: string
   href: string
@@ -28,32 +29,25 @@ export function isUnderTwentyProduct(product: WooProduct): boolean {
 
 export function getHomePromotions(products: WooProduct[], placement: 'discovery' | 'curated'): HomePromotion[] {
   const available = products.filter((p) => p.is_purchasable && p.is_in_stock && p.images?.some((image) => image.src))
-  const kitchen = filterProductsByStoreCategory(available, 'kitchen-tools').slice(0, 2)
-  const storage = filterProductsByStoreCategory(available, 'space-saving').slice(0, 2)
+  const kitchen = filterProductsByStoreCategory(available, 'kitchen-tools').slice(0, 1)
+  const storage = filterProductsByStoreCategory(available, 'space-saving').slice(0, 1)
   const underTwenty = available.filter(isUnderTwentyProduct).slice(0, 2)
-  const daily = filterProductsByStoreCategory(available, 'daily-helpers')
-  const edit = [...daily, ...available.filter((p) => !daily.some((d) => d.id === p.id))].slice(0, 2)
   const banners: HomePromotion[] = placement === 'discovery' ? [
     {
-      id: 'kitchen', eyebrow: 'The kitchen edit', title: 'Kitchen tools that earn their space.',
-      description: 'Practical prep finds for easier everyday cooking.', action: 'Explore kitchen',
+      id: 'kitchen', eyebrow: 'Kitchen tools', title: 'Everyday prep.', emphasis: 'Made simpler.',
+      description: 'Useful tools for the little jobs you do every day.', action: 'Explore kitchen',
       href: '/shop?category=kitchen-tools', products: kitchen,
     },
     {
-      id: 'storage', eyebrow: 'Room for the everyday', title: 'Small-space solutions.',
-      description: 'Practical storage and organisation for calmer everyday rooms.', action: 'Explore storage',
+      id: 'storage', eyebrow: 'Space saving', title: 'More room.', emphasis: 'Less clutter.',
+      description: 'Small ways to make more of the space you have.', action: 'Explore storage',
       href: '/shop?category=space-saving', products: storage,
     },
   ] : [
     {
-      id: 'under-20', eyebrow: 'Small upgrades, thoughtful prices', title: 'Useful finds under £20.',
-      description: 'Everyday home upgrades, all below £20.', action: 'Shop the edit',
+      id: 'under-20', eyebrow: 'Small upgrades, thoughtful prices', title: 'Useful finds', emphasis: 'under £20.',
+      description: 'Every option in this collection is priced below £20.', action: 'Shop under £20',
       href: '/collections/under-20', products: underTwenty,
-    },
-    {
-      id: 'edit', eyebrow: 'Chosen for everyday usefulness', title: 'The Housefinds edit.',
-      description: 'Practical little finds for the way you live.', action: 'Browse the collection',
-      href: '/shop', products: edit,
     },
   ]
   return banners.filter((banner) => banner.products.length > 0)

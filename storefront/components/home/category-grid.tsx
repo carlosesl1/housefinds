@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowUpRightIcon } from '@heroicons/react/24/outline'
@@ -5,11 +6,12 @@ import type { WooProduct } from '@/lib/woocommerce/types'
 import { STORE_CATEGORIES, getCategoryProduct } from '@/lib/storefront/categories'
 import { HOME_CATEGORY_BG, PAPER_TEXTURE } from '@/lib/storefront/home-backgrounds'
 
-export function CategoryGrid({ products }: { products: WooProduct[] }) {
+export function CategoryGrid({ products, children }: { products: WooProduct[]; children?: ReactNode }) {
   return (
     <section
       className="hf-section relative overflow-hidden bg-[var(--hf-background)]"
       style={{
+        paddingBottom: children ? 'clamp(40px, 4vw, 64px)' : undefined,
         backgroundImage: `linear-gradient(rgba(251,250,247,.76), rgba(251,250,247,.86)), url("${HOME_CATEGORY_BG}"), url("${PAPER_TEXTURE}")`,
         backgroundPosition: 'center, center, center',
         backgroundRepeat: 'no-repeat, no-repeat, repeat',
@@ -74,6 +76,7 @@ export function CategoryGrid({ products }: { products: WooProduct[] }) {
             )
           })}
         </div>
+        {children}
       </div>
     </section>
   )

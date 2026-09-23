@@ -34,14 +34,16 @@ export default async function HomePage() {
     <main className="overflow-hidden bg-[var(--hf-background)]">
       <Hero products={products} />
 
-      <EditorialBanners products={products} placement="discovery" />
-
-      <CategoryGrid products={products} />
+      <CategoryGrid products={products}>
+        <EditorialBanners products={products} placement="curated" />
+      </CategoryGrid>
 
       {showcaseProducts.length > 0 && (
         <section
           className="hf-section relative overflow-hidden border-t border-black/[.06] bg-[var(--hf-background)]"
           style={{
+            paddingTop: 'clamp(48px, 5vw, 72px)',
+            paddingBottom: 'clamp(40px, 4vw, 64px)',
             backgroundImage: `linear-gradient(rgba(251,250,247,.78), rgba(251,250,247,.9)), url("${HOME_COLLECTION_BG}"), url("${PAPER_TEXTURE}")`,
             backgroundPosition: 'center, center, center',
             backgroundRepeat: 'no-repeat, no-repeat, repeat',
@@ -65,14 +67,14 @@ export default async function HomePage() {
               </div>
             </div>
 
-            <div className="mt-12 grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 xl:grid-cols-4 xl:gap-x-5">
+            <div className="mt-12 grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 xl:gap-x-5">
               {showcaseProducts.map((product) => <ProductCard key={product.id} product={product} />)}
             </div>
+
+            <EditorialBanners products={products} placement="discovery" />
           </div>
         </section>
       )}
-
-      <EditorialBanners products={products} placement="curated" />
 
       <FeaturedFind product={featuredProduct} />
       <ProductReviewHighlights products={products} reviews={reviews} />
