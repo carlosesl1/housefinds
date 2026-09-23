@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import skipStyles from './skip-link.module.css'
 import { CartProvider } from '@/components/cart/cart-provider'
 import { CartDrawer } from '@/components/cart/cart-drawer'
 import { SiteShell } from '@/components/site-shell'
@@ -39,7 +40,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en-GB">
       <body>
-        <a href="#main-content" className="fixed left-4 top-3 z-[200] -translate-y-20 rounded-full bg-[#172018] px-4 py-2 text-sm font-semibold text-white transition focus:translate-y-0">Skip to content</a>
+        <a href="#main-content" className={skipStyles.skipLink}>Skip to content</a>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }} />
         <CartProvider>
           <SiteShell>{children}</SiteShell>
