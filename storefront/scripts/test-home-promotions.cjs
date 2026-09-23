@@ -1,4 +1,4 @@
-/* Deterministic merchandising + presentation checks. Run from storefront. */
+/* Deterministic campaign content, price promises, assets and JSX checks. */
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const path = require('node:path')
@@ -10,8 +10,7 @@ const jsx = (type, props = {}) => typeof type === 'function' ? type(props) : ({ 
 const icons = new Proxy({}, { get: (_, name) => props => jsx('svg', { ...props, 'data-icon': String(name) }) })
 function load(file) {
   if (cache.has(file)) return cache.get(file)
-  const source = fs.readFileSync(file, 'utf8')
-  const output = ts.transpileModule(source, { fileName: file, compilerOptions: {
+  const output = ts.transpileModule(fs.readFileSync(file, 'utf8'), { fileName: file, compilerOptions: {
     module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true,
   }, reportDiagnostics: true })
   assert.equal((output.diagnostics || []).filter(d => d.category === ts.DiagnosticCategory.Error).length, 0, file)
@@ -82,7 +81,7 @@ test('Categories never fall back to an unrelated product', () => {
   assert.equal(p.length, 1); assert.equal(p[0].id, 'kitchen')
   assert.equal(p[0].href, '/shop?category=kitchen-tools')
 })
-test('Hide empty/unavailable image selections', () => {
+test('Hide empty/unavailable catalogue groups', () => {
   assert.equal(getHomePromotions([product({ images: [] })], 'discovery').length, 0)
   assert.equal(getHomePromotions([product({ is_in_stock: false })], 'discovery').length, 0)
 })
@@ -96,48 +95,74 @@ test('No price banner with an expensive-only catalogue', () => {
   assert.equal(getHomePromotions([p], 'curated').length, 0)
 })
 const fixtures = [product(), product({ id: 2, name: 'Covered Toothbrush Holder', slug: 'covered-toothbrush-holder' })]
-test('Three intentional promotions, no duplicate generic edit banner', () => {
+test('Exactly three distinct promotions', () => {
   const p = [...getHomePromotions(fixtures, 'discovery'), ...getHomePromotions(fixtures, 'curated')]
-  assert.equal(p.length, 3); assert.equal(p.some(b => b.id === 'edit'), false)
+  assert.equal(p.length, 3); assert.equal(new Set(p.map(x => x.id)).size, 3)
 })
-test('One native link, one photo and an h3 per category banner', () => {
+test('Native accessible links, headings and CTAs; no nested controls', () => {
   const tree = EditorialBanners({ products: fixtures, placement: 'discovery' })
   assert.equal(nodes(tree, 'a').length, 2); assert.equal(nodes(tree, 'h3').length, 2)
-  assert.equal(nodes(tree, 'h2').length, 0); assert.equal(nodes(tree, 'img').length, 2)
-  assert.equal(nodes(tree, 'button').length, 0)
-  for (const a of nodes(tree, 'a')) assert.equal(nodes(a.props.children, 'a').length, 0)
-  assert.match(text(tree), /Everyday prep\. Made simpler\./)
+  assert.equal(nodes(tree, 'h2').length, 0); assert.equal(nodes(tree, 'button').length, 0)
+  for (const a of nodes(tree, 'a')) {
+    assert.equal(nodes(a.props.children, 'a').length, 0)
+    const ids = [...nodes(a, 'h3'), ...nodes(a, 'span')].map(x => x.props.id)
+    for (const id of a.props['aria-labelledby'].split(' ')) assert.equal(ids.includes(id), true)
+  }
+  assert.match(text(tree), /Kitchen tools that earn their space\./)
 })
-test('Budget strip is compact HTML, not another photo collage', () => {
+test('Price promise stays live HTML over decorative artwork', () => {
   const tree = EditorialBanners({ products: fixtures, placement: 'curated' })
-  assert.equal(nodes(tree, 'a').length, 1); assert.equal(nodes(tree, 'img').length, 0)
+  assert.equal(nodes(tree, 'a').length, 1); assert.equal(nodes(tree, 'img').length, 1)
   assert.match(text(tree), /Useful finds under £20\./)
 })
-test('Images remain lazy and decorative; native text stays readable', () => {
-  for (const img of nodes(EditorialBanners({ products: fixtures }), 'img')) {
-    assert.equal(img.props.loading, 'lazy'); assert.equal(img.props.alt, '')
-    assert.equal(img.props.priority, undefined)
+test('One text-free scene per campaign, lazy and responsive', () => {
+  for (const placement of ['curated', 'discovery']) {
+    const tree = EditorialBanners({ products: fixtures, placement })
+    for (const img of nodes(tree, 'img')) {
+      assert.equal(img.props.loading, 'lazy'); assert.equal(img.props.alt, '')
+      assert.equal(img.props.priority, undefined); assert.equal(typeof img.props.sizes, 'string')
+      assert.match(img.props.src, /^\/home\/banners\/(kitchen|storage|budget)-scene\.webp$/)
+      const b = fs.readFileSync(path.join(root, 'public', img.props.src))
+      assert.equal(b.toString('ascii',0,4), 'RIFF'); assert.equal(b.toString('ascii',8,12), 'WEBP')
+    }
+    const divs = nodes(tree, 'div')
+    assert.ok(divs.some(x => x.props['data-campaign-layer'] === 'content'))
+    assert.ok(divs.some(x => x.props['data-campaign-layer'] === 'image'))
+    assert.match(text(tree), /Illustrative room scenes/)
   }
 })
-test('No serif, rotated photos, extra image backgrounds or CSS ID mismatch', () => {
-  const css = fs.readFileSync(path.join(root, 'components/home/editorial-banners.module.css'), 'utf8')
-  assert.doesNotMatch(css, /Georgia|Times New Roman|rotate\(|url\(|!important/)
-  assert.match(css, /font: inherit/); assert.match(css, /prefers-reduced-motion/)
-  assert.match(css, /var\(--hf-radius-lg\)/); assert.match(css, /var\(--hf-brand-muted\)/)
+test('All scene masters together stay below 80 KB', () => {
+  const total = ['kitchen','storage','budget'].reduce((sum,id) => sum + fs.statSync(path.join(root, `public/home/banners/${id}-scene.webp`)).size,0)
+  assert.ok(total < 80000, `Scene total: ${total}`)
 })
-test('Groups are embedded into their sections, not after the hero', () => {
+test('Campaign style has editorial type, true image layering and mobile art direction', () => {
+  const css = fs.readFileSync(path.join(root, 'components/home/editorial-banners.module.css'), 'utf8')
+  assert.match(css, /var\(--hf-font-editorial\)/); assert.match(css, /mask-image/)
+  assert.match(css, /max-width: 767px/); assert.match(css, /prefers-reduced-motion/)
+  assert.match(css, /var\(--hf-radius-lg\)/); assert.doesNotMatch(css, /rotate\(|!important/)
+})
+test('Editorial type is scoped; UI family remains independent', () => {
+  const css = fs.readFileSync(path.join(root, 'app/campaign-typography.css'), 'utf8')
+  assert.match(css, /body \{ font-family: var\(--hf-font-ui\)/)
+  assert.match(css, /\.hf-editorial-home \.hf-display/)
+  assert.doesNotMatch(css, /(?:^|\n)(?:h1|h2|h3|button|input|header)\s*\{/)
+  const font = fs.readFileSync(path.join(root, 'lib/storefront/fonts.ts'),'utf8')
+  assert.match(font, /next\/font\/google/); assert.match(font, /Cormorant_Garamond/)
+  assert.match(font, /preload: false/); assert.match(font, /display: 'swap'/)
+})
+test('Groups retain natural placement and complete product rows', () => {
   const source = fs.readFileSync(path.join(root, 'app/page.tsx'), 'utf8')
   assert.match(source, /<Hero products=\{products\} \/>\s*<CategoryGrid/)
   assert.match(source, /<CategoryGrid[^>]*>\s*<EditorialBanners[^>]*placement="curated"[^>]*\/>\s*<\/CategoryGrid>/)
   assert.match(source, /showcaseProducts\.map[\s\S]*placement="discovery"[\s\S]*<\/section>/)
   assert.doesNotMatch(source, /md:grid-cols-3 xl:grid-cols-4/)
 })
-for (const filename of ['components/home/editorial-banners.tsx', 'components/home/category-grid.tsx', 'app/page.tsx']) {
+for (const filename of ['components/home/editorial-banners.tsx', 'app/page.tsx', 'app/layout.tsx', 'lib/storefront/fonts.ts']) {
   test(`TSX syntax: ${filename}`, () => {
     const output = ts.transpileModule(fs.readFileSync(path.join(root, filename),'utf8'), { fileName: filename, compilerOptions: { jsx: ts.JsxEmit.ReactJSX }, reportDiagnostics: true })
     assert.equal((output.diagnostics || []).filter(d => d.category === ts.DiagnosticCategory.Error).length, 0)
   })
 }
 console.log(`${passed} checks passed.`)
-// Optional static rendering fixture for local browser geometry QA; no React/Next server emulation.
+// Optional local geometry fixture; not a React hydration or live commerce test.
 module.exports = { EditorialBanners, jsx, fixtures }

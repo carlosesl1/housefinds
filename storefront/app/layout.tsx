@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import './campaign-typography.css'
+import { editorialFont, uiFont } from '@/lib/storefront/fonts'
 import skipStyles from './skip-link.module.css'
 import { CartProvider } from '@/components/cart/cart-provider'
 import { CartDrawer } from '@/components/cart/cart-drawer'
@@ -38,7 +40,7 @@ const websiteSchema = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en-GB">
+    <html lang="en-GB" className={`${uiFont.variable} ${editorialFont.variable}`}>
       <body>
         <a href="#main-content" className={skipStyles.skipLink}>Skip to content</a>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }} />

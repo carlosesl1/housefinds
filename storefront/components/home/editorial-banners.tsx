@@ -1,65 +1,74 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowRightIcon, TagIcon } from '@heroicons/react/24/outline'
+import { ArrowRightIcon, HomeIcon, SparklesIcon } from '@heroicons/react/24/outline'
 import type { WooProduct } from '@/lib/woocommerce/types'
-import { getHomePromotions } from '@/lib/storefront/home-promotions'
+import { getHomePromotions, type HomePromotion } from '@/lib/storefront/home-promotions'
 import styles from './editorial-banners.module.css'
 
-/** Section footers, not another stack of full-width campaign sections. */
+// Approved lifestyle scenes, cropped to remove campaign text and UI. They are
+// collection inspiration, never a replacement for exact-product gallery media.
+const CAMPAIGN_ART: Record<HomePromotion['id'], string> = {
+  kitchen: '/home/banners/kitchen-scene.webp',
+  storage: '/home/banners/storage-scene.webp',
+  'under-20': '/home/banners/budget-scene.webp',
+}
+
 export function EditorialBanners({ products, placement = 'discovery' }: {
   products: WooProduct[]
   placement?: 'discovery' | 'curated'
 }) {
   const banners = getHomePromotions(products, placement)
   if (!banners.length) return null
-  const compact = placement === 'curated'
+  const wide = placement === 'curated'
 
   return (
-    <div
-      className={`${styles.group} ${compact ? styles.curated : styles.discovery}`}
-      role="group"
-      aria-label={compact ? 'Shop by budget' : 'More ways to make home life easier'}
-      data-promotion-group={placement}
-    >
-      {banners.map((banner) => {
-        const image = banner.products[0]?.images.find((item) => item.src)
-        return (
+    <div className={styles.wrapper}>
+      <div
+        className={`${styles.group} ${wide ? styles.curated : styles.discovery}`}
+        role="group"
+        aria-label={wide ? 'Shop by budget' : 'Ideas for everyday home life'}
+        data-promotion-group={placement}
+      >
+        {banners.map((banner) => (
           <Link
             key={banner.id}
             href={banner.href}
-            className={`${styles.banner} ${compact ? styles.compact : styles.spotlight}`}
+            className={`${styles.banner} ${wide ? styles.wide : styles.spotlight}`}
             data-promotion={banner.id}
+            aria-labelledby={`campaign-${banner.id}-title campaign-${banner.id}-action`}
           >
-            {compact && <span className={styles.icon} aria-hidden="true"><TagIcon /></span>}
-            <div className={styles.copy}>
-              <p className={`hf-eyebrow ${styles.eyebrow}`}>{banner.eyebrow}</p>
-              <h3 className={styles.title}>{banner.title} <span>{banner.emphasis}</span></h3>
-              <p className={styles.description}>{banner.description}</p>
-              {!compact && (
-                <span className={`hf-button-tertiary ${styles.action}`}>
-                  {banner.action}<ArrowRightIcon aria-hidden="true" />
-                </span>
-              )}
+            <div className={styles.art} aria-hidden="true" data-campaign-layer="image">
+              <Image
+                src={CAMPAIGN_ART[banner.id]}
+                alt=""
+                fill
+                loading="lazy"
+                sizes={wide
+                  ? '(max-width: 767px) calc(100vw - 32px), (max-width: 1536px) 65vw, 960px'
+                  : '(max-width: 767px) calc(100vw - 32px), (max-width: 1099px) 65vw, 480px'}
+                className={styles.scene}
+              />
             </div>
-            {compact ? (
-              <span className={`hf-button-primary ${styles.action}`}>
+            <div className={styles.copy} data-campaign-layer="content">
+              <p className={styles.eyebrow}>{banner.eyebrow}</p>
+              <h3 id={`campaign-${banner.id}-title`} className={styles.title}>
+                {banner.title} <span>{banner.emphasis}</span>
+              </h3>
+              <p className={styles.description}>{banner.description}</p>
+              <span id={`campaign-${banner.id}-action`} className={`hf-button-primary ${styles.action}`}>
                 {banner.action}<ArrowRightIcon aria-hidden="true" />
               </span>
-            ) : image ? (
-              <div className={styles.visual} aria-hidden="true">
-                <Image
-                  src={image.src}
-                  alt=""
-                  fill
-                  loading="lazy"
-                  sizes="(max-width: 767px) 40vw, (max-width: 1023px) 44vw, 320px"
-                  className={styles.productImage}
-                />
-              </div>
-            ) : null}
+              {!wide && (
+                <div className={styles.benefits}>
+                  <span><HomeIcon aria-hidden="true" />A more organised home</span>
+                  <span><SparklesIcon aria-hidden="true" />Everyday essentials</span>
+                </div>
+              )}
+            </div>
           </Link>
-        )
-      })}
+        ))}
+      </div>
+      <p className={styles.artNote}>Illustrative room scenes. Explore each collection for available products.</p>
     </div>
   )
 }

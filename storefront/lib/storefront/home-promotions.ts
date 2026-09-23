@@ -34,19 +34,19 @@ export function getHomePromotions(products: WooProduct[], placement: 'discovery'
   const underTwenty = available.filter(isUnderTwentyProduct).slice(0, 2)
   const banners: HomePromotion[] = placement === 'discovery' ? [
     {
-      id: 'kitchen', eyebrow: 'Kitchen tools', title: 'Everyday prep.', emphasis: 'Made simpler.',
-      description: 'Useful tools for the little jobs you do every day.', action: 'Explore kitchen',
+      id: 'kitchen', eyebrow: 'Housefinds · Kitchen', title: 'Kitchen tools', emphasis: 'that earn their space.',
+      description: 'Practical prep finds for easier everyday cooking.', action: 'Explore kitchen',
       href: '/shop?category=kitchen-tools', products: kitchen,
     },
     {
-      id: 'storage', eyebrow: 'Space saving', title: 'More room.', emphasis: 'Less clutter.',
-      description: 'Small ways to make more of the space you have.', action: 'Explore storage',
+      id: 'storage', eyebrow: 'Housefinds · Organisation', title: 'Small-space', emphasis: 'solutions.',
+      description: 'Practical storage and organisation for calmer everyday rooms.', action: 'Explore storage',
       href: '/shop?category=space-saving', products: storage,
     },
   ] : [
     {
-      id: 'under-20', eyebrow: 'Small upgrades, thoughtful prices', title: 'Useful finds', emphasis: 'under £20.',
-      description: 'Every option in this collection is priced below £20.', action: 'Shop under £20',
+      id: 'under-20', eyebrow: 'Housefinds · The everyday edit', title: 'Useful finds', emphasis: 'under £20.',
+      description: 'Little upgrades for everyday home life. Every option in this collection is below £20.', action: 'Shop the edit',
       href: '/collections/under-20', products: underTwenty,
     },
   ]

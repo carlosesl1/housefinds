@@ -31,7 +31,7 @@ export default async function HomePage() {
   const showcaseProducts = products.filter((product) => product.id !== featuredProduct?.id).slice(0, 6)
 
   return (
-    <main className="overflow-hidden bg-[var(--hf-background)]">
+    <main className="hf-editorial-home overflow-hidden bg-[var(--hf-background)]">
       <Hero products={products} />
 
       <CategoryGrid products={products}>

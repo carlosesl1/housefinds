@@ -1,9 +1,25 @@
-# Home merchandising: integrated Housefinds style
+# Housefinds hybrid editorial campaigns
 
-The Home uses three promotions, rather than four standalone campaign banners. Hero flows directly into categories. The category container ends with a compact Under £20 row. Two contextual kitchen/storage links finish the product showcase inside its existing container. The generic Housefinds edit banner is retired; its destination duplicates the existing full-shop actions. Six showcase products form complete three-column desktop rows (two columns on small screens). Adjacent section padding is reduced without changing global spacing tokens.
+## Art versus live content
 
-Presentation inherits the storefront sans-serif family, 650-weight headlines with muted-green emphasis, shared ink/surface/radius/border/shadow tokens and existing pill controls. Category promotions use a single edge-to-edge catalogue image, not tilted framed photos. No campaign-specific decorative background, serif font, floating caption or extra browser JavaScript is used. Images stay lazy and responsive. Entire banners are native links with visible keyboard focus and no nested controls. All three titles are h3 under the parent section h2.
+The three approved campaign themes are retained. Kitchen and organisation campaigns finish the existing product showcase; the under-20 campaign remains inside the category section. No extra standalone section is inserted between the hero and categories.
 
-`/collections/under-20` and its sitemap entry remain unchanged. The live GBP price predicate still requires in-stock, purchasable products with the entire listed variant price range strictly below £20. Empty/unavailable category groups render nothing. No WooCommerce records, checkout/payment code, product pages or reviews are changed.
+Each campaign uses a single photographic scene cropped from the artwork approved in this conversation, with the campaign heading, body copy, logo, CTA and feature labels removed by cropping. Decorative writing on objects in the photographed scene is nonessential. Headlines, descriptions, the under-20 price promise, CTA, feature icons, accessible link names, hover and keyboard focus are real HTML/SVG/CSS. There are no text-as-image buttons, nested links, Polaroid frames or catalogue photo collages. The whole banner remains a native link.
 
-Validation: `node scripts/test-home-promotions.cjs` runs 21 deterministic price-boundary, availability, routing, JSX structure and syntax checks. Browser geometry was also checked locally at 320, 360, 390, 539, 768, 1024, 1440 and 1920 px using the component output and stylesheet with static fixture imagery drawn from the supplied screenshots. This local layout check is not a Next.js hydration test or a physical-device check. Vercel preview/production builds and live DOM verification are separate release checks.
+Lifestyle scenes are illustrative collection inspiration, not exact products or a claim that every object depicted is sold. A visible sentence below each campaign group explains this distinction. Exact-product photographs and product data remain unchanged on catalogue cards and PDPs. The fourth air-fryer concept is not used.
+
+## Typography
+
+`lib/storefront/fonts.ts` uses next/font/google for Inter (UI) and Cormorant Garamond (editorial). Next hosts the resulting font resources; shoppers do not request fonts from Google. Both use swap. The editorial face is not preloaded and is applied only to campaign headings and display/section headings under .hf-editorial-home. Navigation, descriptions, price, filters, product titles, quantity and checkout remain sans-serif. Brand SVG remains untouched. Explicit --hf-font-ui / --hf-font-editorial tokens live in campaign-typography.css; the existing global stylesheet is not replaced.
+
+## Responsive art and delivery
+
+Desktop places real text over the quiet left side, fading into a single scene at the right; the under-20 campaign has a wide 8:3 frame. Mobile places readable copy above a dedicated image area with a top fade, so neither headline nor CTA is cropped. Intermediate tablet widths use one column. Three local WebP masters are lazy-loaded through Next Image with responsive sizes: kitchen 16,114 bytes, storage 28,838 bytes, budget 17,734 bytes (62,686 bytes combined, before Next image derivatives). The existing small botanical texture is reused separately. No new browser JavaScript, external image host, runtime font service or image-generation dependency is added.
+
+## Commerce integrity
+
+Campaign availability and destinations remain based on the live catalogue. Under-20 uses only in-stock, purchasable GBP products whose full listed range is strictly below 20.00. Empty groups render nothing. /collections/under-20 is unchanged. No checkout/payment, WooCommerce records, product availability, reviews or prices are modified.
+
+## Validation
+
+`npm run test:home` runs 24 deterministic content, routing, price boundary, image size/format, accessible component structure, layering, typography scope and syntax checks. It is included in prebuild alongside the existing PDP and checkout suites. Local Chromium layout checks cover 320, 360, 390, 540, 768, 1024, 1100, 1440 and 1920px plus tab focus order, using the actual campaign component output and stylesheet. Local offline screenshots use an installed serif fallback; they are not a live Next hydration test, an assertion of the final downloaded font or a physical-device test. Vercel build and deployed DOM/CSS checks are separate release checks.
