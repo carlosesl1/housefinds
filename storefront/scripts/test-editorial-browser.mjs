@@ -30,17 +30,23 @@ async function waitFont(page, selector, fragment) {
   return report
 }
 async function checkEditorialScale(page) {
-  const report = await page.locator('.hf-editorial-scope').evaluate(scope => {
+  const report = await page.locator('.hf-editorial-scope').evaluate(async scope => {
     const titles = [...scope.querySelectorAll('.hf-display, .hf-section-title, .hf-editorial-title, [data-promotion] h3')]
     const ui = [...scope.querySelectorAll('p, button, .hf-button-primary, .hf-button-secondary, .hf-button-tertiary, [class*="price"]')]
     const sizes = elements => elements.map(el => parseFloat(getComputedStyle(el).fontSize))
+    // Reduced-motion CSS retains 0.01ms transitions. Read settled values, not
+    // the old font size returned on the very first frame of a style change.
+    const settle = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+    await settle()
     const tuned = sizes(titles)
     const uiTuned = sizes(ui)
     const scale = parseFloat(getComputedStyle(scope).getPropertyValue('--hf-editorial-scale'))
     scope.style.setProperty('--hf-editorial-scale', '1')
+    await settle()
     const original = sizes(titles)
     const uiOriginal = sizes(ui)
     scope.style.removeProperty('--hf-editorial-scale')
+    await settle()
     const overflow = titles.filter(el => {
       const r = el.getBoundingClientRect()
       return r.left < -1 || r.right > innerWidth + 1 || el.scrollWidth > el.clientWidth + 1
