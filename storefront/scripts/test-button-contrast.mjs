@@ -57,8 +57,10 @@ async function scan(page, label) {
   const count = await page.locator('a, button, [id$="-action"]').evaluateAll((nodes, palette) => {
     let n = 0
     for (const node of nodes) {
-      const box = node.getBoundingClientRect()
-      if (box.width > 0 && box.height > 0 && palette.includes(getComputedStyle(node).backgroundColor)) node.setAttribute('data-colour-test', String(n++))
+      const box = node.getBoundingClientRect(), style = getComputedStyle(node)
+      // A keyboard-only skip link has geometry but is clipped and non-interactive
+      // until focused. It is covered separately, not hovered while hidden.
+      if (box.width > 0 && box.height > 0 && style.opacity !== '0' && style.visibility !== 'hidden' && style.pointerEvents !== 'none' && palette.includes(style.backgroundColor)) node.setAttribute('data-colour-test', String(n++))
     }
     return n
   }, greens)
@@ -93,6 +95,10 @@ try {
     })
     const page = await context.newPage()
     await page.goto(origin, { waitUntil: 'networkidle' })
+    const skip = page.getByRole('link', { name: 'Skip to content', exact: true })
+    await page.keyboard.press('Tab'); await skip.focus()
+    assert.equal(await skip.evaluate(el => getComputedStyle(el).color), white)
+    await skip.evaluate(el => el.blur())
     await scan(page, `Home ${width}`)
     // Light and inverted controls must NOT become white-on-white.
     for (const selector of ['.hf-button-secondary', '.hf-button-tertiary', '#featured-find a.hf-button-primary']) {
