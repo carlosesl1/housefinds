@@ -1,0 +1,56 @@
+name: Brand button contrast QA
+on:
+  push:
+    branches: [fix/brand-button-contrast-20260924, headless-storefront]
+    paths:
+      - 'storefront/app/globals.css'
+      - 'storefront/scripts/test-button-contrast.mjs'
+      - '.github/workflows/button-contrast-qa.yml'
+permissions:
+  contents: read
+concurrency:
+  group: button-contrast-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  contrast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: storefront
+    env:
+      WOOCOMMERCE_URL: http://127.0.0.1:4010
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_qa_fixture_only
+      NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - run: npm install --no-save --package-lock=false playwright@1.55.1
+      - run: npx playwright install --with-deps chromium
+      - name: Build, preserve editorial layout and check CTA colours
+        run: |
+          node scripts/editorial-fixtures.mjs > /tmp/hf-button-fixtures.log 2>&1 &
+          FIXTURE_PID=$!
+          NEXT_PID=''
+          trap 'kill $FIXTURE_PID ${NEXT_PID:-} 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:4010/health >/dev/null && break; sleep 1; done
+          npm run build
+          npm run start -- --hostname 127.0.0.1 > /tmp/hf-button-next.log 2>&1 &
+          NEXT_PID=$!
+          for i in $(seq 1 45); do curl -sf http://127.0.0.1:3000/ >/dev/null && break; sleep 1; done
+          node scripts/test-editorial-browser.mjs
+          node scripts/test-button-contrast.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: brand-button-contrast-qa
+          path: |
+            storefront/button-qa/
+            storefront/editorial-qa/results.json
+          if-no-files-found: ignore
+          retention-days: 3
