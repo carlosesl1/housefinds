@@ -47,10 +47,10 @@ export function SiteFooter() {
             <h3 className="text-sm font-semibold text-[var(--hf-ink)]">Categories</h3>
             <ul className="mt-5 space-y-3 text-sm text-black/50">{shopLinks.slice(3).map(([label, href]) => <li key={href}><Link className="transition hover:text-black" href={href}>{label}</Link></li>)}<li><Link className="transition hover:text-black" href="/shop?category=daily-helpers">Daily helpers</Link></li></ul>
           </div>
-          <div className="col-span-2 sm:col-span-1">
+          <div className="col-span-2 min-w-0 sm:col-span-1">
             <h3 className="text-sm font-semibold text-[var(--hf-ink)]">Customer care</h3>
             <ul className="mt-5 space-y-3 text-sm text-black/50">{customerLinks.map(([label, href]) => <li key={href}><Link className="transition hover:text-black" href={href}>{label}</Link></li>)}</ul>
-            <a href="mailto:contact@housefindsstore.com" className="mt-5 inline-flex items-center gap-2 text-xs font-semibold text-[var(--hf-brand)] hover:underline"><EnvelopeIcon className="size-4" /> contact@housefindsstore.com</a>
+            <a href="mailto:contact@housefindsstore.com" className="mt-5 inline-flex max-w-full items-center gap-2 text-xs font-semibold text-[var(--hf-brand)] hover:underline"><EnvelopeIcon className="size-4 shrink-0" /><span className="min-w-0 break-all">contact@housefindsstore.com</span></a>
             <p className="mt-3 max-w-xs text-xs leading-5 text-black/38">Current UK delivery estimate: around 14 days.</p>
           </div>
         </div>
