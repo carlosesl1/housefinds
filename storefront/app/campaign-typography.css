@@ -17,8 +17,12 @@ body { font-family: var(--hf-font-ui), -apple-system, BlinkMacSystemFont, "Segoe
   line-height: 1.05;
   text-wrap: balance;
 }
+/* The hero's implicit grid must be allowed to shrink on narrow screens;
+   otherwise its search/form min-content width can push the title off-screen. */
+.hf-editorial-home > section:first-child > .hf-container > div { min-width: 0; }
 .hf-editorial-home .hf-display {
-  max-width: 15ch;
+  min-width: 0;
+  max-width: min(15ch, 100%);
   font-size: calc(clamp(3.6rem, 6.1vw, 6.1rem) * var(--hf-editorial-scale, 1));
 }
 .hf-editorial-home .hf-section-title {
