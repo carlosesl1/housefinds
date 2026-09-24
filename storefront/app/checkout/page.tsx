@@ -33,7 +33,7 @@ function visibleErrors(errors: AddressErrors, touched: Set<string>, attempted: b
 function CheckoutHeader({ locked = false }: { locked?: boolean }) {
   return <header className="border-b border-[var(--hf-border)] bg-[var(--hf-background)]">
     <div className="mx-auto flex min-h-[76px] max-w-[1220px] flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
-      <Link href="/" aria-label="Housefinds home" aria-disabled={locked} tabIndex={locked ? -1 : undefined} onClick={(event) => { if (locked) event.preventDefault() }}>
+      <Link href="/" prefetch={false} aria-label="Housefinds home" aria-disabled={locked} tabIndex={locked ? -1 : undefined} onClick={(event) => { if (locked) event.preventDefault() }}>
         <Image src="/housefinds-logo.svg" alt="Housefinds" width={720} height={210} priority className="h-8 w-auto sm:h-10" />
       </Link>
       <span className="inline-flex items-center gap-2 text-xs font-medium text-[var(--hf-brand)] sm:text-sm"><LockClosedIcon className="size-4" />Secure checkout</span>
