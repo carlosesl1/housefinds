@@ -4,50 +4,43 @@ import { ArrowRightIcon, CheckIcon } from '@heroicons/react/24/outline'
 import type { WooProduct } from '@/lib/woocommerce/types'
 import { formatProductPrice } from '@/lib/woocommerce/money'
 import { displayProductName, displayProductTagline, storefrontProductSlug } from '@/lib/woocommerce/presentation'
+import styles from './featured-find.module.css'
 
 export function FeaturedFind({ product }: { product?: WooProduct }) {
   if (!product) return null
-
   const image = product.images?.[0]
   const name = displayProductName(product.name)
   const copy = displayProductTagline(product)
   const href = `/product/${storefrontProductSlug(product)}`
 
   return (
-    <section id="featured-find" className="bg-[#121714] px-4 py-5 text-white sm:px-6 lg:px-8 lg:py-8">
-      <div className="mx-auto grid max-w-[1480px] overflow-hidden rounded-[var(--hf-radius-lg)] border border-white/[.06] bg-[#19211b] lg:grid-cols-[1.08fr_.92fr]">
-        <div className="relative min-h-[480px] overflow-hidden lg:min-h-[650px]">
+    <section id="featured-find" className={styles.section} aria-labelledby="featured-find-title">
+      <div className={styles.panel}>
+        <div className={styles.visual}>
           {image ? (
-            <Image src={image.src} alt={image.alt || name} fill sizes="(max-width: 1024px) 100vw, 55vw" className="object-cover transition duration-700 hover:scale-[1.015]" />
-          ) : (
-            <div className="absolute inset-0 bg-[#26352c]" />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/48 via-transparent to-transparent" />
-          <p className="absolute bottom-6 left-6 rounded-[var(--hf-radius-pill)] border border-white/15 bg-black/25 px-4 py-2 text-xs font-semibold uppercase tracking-[.16em] text-white/75 backdrop-blur lg:bottom-8 lg:left-8">Selected by Housefinds</p>
+            <Image src={image.src} alt={image.alt || name} fill sizes="(max-width: 1023px) calc(100vw - 32px), (max-width: 1544px) 52vw, 770px" className={styles.photo} />
+          ) : <div className="absolute inset-0 bg-[#26352c]" />}
+          <p className={styles.caption}>Selected by Housefinds</p>
         </div>
-
-        <div className="flex flex-col justify-center px-7 py-14 sm:px-10 lg:px-14 xl:px-16">
-          <p className="hf-eyebrow text-white/42">Featured find</p>
-          <h2 className="mt-5 text-[clamp(2.9rem,4.4vw,4.8rem)] font-semibold leading-[.94] tracking-[-.052em]">
-            One useful find. <span className="text-[#a4bba9]">A better little routine.</span>
+        <div className={styles.copy}>
+          <p className={`hf-eyebrow ${styles.eyebrow}`}>Featured find</p>
+          <h2 id="featured-find-title" className={`hf-editorial-title ${styles.title}`}>
+            One useful find. <span>A better little routine.</span>
           </h2>
-          <h3 className="mt-7 max-w-xl text-2xl font-semibold leading-tight tracking-[-.03em] text-white/94">{name}</h3>
-          <p className="mt-3 max-w-xl text-base leading-7 text-white/52">{copy}</p>
-
-          <div className="mt-8 grid gap-3 border-y border-white/10 py-5 sm:grid-cols-3">
+          <h3 className={styles.name}>{name}</h3>
+          <p className={styles.tagline}>{copy}</p>
+          <ul className={styles.benefits}>
             {['Useful by design', 'Easy to understand', 'Made for everyday life'].map((item) => (
-              <div key={item} className="flex items-center gap-2 text-sm font-medium text-white/72">
-                <span className="grid size-7 shrink-0 place-items-center rounded-full bg-white/8 text-[#a8c6b0]"><CheckIcon className="size-4" /></span>
-                <span>{item}</span>
-              </div>
+              <li key={item}>
+                <span className={styles.check} aria-hidden="true"><CheckIcon /></span>{item}
+              </li>
             ))}
-          </div>
-
-          <div className="mt-8 flex flex-wrap items-center gap-5">
-            <Link href={href} className="hf-button-secondary border-white/12 bg-[#dce8df] text-[#172018] shadow-none hover:border-white/25 hover:bg-white">
-              Explore this find <ArrowRightIcon className="size-4" />
+          </ul>
+          <div className={styles.purchase}>
+            <Link href={href} className={`hf-button-secondary ${styles.action}`}>
+              Explore this find <ArrowRightIcon aria-hidden="true" />
             </Link>
-            <span className="text-xl font-semibold">{formatProductPrice(product)}</span>
+            <span className={styles.price}>{formatProductPrice(product)}</span>
           </div>
         </div>
       </div>

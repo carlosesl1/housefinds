@@ -3,6 +3,7 @@ import { getProducts } from '@/lib/woocommerce/client'
 import { dedupeStoreProducts } from '@/lib/storefront/catalog'
 import { isUnderTwentyProduct } from '@/lib/storefront/home-promotions'
 import { SITE_URL } from '@/lib/storefront/site-url'
+import { editorialFont } from '@/lib/storefront/editorial-font'
 import { ProductCard } from '@/components/product/product-card'
 
 export const metadata = {
@@ -19,7 +20,7 @@ export default async function UnderTwentyCollection() {
   })
   const products = dedupeStoreProducts(rawProducts).filter(isUnderTwentyProduct)
   return (
-    <main className="hf-page">
+    <main className={`${editorialFont.variable} hf-editorial-scope hf-page`}>
       <div className="hf-container pb-16 pt-7 lg:pb-24">
         <nav aria-label="Breadcrumb" className="flex flex-wrap gap-2 text-sm text-black/65">
           <Link href="/" className="hover:underline">Home</Link><span aria-hidden="true">/</span>
@@ -28,7 +29,7 @@ export default async function UnderTwentyCollection() {
         </nav>
         <header className="mb-9 mt-9 max-w-2xl">
           <p className="hf-eyebrow text-[var(--hf-brand)]">Small upgrades, thoughtful prices</p>
-          <h1 className="mt-4 text-[clamp(2.25rem,5vw,4rem)] font-semibold leading-tight tracking-[-.045em]">Useful finds <span className="text-[var(--hf-brand)]">under £20.</span></h1>
+          <h1 className="hf-editorial-title mt-4 text-[clamp(2.5rem,5vw,4.5rem)]">Useful finds <span className="text-[var(--hf-brand)]">under £20.</span></h1>
           <p className="mt-4 text-base leading-7 text-black/65">Practical home upgrades priced below £20. Every listed option of each product in this edit is under £20, with free standard UK delivery.</p>
         </header>
         {unavailable ? (

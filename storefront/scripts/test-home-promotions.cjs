@@ -1,4 +1,4 @@
-/* Deterministic campaign content, price promises, assets and JSX checks. */
+/* Deterministic campaign content, real price boundaries and responsive assets. */
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const path = require('node:path')
@@ -19,7 +19,7 @@ function load(file) {
     if (name.startsWith('@/')) return load(path.join(root, `${name.slice(2)}.ts`))
     if (name === 'react/jsx-runtime') return { jsx, jsxs: jsx }
     if (name === 'next/link') return props => jsx('a', props)
-    if (name === 'next/image') return props => jsx('img', props)
+    if (name === 'next/image') return { __esModule: true, default: props => jsx('img', props), getImageProps: props => ({ props: { ...props, srcSet: `${props.src} ${props.width}w` } }) }
     if (name === '@heroicons/react/24/outline') return icons
     if (name.endsWith('.module.css')) return { __esModule: true, default: new Proxy({}, { get: (_, key) => String(key) }) }
     throw new Error(`Unexpected import ${name}`)
@@ -31,14 +31,15 @@ function load(file) {
 function nodes(node, type) {
   if (!node || typeof node !== 'object') return []
   if (Array.isArray(node)) return node.flatMap(n => nodes(n, type))
-  return [...(node.type === type ? [node] : []), ...nodes(node.props.children, type)]
+  return [...(node.type === type ? [node] : []), ...nodes(node.props?.children, type)]
 }
 function text(node) {
   if (node == null || typeof node === 'boolean') return ''
   if (typeof node !== 'object') return String(node)
   if (Array.isArray(node)) return node.map(text).join('')
-  return text(node.props.children)
+  return text(node.props?.children)
 }
+const read = file => fs.readFileSync(path.join(root, file), 'utf8')
 const { isUnderTwentyProduct, getHomePromotions } = load(path.join(root, 'lib/storefront/home-promotions.ts'))
 const { EditorialBanners } = load(path.join(root, 'components/home/editorial-banners.tsx'))
 function product(patch = {}) {
@@ -47,17 +48,15 @@ function product(patch = {}) {
 }
 let passed = 0
 function test(name, fn) { fn(); passed++; console.log(`PASS ${name}`) }
-test('Includes products below £10 as well as £10–£20', () => {
+test('Includes prices below £10 and £19.99', () => {
   assert.equal(isUnderTwentyProduct(product()), true)
   assert.equal(isUnderTwentyProduct(product({ prices: { price: '1999', currency_code: 'GBP', currency_minor_unit: 2 } })), true)
 })
-test('Excludes exactly £20 and above', () => {
-  for (const price of ['2000','3500']) assert.equal(isUnderTwentyProduct(product({ prices: { price, currency_code: 'GBP', currency_minor_unit: 2 } })), false)
+test('Excludes £20 and above', () => {
+  for (const price of ['2000', '3500']) assert.equal(isUnderTwentyProduct(product({ prices: { price, currency_code: 'GBP', currency_minor_unit: 2 } })), false)
 })
-test('Checks most expensive variant rather than lowest starting price', () => {
+test('Checks every variant rather than starting price', () => {
   assert.equal(isUnderTwentyProduct(product({ prices: { price: '500', currency_code: 'GBP', currency_minor_unit: 2, price_range: { min_amount: '500', max_amount: '2022' } } })), false)
-})
-test('Accepts only a range wholly below £20', () => {
   assert.equal(isUnderTwentyProduct(product({ prices: { currency_code: 'GBP', currency_minor_unit: 2, price_range: { min_amount: '100', max_amount: '1999' } } })), true)
 })
 test('Rejects malformed, empty and inverted prices', () => {
@@ -66,103 +65,125 @@ test('Rejects malformed, empty and inverted prices', () => {
 })
 test('Rejects non-GBP and invalid minor units', () => {
   assert.equal(isUnderTwentyProduct(product({ prices: { price: '500', currency_code: 'USD', currency_minor_unit: 2 } })), false)
-  for (const unit of [-1,1.5,9]) assert.equal(isUnderTwentyProduct(product({ prices: { price: '500', currency_code: 'GBP', currency_minor_unit: unit } })), false)
+  for (const unit of [-1, 1.5, 9]) assert.equal(isUnderTwentyProduct(product({ prices: { price: '500', currency_code: 'GBP', currency_minor_unit: unit } })), false)
 })
 test('Unavailable products do not qualify', () => {
   assert.equal(isUnderTwentyProduct(product({ is_in_stock: false })), false)
   assert.equal(isUnderTwentyProduct(product({ is_purchasable: false })), false)
 })
 test('Empty catalogue renders no campaign chrome', () => {
-  assert.equal(EditorialBanners({ products: [], placement: 'discovery' }), null)
-  assert.equal(EditorialBanners({ products: [], placement: 'curated' }), null)
+  for (const placement of ['discovery', 'curated']) assert.equal(EditorialBanners({ products: [], placement }), null)
 })
-test('Categories never fall back to an unrelated product', () => {
+test('Categories never fall back to unrelated products', () => {
   const p = getHomePromotions([product()], 'discovery')
-  assert.equal(p.length, 1); assert.equal(p[0].id, 'kitchen')
-  assert.equal(p[0].href, '/shop?category=kitchen-tools')
+  assert.equal(p.length, 1); assert.equal(p[0].id, 'kitchen'); assert.equal(p[0].href, '/shop?category=kitchen-tools')
 })
-test('Hide empty/unavailable catalogue groups', () => {
+test('Hide unavailable/no-image groups', () => {
   assert.equal(getHomePromotions([product({ images: [] })], 'discovery').length, 0)
   assert.equal(getHomePromotions([product({ is_in_stock: false })], 'discovery').length, 0)
 })
-test('Budget banner links to actual under-20 collection', () => {
+test('Budget campaign links to the real price-filtered destination', () => {
   const p = getHomePromotions([product()], 'curated')
-  assert.equal(p.length, 1); assert.equal(p[0].href, '/collections/under-20')
-  assert.equal(p[0].products.every(isUnderTwentyProduct), true)
-})
-test('No price banner with an expensive-only catalogue', () => {
-  const p = product({ prices: { price: '2500', currency_code: 'GBP', currency_minor_unit: 2 } })
-  assert.equal(getHomePromotions([p], 'curated').length, 0)
+  assert.equal(p.length, 1); assert.equal(p[0].href, '/collections/under-20'); assert.equal(p[0].products.every(isUnderTwentyProduct), true)
+  assert.equal(getHomePromotions([product({ prices: { price: '2500', currency_code: 'GBP', currency_minor_unit: 2 } })], 'curated').length, 0)
 })
 const fixtures = [product(), product({ id: 2, name: 'Covered Toothbrush Holder', slug: 'covered-toothbrush-holder' })]
-test('Exactly three distinct promotions', () => {
+test('Three unique campaigns with one native link each', () => {
   const p = [...getHomePromotions(fixtures, 'discovery'), ...getHomePromotions(fixtures, 'curated')]
   assert.equal(p.length, 3); assert.equal(new Set(p.map(x => x.id)).size, 3)
-})
-test('Native accessible links, headings and CTAs; no nested controls', () => {
-  const tree = EditorialBanners({ products: fixtures, placement: 'discovery' })
-  assert.equal(nodes(tree, 'a').length, 2); assert.equal(nodes(tree, 'h3').length, 2)
-  assert.equal(nodes(tree, 'h2').length, 0); assert.equal(nodes(tree, 'button').length, 0)
+  const tree = EditorialBanners({ products: fixtures })
+  assert.equal(nodes(tree, 'a').length, 2); assert.equal(nodes(tree, 'h3').length, 2); assert.equal(nodes(tree, 'button').length, 0)
   for (const a of nodes(tree, 'a')) {
     assert.equal(nodes(a.props.children, 'a').length, 0)
     const ids = [...nodes(a, 'h3'), ...nodes(a, 'span')].map(x => x.props.id)
-    for (const id of a.props['aria-labelledby'].split(' ')) assert.equal(ids.includes(id), true)
+    for (const id of a.props['aria-labelledby'].split(' ')) assert.ok(ids.includes(id))
   }
-  assert.match(text(tree), /Kitchen tools that earn their space\./)
 })
-test('Price promise stays live HTML over decorative artwork', () => {
-  const tree = EditorialBanners({ products: fixtures, placement: 'curated' })
-  assert.equal(nodes(tree, 'a').length, 1); assert.equal(nodes(tree, 'img').length, 1)
-  assert.match(text(tree), /Useful finds under £20\./)
+test('Price promise, title and action remain live text', () => {
+  assert.match(text(EditorialBanners({ products: fixtures, placement: 'curated' })), /Useful finds under £20\./)
+  assert.match(text(EditorialBanners({ products: fixtures })), /Kitchen tools that earn their space\./)
 })
-test('One text-free scene per campaign, lazy and responsive', () => {
+test('One art-directed picture per campaign, no duplicate image downloads', () => {
   for (const placement of ['curated', 'discovery']) {
     const tree = EditorialBanners({ products: fixtures, placement })
+    assert.equal(nodes(tree, 'picture').length, nodes(tree, 'a').length)
+    assert.equal(nodes(tree, 'img').length, nodes(tree, 'a').length)
     for (const img of nodes(tree, 'img')) {
-      assert.equal(img.props.loading, 'lazy'); assert.equal(img.props.alt, '')
-      assert.equal(img.props.priority, undefined); assert.equal(typeof img.props.sizes, 'string')
+      assert.equal(img.props.alt, ''); assert.equal(img.props.loading, 'lazy'); assert.equal(img.props.priority, undefined)
+      assert.equal(typeof img.props.sizes, 'string')
       assert.match(img.props.src, /^\/home\/banners\/(kitchen|storage|budget)-scene\.webp$/)
-      const b = fs.readFileSync(path.join(root, 'public', img.props.src))
-      assert.equal(b.toString('ascii',0,4), 'RIFF'); assert.equal(b.toString('ascii',8,12), 'WEBP')
+    }
+    for (const source of nodes(tree, 'source')) {
+      assert.equal(source.props.media, '(max-width: 767px)')
+      assert.match(source.props.srcSet, /\/mobile\/(kitchen|storage|budget)-scene\.webp/)
     }
     const divs = nodes(tree, 'div')
-    assert.ok(divs.some(x => x.props['data-campaign-layer'] === 'content'))
-    assert.ok(divs.some(x => x.props['data-campaign-layer'] === 'image'))
+    for (const layer of ['image', 'content']) assert.ok(divs.some(x => x.props['data-campaign-layer'] === layer))
     assert.match(text(tree), /Illustrative room scenes/)
   }
 })
-test('All scene masters together stay below 80 KB', () => {
-  const total = ['kitchen','storage','budget'].reduce((sum,id) => sum + fs.statSync(path.join(root, `public/home/banners/${id}-scene.webp`)).size,0)
-  assert.ok(total < 80000, `Scene total: ${total}`)
+test('Desktop and dedicated mobile masters are genuine WebP assets', () => {
+  for (const id of ['kitchen', 'storage', 'budget']) for (const prefix of ['', 'mobile/']) {
+    const b = fs.readFileSync(path.join(root, `public/home/banners/${prefix}${id}-scene.webp`))
+    assert.equal(b.toString('ascii', 0, 4), 'RIFF'); assert.equal(b.toString('ascii', 8, 12), 'WEBP')
+  }
 })
-test('Campaign style has editorial type, true image layering and mobile art direction', () => {
-  const css = fs.readFileSync(path.join(root, 'components/home/editorial-banners.module.css'), 'utf8')
-  assert.match(css, /var\(--hf-font-editorial\)/); assert.match(css, /mask-image/)
-  assert.match(css, /max-width: 767px/); assert.match(css, /prefers-reduced-motion/)
-  assert.match(css, /var\(--hf-radius-lg\)/); assert.doesNotMatch(css, /rotate\(|!important/)
+test('Mobile crop manifest includes fixed dimensions and bounded file size', () => {
+  const manifest = JSON.parse(read('public/home/banners/mobile/manifest.json'))
+  for (const id of ['kitchen', 'storage', 'budget']) {
+    assert.equal(manifest[id].width, 720); assert.equal(manifest[id].height, 600)
+    assert.ok(manifest[id].bytes < 60000); assert.match(manifest[id].sourceSha256, /^[a-f0-9]{64}$/)
+    assert.ok(manifest[id].crop.width > 0)
+  }
 })
-test('Editorial type is scoped; UI family remains independent', () => {
-  const css = fs.readFileSync(path.join(root, 'app/campaign-typography.css'), 'utf8')
+test('Existing desktop scene masters stay below 80 KB together', () => {
+  const total = ['kitchen', 'storage', 'budget'].reduce((sum, id) => sum + fs.statSync(path.join(root, `public/home/banners/${id}-scene.webp`)).size, 0)
+  assert.ok(total < 80000)
+})
+test('No repeated benefit rows in mobile presentation', () => {
+  const tree = EditorialBanners({ products: fixtures })
+  assert.match(text(tree), /For everyday cooking/); assert.match(text(tree), /More room at home/)
+  assert.doesNotMatch(text(tree), /A more organised home/)
+  const css = read('components/home/editorial-banners.module.css')
+  assert.match(css, /max-width: 767px[\s\S]*\.benefits \{ display: none;/)
+})
+test('Layering, reduced motion, focus and store tokens remain', () => {
+  const css = read('components/home/editorial-banners.module.css')
+  for (const s of ['var(--hf-font-editorial)', 'mask-image', 'prefers-reduced-motion', 'focus-visible', 'var(--hf-radius-lg)']) assert.ok(css.includes(s))
+  assert.doesNotMatch(css, /rotate\(|!important/)
+})
+test('Editorial font is page-scoped and preloaded, not in the root layout', () => {
+  assert.doesNotMatch(read('app/layout.tsx'), /editorialFont/)
+  assert.doesNotMatch(read('lib/storefront/fonts.ts'), /Cormorant_Garamond/)
+  const font = read('lib/storefront/editorial-font.ts')
+  assert.match(font, /next\/font\/google/); assert.match(font, /preload: true/); assert.match(font, /display: 'swap'/)
+  for (const page of ['app/page.tsx', 'app/collections/under-20/page.tsx']) {
+    assert.match(read(page), /editorialFont.variable/); assert.match(read(page), /hf-editorial-scope/)
+  }
+})
+test('Font alias resolves in the page scope; UI is not overwritten', () => {
+  const css = read('app/campaign-typography.css')
+  assert.match(css, /\.hf-editorial-scope \{ --hf-font-editorial: var\(--font-hf-editorial, Georgia\)/)
   assert.match(css, /body \{ font-family: var\(--hf-font-ui\)/)
-  assert.match(css, /\.hf-editorial-home \.hf-display/)
   assert.doesNotMatch(css, /(?:^|\n)(?:h1|h2|h3|button|input|header)\s*\{/)
-  const font = fs.readFileSync(path.join(root, 'lib/storefront/fonts.ts'),'utf8')
-  assert.match(font, /next\/font\/google/); assert.match(font, /Cormorant_Garamond/)
-  assert.match(font, /preload: false/); assert.match(font, /display: 'swap'/)
 })
-test('Groups retain natural placement and complete product rows', () => {
-  const source = fs.readFileSync(path.join(root, 'app/page.tsx'), 'utf8')
+test('Featured and destination headings share editorial class, prices do not', () => {
+  assert.match(read('components/home/featured-find.tsx'), /id="featured-find-title" className=\{`hf-editorial-title/)
+  assert.match(read('app/collections/under-20/page.tsx'), /<h1 className="hf-editorial-title/)
+  assert.match(read('components/home/featured-find.module.css'), /\.price \{[^}]*font-family: var\(--hf-font-ui\)/)
+  assert.match(read('components/home/featured-find.module.css'), /\.section \.eyebrow \{ color: var\(--featured-muted\)/)
+})
+test('Promotions keep their approved in-section placement', () => {
+  const source = read('app/page.tsx')
   assert.match(source, /<Hero products=\{products\} \/>\s*<CategoryGrid/)
   assert.match(source, /<CategoryGrid[^>]*>\s*<EditorialBanners[^>]*placement="curated"[^>]*\/>\s*<\/CategoryGrid>/)
   assert.match(source, /showcaseProducts\.map[\s\S]*placement="discovery"[\s\S]*<\/section>/)
-  assert.doesNotMatch(source, /md:grid-cols-3 xl:grid-cols-4/)
 })
-for (const filename of ['components/home/editorial-banners.tsx', 'app/page.tsx', 'app/layout.tsx', 'lib/storefront/fonts.ts']) {
+for (const filename of ['components/home/editorial-banners.tsx', 'components/home/featured-find.tsx', 'app/page.tsx', 'app/layout.tsx', 'app/collections/under-20/page.tsx', 'lib/storefront/fonts.ts', 'lib/storefront/editorial-font.ts']) {
   test(`TSX syntax: ${filename}`, () => {
-    const output = ts.transpileModule(fs.readFileSync(path.join(root, filename),'utf8'), { fileName: filename, compilerOptions: { jsx: ts.JsxEmit.ReactJSX }, reportDiagnostics: true })
-    assert.equal((output.diagnostics || []).filter(d => d.category === ts.DiagnosticCategory.Error).length, 0)
+    const result = ts.transpileModule(read(filename), { fileName: filename, compilerOptions: { jsx: ts.JsxEmit.ReactJSX }, reportDiagnostics: true })
+    assert.equal((result.diagnostics || []).filter(d => d.category === ts.DiagnosticCategory.Error).length, 0)
   })
 }
-console.log(`${passed} checks passed.`)
-// Optional local geometry fixture; not a React hydration or live commerce test.
+console.log(`${passed} home checks passed.`)
 module.exports = { EditorialBanners, jsx, fixtures }

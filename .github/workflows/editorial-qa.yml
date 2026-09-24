@@ -1,18 +1,21 @@
 name: Editorial campaign QA
 on:
   push:
-    branches: [feat/editorial-campaign-art-20260923]
+    branches: [refine/editorial-finish-20260923]
 permissions:
   contents: read
+concurrency:
+  group: editorial-qa-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: storefront
     env:
-      WOOCOMMERCE_URL: http://127.0.0.1:9
+      WOOCOMMERCE_URL: http://127.0.0.1:4010
       NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_qa_fixture_only
       NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
     steps:
@@ -23,4 +26,24 @@ jobs:
         with:
           node-version: '22'
       - run: npm install --no-audit --no-fund
-      - run: npm run build
+      - run: npm install --no-save --package-lock=false playwright@1.55.1
+      - run: npx playwright install --with-deps chromium
+      - name: Build and validate final fonts, crops, contrast and keyboard focus
+        run: |
+          node scripts/editorial-fixtures.mjs > /tmp/hf-editorial-fixtures.log 2>&1 &
+          FIXTURE_PID=$!
+          NEXT_PID=''
+          trap 'kill $FIXTURE_PID ${NEXT_PID:-} 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:4010/health >/dev/null && break; sleep 1; done
+          npm run build
+          npm run start -- --hostname 127.0.0.1 > /tmp/hf-editorial-next.log 2>&1 &
+          NEXT_PID=$!
+          for i in $(seq 1 45); do curl -sf http://127.0.0.1:3000/ >/dev/null && break; sleep 1; done
+          node scripts/test-editorial-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: editorial-final-font-qa
+          path: storefront/editorial-qa/
+          if-no-files-found: ignore
+          retention-days: 3

@@ -9,6 +9,7 @@ import { getProductReviews, getProducts } from '@/lib/woocommerce/client'
 import { findProductByKeywords } from '@/lib/woocommerce/presentation'
 import { dedupeStoreProducts } from '@/lib/storefront/catalog'
 import { HOME_COLLECTION_BG, PAPER_TEXTURE, SAGE_TEXTURE } from '@/lib/storefront/home-backgrounds'
+import { editorialFont } from '@/lib/storefront/editorial-font'
 import { Hero } from '@/components/home/hero'
 import { CategoryGrid } from '@/components/home/category-grid'
 import { EditorialBanners } from '@/components/home/editorial-banners'
@@ -31,7 +32,7 @@ export default async function HomePage() {
   const showcaseProducts = products.filter((product) => product.id !== featuredProduct?.id).slice(0, 6)
 
   return (
-    <main className="hf-editorial-home overflow-hidden bg-[var(--hf-background)]">
+    <main className={`${editorialFont.variable} hf-editorial-scope hf-editorial-home overflow-hidden bg-[var(--hf-background)]`}>
       <Hero products={products} />
 
       <CategoryGrid products={products}>

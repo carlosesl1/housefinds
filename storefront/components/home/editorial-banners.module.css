@@ -1,4 +1,4 @@
-/* Art is a text-free raster layer. Copy, CTAs, icons and focus are native UI. */
+/* Images are decorative art. Content, price promises and controls are live HTML. */
 .wrapper { margin-top: clamp(32px, 3.5vw, 52px); }
 .group { display: grid; gap: 24px; }
 .discovery { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -6,96 +6,51 @@
 .spotlight { align-items: stretch; }
 .banner {
   --campaign-surface: #f3eee4;
-  position: relative;
-  isolation: isolate;
-  display: flex;
-  min-width: 0;
-  width: 100%;
-  max-width: 100%;
-  min-height: 370px;
-  overflow: hidden;
-  color: var(--hf-ink);
-  border: 1px solid var(--hf-border);
-  border-radius: var(--hf-radius-lg);
-  background: var(--campaign-surface);
-  box-shadow: 0 8px 28px rgba(30, 42, 34, .035);
-  text-decoration: none;
+  position: relative; isolation: isolate; display: flex; min-width: 0;
+  width: 100%; max-width: 100%; min-height: 370px; overflow: hidden;
+  color: var(--hf-ink); border: 1px solid var(--hf-border);
+  border-radius: var(--hf-radius-lg); background: var(--campaign-surface);
+  box-shadow: 0 8px 28px rgba(30,42,34,.035); text-decoration: none;
   transition: border-color 180ms ease, box-shadow 180ms ease;
 }
 .banner[data-promotion="storage"] { --campaign-surface: #f1f0e8; }
 .banner[data-promotion="under-20"] { --campaign-surface: #f5eee2; }
 .banner::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
+  content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
   background: linear-gradient(95deg, transparent, var(--campaign-surface) 65%), url('/home/banners/editorial-botanical.webp') left center / cover;
   opacity: .24;
 }
 .banner:focus-visible { outline: 3px solid var(--hf-brand-muted); outline-offset: 5px; }
 .art {
-  position: absolute;
-  inset: 0 0 0 auto;
-  width: 65%;
-  z-index: -1;
-  pointer-events: none;
+  position: absolute; inset: 0 0 0 auto; width: 65%; z-index: -1; pointer-events: none;
   -webkit-mask-image: linear-gradient(to right, transparent, #000 28%);
   mask-image: linear-gradient(to right, transparent, #000 28%);
 }
-.scene { object-fit: cover; object-position: 54% center; }
+.picture { display: block; width: 100%; height: 100%; }
+.scene { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 54% center; }
 .copy { position: relative; align-self: center; min-width: 0; width: 58%; padding: 32px; }
 .eyebrow {
-  color: var(--hf-brand);
-  font-family: var(--hf-font-ui), Arial, sans-serif;
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: .18em;
-  line-height: 1.5;
-  text-transform: uppercase;
-  margin: 0 0 18px;
+  color: var(--hf-brand); font-family: var(--hf-font-ui), Arial, sans-serif;
+  font-size: 10px; font-weight: 500; letter-spacing: .18em; line-height: 1.5;
+  text-transform: uppercase; margin: 0 0 18px;
 }
 .title {
-  margin: 0;
-  font-family: var(--hf-font-editorial), Georgia, serif;
-  font-size: clamp(36px, 3.1vw, 48px);
-  font-weight: 500;
-  letter-spacing: -.035em;
-  line-height: .99;
-  text-wrap: balance;
+  margin: 0; font-family: var(--hf-font-editorial), Georgia, serif;
+  font-size: clamp(36px, 3.1vw, 48px); font-weight: 500;
+  letter-spacing: -.035em; line-height: 1.04; text-wrap: balance;
 }
 .title span { display: block; }
-.description {
-  max-width: 29ch;
-  margin: 16px 0 0;
-  color: var(--hf-ink-soft);
-  font-size: 14px;
-  line-height: 1.65;
-}
+.description { max-width: 29ch; margin: 16px 0 0; color: var(--hf-ink-soft); font-size: 14px; line-height: 1.65; }
 .action.action {
-  width: fit-content;
-  max-width: 100%;
-  min-height: 46px;
-  margin-top: 22px;
-  padding: 12px 20px;
-  font-family: var(--hf-font-ui), Arial, sans-serif;
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.25;
+  width: fit-content; max-width: 100%; min-height: 46px; margin-top: 22px; padding: 12px 20px;
+  font-family: var(--hf-font-ui), Arial, sans-serif; font-size: 14px; font-weight: 600; line-height: 1.25;
 }
 .action svg { width: 17px; height: 17px; flex: 0 0 auto; }
 .benefits {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 26px;
-  padding-top: 14px;
-  border-top: 1px solid rgba(53,95,74,.15);
-  color: var(--hf-ink-soft);
-  font-size: 10px;
-  line-height: 1.5;
+  display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; padding-top: 14px;
+  border-top: 1px solid rgba(53,95,74,.15); color: var(--hf-ink-soft); font-size: 11px; line-height: 1.5;
 }
-.benefits span { display: inline-flex; align-items: center; gap: 6px; max-width: 15ch; }
+.benefits span { display: inline-flex; align-items: center; gap: 6px; max-width: 17ch; }
 .benefits svg { width: 18px; height: 18px; flex: 0 0 auto; color: var(--hf-brand-muted); }
 .wide { min-height: 360px; aspect-ratio: 8 / 3; }
 .wide .copy { width: 46%; padding: 40px 52px; }
@@ -103,7 +58,7 @@
 .wide .description { max-width: 35ch; font-size: 16px; }
 .wide .art { width: 59%; }
 .wide .scene { object-position: center 58%; }
-.artNote { margin: 11px 2px 0; color: var(--hf-ink-soft); font-size: 11px; line-height: 1.6; }
+.artNote { margin: 11px 2px 0; color: var(--hf-ink-soft); font-size: 12px; line-height: 1.6; }
 @media (hover: hover) {
   .banner:hover { border-color: var(--hf-border-strong); box-shadow: var(--hf-shadow-soft); }
   .banner:hover .action { background: var(--hf-brand-hover); }
@@ -124,21 +79,12 @@
   .title, .wide .title { max-width: 17ch; font-size: clamp(36px, 9.5vw, 48px); }
   .description, .wide .description { max-width: 36ch; font-size: 14px; margin-top: 14px; }
   .action.action { margin-top: 18px; }
-  .benefits { margin-top: 18px; padding-top: 12px; gap: 20px; }
-  .benefits span { max-width: none; }
+  .benefits { display: none; }
   .art, .wide .art {
-    position: relative;
-    inset: auto;
-    order: 1;
-    width: 100%;
-    aspect-ratio: 1.65;
-    margin-top: 0;
-    -webkit-mask-image: linear-gradient(to bottom, transparent, #000 22%);
-    mask-image: linear-gradient(to bottom, transparent, #000 22%);
+    position: relative; inset: auto; order: 1; width: 100%; aspect-ratio: 6 / 5; margin-top: 0;
+    -webkit-mask-image: linear-gradient(to bottom, transparent, #000 15%);
+    mask-image: linear-gradient(to bottom, transparent, #000 15%);
   }
-  .scene, .wide .scene { object-position: center 60%; }
-  .artNote { font-size: 11px; }
+  .scene, .wide .scene { object-position: center; }
 }
-@media (prefers-reduced-motion: reduce) {
-  .banner { transition: none; }
-}
+@media (prefers-reduced-motion: reduce) { .banner { transition: none; } }

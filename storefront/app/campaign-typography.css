@@ -1,15 +1,18 @@
 /* Functional UI and editorial storytelling are intentionally different layers. */
 :root {
   --hf-font-ui: var(--font-hf-ui, ui-sans-serif);
-  --hf-font-editorial: var(--font-hf-editorial, Georgia);
+  --hf-font-editorial: Georgia;
 }
 body { font-family: var(--hf-font-ui), -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; }
+/* Resolve this alias where next/font's page-scoped variable exists, not at root. */
+.hf-editorial-scope { --hf-font-editorial: var(--font-hf-editorial, Georgia); }
+.hf-editorial-title,
 .hf-editorial-home .hf-display,
 .hf-editorial-home .hf-section-title {
   font-family: var(--hf-font-editorial), Georgia, serif;
   font-weight: 600;
   letter-spacing: -.035em;
-  line-height: 1.02;
+  line-height: 1.05;
   text-wrap: balance;
 }
 .hf-editorial-home .hf-display {

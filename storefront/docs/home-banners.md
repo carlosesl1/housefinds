@@ -1,25 +1,23 @@
-# Housefinds hybrid editorial campaigns
+# Hybrid editorial campaigns — finishing pass
 
-## Art versus live content
+## Layout and typography
 
-The three approved campaign themes are retained. Kitchen and organisation campaigns finish the existing product showcase; the under-20 campaign remains inside the category section. No extra standalone section is inserted between the hero and categories.
+Home placements, native whole-banner links, the three campaign destinations and the strict under-20 predicate remain unchanged. Cormorant Garamond is page-scoped to Home and the Under £20 collection with preload enabled; only Inter remains in the root layout. The --hf-font-editorial alias is rebound on .hf-editorial-scope so it resolves the page's Next font rather than inheriting a root-level Georgia fallback. Hero, section headings, the dark Featured Find heading and the destination collection heading share the editorial family. Product names, prices, navigation, fields and checkout stay in Inter.
 
-Each campaign uses a single photographic scene cropped from the artwork approved in this conversation, with the campaign heading, body copy, logo, CTA and feature labels removed by cropping. Decorative writing on objects in the photographed scene is nonessential. Headlines, descriptions, the under-20 price promise, CTA, feature icons, accessible link names, hover and keyboard focus are real HTML/SVG/CSS. There are no text-as-image buttons, nested links, Polaroid frames or catalogue photo collages. The whole banner remains a native link.
+Featured Find now uses explicit dark-surface CSS variables and component-scoped foregrounds rather than conflicting colour utilities on .hf-eyebrow. Its body, metadata, action, price and keyboard focus have explicit contrasting colours. Mobile media uses a bounded aspect ratio instead of a fixed 480px minimum.
 
-Lifestyle scenes are illustrative collection inspiration, not exact products or a claim that every object depicted is sold. A visible sentence below each campaign group explains this distinction. Exact-product photographs and product data remain unchanged on catalogue cards and PDPs. The fourth air-fryer concept is not used.
+## Image versus code
 
-## Typography
+The three existing illustrative scene masters are retained. Native picture/source art direction selects a dedicated 720x600 mobile WebP rather than cropping the desktop bitmap blindly in CSS. scripts/prepare-campaign-art.cjs deterministically creates the three mobile files before development and test/build, with per-scene focal regions and an integrity/size manifest. It uses only versioned local assets and does not contact an image provider. Source and mobile image candidates remain lazy; the browser selects one picture source.
 
-`lib/storefront/fonts.ts` uses next/font/google for Inter (UI) and Cormorant Garamond (editorial). Next hosts the resulting font resources; shoppers do not request fonts from Google. Both use swap. The editorial face is not preloaded and is applied only to campaign headings and display/section headings under .hf-editorial-home. Navigation, descriptions, price, filters, product titles, quantity and checkout remain sans-serif. Brand SVG remains untouched. Explicit --hf-font-ui / --hf-font-editorial tokens live in campaign-typography.css; the existing global stylesheet is not replaced.
+Titles, copy, actions, accessible names, prices/promises and icons remain live HTML/CSS/SVG. Desktop feature labels are campaign-specific; the secondary feature row is hidden on mobile to avoid repeating filler and increasing scrolling.
 
-## Responsive art and delivery
+## Art limitation, not silently marked complete
 
-Desktop places real text over the quiet left side, fading into a single scene at the right; the under-20 campaign has a wide 8:3 frame. Mobile places readable copy above a dedicated image area with a top fade, so neither headline nor CTA is cropped. Intermediate tablet widths use one column. Three local WebP masters are lazy-loaded through Next Image with responsive sizes: kitchen 16,114 bytes, storage 28,838 bytes, budget 17,734 bytes (62,686 bytes combined, before Next image derivatives). The existing small botanical texture is reused separately. No new browser JavaScript, external image host, runtime font service or image-generation dependency is added.
+The approved generated scenes are collection inspiration, not photographs of the exact models sold. This pass does not claim to have re-photographed or composited the actual catalogue products. The visible illustration disclosure remains. The live Woo catalogue was read to review the available media; the displayed concept objects differ from actual models, so final product-faithful lifestyle art remains a separate asset-production task. Exact product photographs on cards and PDPs are not replaced. No new reviews, sales claims, operational promises, stock or pricing changes are made.
 
-## Commerce integrity
+## Verification
 
-Campaign availability and destinations remain based on the live catalogue. Under-20 uses only in-stock, purchasable GBP products whose full listed range is strictly below 20.00. Empty groups render nothing. /collections/under-20 is unchanged. No checkout/payment, WooCommerce records, product availability, reviews or prices are modified.
+npm run test:home prepares mobile WebPs and runs deterministic price, availability, source selection, accessible structure, text/image separation, font scope and TSX checks. Existing PDP and checkout suites remain in prebuild.
 
-## Validation
-
-`npm run test:home` runs 24 deterministic content, routing, price boundary, image size/format, accessible component structure, layering, typography scope and syntax checks. It is included in prebuild alongside the existing PDP and checkout suites. Local Chromium layout checks cover 320, 360, 390, 540, 768, 1024, 1100, 1440 and 1920px plus tab focus order, using the actual campaign component output and stylesheet. Local offline screenshots use an installed serif fallback; they are not a live Next hydration test, an assertion of the final downloaded font or a physical-device test. Vercel build and deployed DOM/CSS checks are separate release checks.
+The editorial-qa workflow builds the actual Next app with read-only local commerce fixtures and runs Chromium at 320, 360, 390, 540, 768, 1024, 1100, 1440 and 1920px. Tests require loaded Cormorant/Inter FontFace records, not just a fallback CSS declaration, verify picture currentSrc, text bounds, focus and dark-label contrast, and compare Home/checkout font preloads. Results and screenshots are CI artifacts. These are not physical-device tests, production checkout tests, or evidence that the illustrative scene objects are the sold products.

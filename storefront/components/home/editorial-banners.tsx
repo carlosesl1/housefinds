@@ -1,16 +1,32 @@
-import Image from 'next/image'
+import { getImageProps } from 'next/image'
 import Link from 'next/link'
 import { ArrowRightIcon, HomeIcon, SparklesIcon } from '@heroicons/react/24/outline'
 import type { WooProduct } from '@/lib/woocommerce/types'
 import { getHomePromotions, type HomePromotion } from '@/lib/storefront/home-promotions'
 import styles from './editorial-banners.module.css'
 
-// Approved lifestyle scenes, cropped to remove campaign text and UI. They are
-// collection inspiration, never a replacement for exact-product gallery media.
+// Campaign art remains illustrative. Exact-product media stays on cards/PDPs.
 const CAMPAIGN_ART: Record<HomePromotion['id'], string> = {
-  kitchen: '/home/banners/kitchen-scene.webp',
-  storage: '/home/banners/storage-scene.webp',
-  'under-20': '/home/banners/budget-scene.webp',
+  kitchen: 'kitchen', storage: 'storage', 'under-20': 'budget',
+}
+
+function CampaignScene({ id, wide }: { id: HomePromotion['id']; wide: boolean }) {
+  const name = CAMPAIGN_ART[id]
+  const { props: desktop } = getImageProps({
+    src: `/home/banners/${name}-scene.webp`, alt: '', width: 960, height: 720,
+    loading: 'lazy', className: styles.scene,
+    sizes: wide ? '(max-width: 1536px) 59vw, 874px' : '(max-width: 1099px) 65vw, 480px',
+  })
+  const { props: mobile } = getImageProps({
+    src: `/home/banners/mobile/${name}-scene.webp`, alt: '', width: 720, height: 600,
+    loading: 'lazy', sizes: 'calc(100vw - 32px)',
+  })
+  return (
+    <picture className={styles.picture}>
+      <source media="(max-width: 767px)" srcSet={mobile.srcSet} sizes={mobile.sizes} />
+      <img {...desktop} decoding="async" />
+    </picture>
+  )
 }
 
 export function EditorialBanners({ products, placement = 'discovery' }: {
@@ -20,34 +36,18 @@ export function EditorialBanners({ products, placement = 'discovery' }: {
   const banners = getHomePromotions(products, placement)
   if (!banners.length) return null
   const wide = placement === 'curated'
-
   return (
     <div className={styles.wrapper}>
-      <div
-        className={`${styles.group} ${wide ? styles.curated : styles.discovery}`}
-        role="group"
-        aria-label={wide ? 'Shop by budget' : 'Ideas for everyday home life'}
-        data-promotion-group={placement}
-      >
+      <div className={`${styles.group} ${wide ? styles.curated : styles.discovery}`}
+        role="group" aria-label={wide ? 'Shop by budget' : 'Ideas for everyday home life'}
+        data-promotion-group={placement}>
         {banners.map((banner) => (
-          <Link
-            key={banner.id}
-            href={banner.href}
+          <Link key={banner.id} href={banner.href}
             className={`${styles.banner} ${wide ? styles.wide : styles.spotlight}`}
             data-promotion={banner.id}
-            aria-labelledby={`campaign-${banner.id}-title campaign-${banner.id}-action`}
-          >
+            aria-labelledby={`campaign-${banner.id}-title campaign-${banner.id}-action`}>
             <div className={styles.art} aria-hidden="true" data-campaign-layer="image">
-              <Image
-                src={CAMPAIGN_ART[banner.id]}
-                alt=""
-                fill
-                loading="lazy"
-                sizes={wide
-                  ? '(max-width: 767px) calc(100vw - 32px), (max-width: 1536px) 65vw, 960px'
-                  : '(max-width: 767px) calc(100vw - 32px), (max-width: 1099px) 65vw, 480px'}
-                className={styles.scene}
-              />
+              <CampaignScene id={banner.id} wide={wide} />
             </div>
             <div className={styles.copy} data-campaign-layer="content">
               <p className={styles.eyebrow}>{banner.eyebrow}</p>
@@ -60,8 +60,8 @@ export function EditorialBanners({ products, placement = 'discovery' }: {
               </span>
               {!wide && (
                 <div className={styles.benefits}>
-                  <span><HomeIcon aria-hidden="true" />A more organised home</span>
-                  <span><SparklesIcon aria-hidden="true" />Everyday essentials</span>
+                  <span><HomeIcon aria-hidden="true" />{banner.id === 'kitchen' ? 'For everyday cooking' : 'More room at home'}</span>
+                  <span><SparklesIcon aria-hidden="true" />{banner.id === 'kitchen' ? 'Practical prep tools' : 'Simple organisation'}</span>
                 </div>
               )}
             </div>
