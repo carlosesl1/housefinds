@@ -29,7 +29,7 @@ export default async function UnderTwentyCollection() {
         </nav>
         <header className="mb-9 mt-9 max-w-2xl">
           <p className="hf-eyebrow text-[var(--hf-brand)]">Small upgrades, thoughtful prices</p>
-          <h1 className="hf-editorial-title mt-4 text-[clamp(2.5rem,5vw,4.5rem)]">Useful finds <span className="text-[var(--hf-brand)]">under £20.</span></h1>
+          <h1 className="hf-editorial-title hf-editorial-collection-title mt-4">Useful finds <span className="text-[var(--hf-brand)]">under £20.</span></h1>
           <p className="mt-4 text-base leading-7 text-black/65">Practical home upgrades priced below £20. Every listed option of each product in this edit is under £20, with free standard UK delivery.</p>
         </header>
         {unavailable ? (

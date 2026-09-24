@@ -29,12 +29,37 @@ async function waitFont(page, selector, fragment) {
   assert.ok(report.faces.some(face => face.status === 'loaded'), `Fallback-only font: ${JSON.stringify(report)}`)
   return report
 }
+async function checkEditorialScale(page) {
+  const report = await page.locator('.hf-editorial-scope').evaluate(scope => {
+    const titles = [...scope.querySelectorAll('.hf-display, .hf-section-title, .hf-editorial-title, [data-promotion] h3')]
+    const ui = [...scope.querySelectorAll('p, button, .hf-button-primary, .hf-button-secondary, .hf-button-tertiary, [class*="price"]')]
+    const sizes = elements => elements.map(el => parseFloat(getComputedStyle(el).fontSize))
+    const tuned = sizes(titles)
+    const uiTuned = sizes(ui)
+    const scale = parseFloat(getComputedStyle(scope).getPropertyValue('--hf-editorial-scale'))
+    scope.style.setProperty('--hf-editorial-scale', '1')
+    const original = sizes(titles)
+    const uiOriginal = sizes(ui)
+    scope.style.removeProperty('--hf-editorial-scale')
+    const overflow = titles.filter(el => {
+      const r = el.getBoundingClientRect()
+      return r.left < -1 || r.right > innerWidth + 1 || el.scrollWidth > el.clientWidth + 1
+    }).map(el => el.textContent.trim())
+    return { scale, headings: titles.map((el, i) => ({ text: el.textContent.trim(), original: original[i], tuned: tuned[i] })), uiTuned, uiOriginal, overflow }
+  })
+  assert.equal(report.scale, .9, 'Editorial scale token is missing')
+  assert.ok(report.headings.length > 0)
+  for (const heading of report.headings) assert.ok(Math.abs(heading.tuned - heading.original * .9) < .05, `Wrong Lora size: ${JSON.stringify(heading)}`)
+  assert.deepEqual(report.uiTuned, report.uiOriginal, 'Editorial tuning changed UI sizes')
+  assert.deepEqual(report.overflow, [], 'Editorial heading overflow')
+  return report.headings
+}
 function luminance(rgb) {
   const channel = x => { const c = x / 255; return c <= .04045 ? c / 12.92 : ((c + .055) / 1.055) ** 2.4 }
   return .2126 * channel(rgb[0]) + .7152 * channel(rgb[1]) + .0722 * channel(rgb[2])
 }
 try {
-  for (const width of [320, 360, 390, 540, 768, 1024, 1100, 1440, 1920]) {
+  for (const width of [320, 360, 390, 540, 640, 767, 768, 1024, 1099, 1100, 1440, 1920]) {
     const context = await contextFor(width)
     const page = await context.newPage()
     const errors = []
@@ -44,6 +69,7 @@ try {
     const heroFont = await waitFont(page, 'main h1', 'lora')
     await waitFont(page, '#featured-find-title', 'lora')
     await waitFont(page, '#featured-find [class*="price"]', 'inter')
+    const headingSizes = await checkEditorialScale(page)
     assert.equal(await page.locator('[data-promotion]').count(), 3)
     for (const banner of await page.locator('[data-promotion]').all()) {
       await banner.scrollIntoViewIfNeeded()
@@ -79,11 +105,12 @@ try {
     const ratio = (Math.max(luminance(fg), luminance(bg)) + .05) / (Math.min(luminance(fg), luminance(bg)) + .05)
     assert.ok(ratio >= 4.5, `Dark eyebrow contrast ${ratio}`)
     if ([390, 1440].includes(width)) {
+      await page.locator('main > section').first().screenshot({ path: path.join(output, `hero-${width}.png`) })
       await page.locator('[data-promotion-group="discovery"]').screenshot({ path: path.join(output, `campaigns-${width}.png`) })
       await page.locator('#featured-find').screenshot({ path: path.join(output, `featured-${width}.png`) })
     }
     assert.deepEqual(errors, [], 'Next hydration/client errors')
-    checks.push({ name: `Home ${width}px`, result: 'pass', editorial: heroFont.computed, loadedFaces: heroFont.faces, darkEyebrowContrast: Number(ratio.toFixed(2)) })
+    checks.push({ name: `Home ${width}px`, result: 'pass', editorial: heroFont.computed, loadedFaces: heroFont.faces, headingSizes, darkEyebrowContrast: Number(ratio.toFixed(2)) })
     await context.close()
   }
   const context = await contextFor(1440)
@@ -104,8 +131,9 @@ try {
   assert.ok(editorialUrls.some(url => homePreloads.includes(url)), 'Home editorial font is not preloaded')
   await page.goto(`${base}/collections/under-20`, { waitUntil: 'networkidle' })
   await waitFont(page, 'main h1', 'lora')
+  const collectionSizes = await checkEditorialScale(page)
   await page.screenshot({ path: path.join(output, 'collection-1440.png'), fullPage: false })
-  checks.push({ name: 'Collection heading and Home font preload', result: 'pass' })
+  checks.push({ name: 'Collection heading and Home font preload', result: 'pass', headingSizes: collectionSizes })
   await context.close()
   const checkoutContext = await contextFor(390)
   const checkout = await checkoutContext.newPage()
