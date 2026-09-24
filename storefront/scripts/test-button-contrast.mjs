@@ -111,6 +111,11 @@ try {
     await checkWhite(page, checkout, `Cart drawer ${width}`)
     // Reproduce the original failure: an unlayered reset beats text-white.
     const regression = await page.addStyleTag({ content: 'a { color: inherit; }' })
+    await settle(page)
+    await page.waitForFunction(() => {
+      const link = document.querySelector('[role="dialog"] a[href="/checkout"]')
+      return link && getComputedStyle(link).color !== 'rgb(255, 255, 255)'
+    })
     assert.notEqual(await checkout.evaluate(el => getComputedStyle(el).color), white, 'Regression probe must reproduce dark text')
     await regression.evaluate(el => el.remove()); await settle(page)
     await checkWhite(page, checkout, `Cart drawer restored ${width}`)
