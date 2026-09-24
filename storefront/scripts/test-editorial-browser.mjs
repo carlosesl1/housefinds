@@ -41,8 +41,8 @@ try {
     page.on('pageerror', error => errors.push(error.message))
     const response = await page.goto(base, { waitUntil: 'networkidle' })
     assert.equal(response.status(), 200)
-    const heroFont = await waitFont(page, 'main h1', 'cormorant')
-    await waitFont(page, '#featured-find-title', 'cormorant')
+    const heroFont = await waitFont(page, 'main h1', 'lora')
+    await waitFont(page, '#featured-find-title', 'lora')
     await waitFont(page, '#featured-find [class*="price"]', 'inter')
     assert.equal(await page.locator('[data-promotion]').count(), 3)
     for (const banner of await page.locator('[data-promotion]').all()) {
@@ -64,7 +64,7 @@ try {
       })
       assert.deepEqual(geometry.failures, [], `Overflow at ${width}: ${geometry.id}`)
       assert.ok(geometry.loaded)
-      assert.ok(geometry.font.toLowerCase().includes('cormorant'))
+      assert.ok(geometry.font.toLowerCase().includes('lora'))
       assert.equal(decodeURIComponent(geometry.src).includes('/mobile/'), width < 768)
       if (width < 768) assert.ok(geometry.below, `Art covers text at ${width}`)
       await banner.focus()
@@ -90,7 +90,7 @@ try {
   const page = await context.newPage()
   await page.goto(base, { waitUntil: 'networkidle' })
   const homePreloads = await page.locator('link[rel="preload"][as="font"]').evaluateAll(nodes => nodes.map(n => new URL(n.href).pathname))
-  const editorialFamily = (await waitFont(page, 'main h1', 'cormorant')).computed.split(',')[0].replace(/["']/g, '').trim()
+  const editorialFamily = (await waitFont(page, 'main h1', 'lora')).computed.split(',')[0].replace(/["']/g, '').trim()
   const editorialUrls = await page.evaluate(family => {
     const out = []
     for (const sheet of document.styleSheets) for (const rule of (() => { try { return [...sheet.cssRules] } catch { return [] } })()) {
@@ -103,7 +103,7 @@ try {
   }, editorialFamily)
   assert.ok(editorialUrls.some(url => homePreloads.includes(url)), 'Home editorial font is not preloaded')
   await page.goto(`${base}/collections/under-20`, { waitUntil: 'networkidle' })
-  await waitFont(page, 'main h1', 'cormorant')
+  await waitFont(page, 'main h1', 'lora')
   await page.screenshot({ path: path.join(output, 'collection-1440.png'), fullPage: false })
   checks.push({ name: 'Collection heading and Home font preload', result: 'pass' })
   await context.close()
@@ -113,7 +113,7 @@ try {
   const checkoutPreloads = await checkout.locator('link[rel="preload"][as="font"]').evaluateAll(nodes => nodes.map(n => new URL(n.href).pathname))
   const checkoutFonts = await checkout.evaluate(() => performance.getEntriesByType('resource').filter(r => r.name.includes('.woff')).map(r => new URL(r.name).pathname))
   assert.ok(editorialUrls.every(url => !checkoutPreloads.includes(url) && !checkoutFonts.includes(url)), 'Checkout downloaded the editorial font')
-  checks.push({ name: 'Checkout does not preload or download Cormorant', result: 'pass' })
+  checks.push({ name: 'Checkout does not preload or download Lora', result: 'pass' })
   await checkoutContext.close()
 } catch (error) {
   allFailures.push(error.stack || String(error))
