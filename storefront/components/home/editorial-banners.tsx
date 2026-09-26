@@ -1,6 +1,6 @@
 import { getImageProps } from 'next/image'
 import Link from 'next/link'
-import { ArrowRightIcon, HomeIcon, SparklesIcon } from '@heroicons/react/24/outline'
+import { ArrowRightIcon } from '@heroicons/react/24/outline'
 import type { WooProduct } from '@/lib/woocommerce/types'
 import { getHomePromotions, type HomePromotion } from '@/lib/storefront/home-promotions'
 import styles from './editorial-banners.module.css'
@@ -15,7 +15,7 @@ function CampaignScene({ id, wide }: { id: HomePromotion['id']; wide: boolean })
   const { props: desktop } = getImageProps({
     src: `/home/banners/${name}-scene.webp`, alt: '', width: 960, height: 720,
     loading: 'lazy', className: styles.scene,
-    sizes: wide ? '(max-width: 1536px) 59vw, 874px' : '(max-width: 1099px) 65vw, 480px',
+    sizes: wide ? '(max-width: 767px) 100vw, 55vw' : '(max-width: 767px) 100vw, 50vw',
   })
   const { props: mobile } = getImageProps({
     src: `/home/banners/mobile/${name}-scene.webp`, alt: '', width: 720, height: 600,
@@ -58,12 +58,6 @@ export function EditorialBanners({ products, placement = 'discovery' }: {
               <span id={`campaign-${banner.id}-action`} className={`hf-button-primary ${styles.action}`}>
                 {banner.action}<ArrowRightIcon aria-hidden="true" />
               </span>
-              {!wide && (
-                <div className={styles.benefits}>
-                  <span><HomeIcon aria-hidden="true" />{banner.id === 'kitchen' ? 'For everyday cooking' : 'More room at home'}</span>
-                  <span><SparklesIcon aria-hidden="true" />{banner.id === 'kitchen' ? 'Practical prep tools' : 'Simple organisation'}</span>
-                </div>
-              )}
             </div>
           </Link>
         ))}

@@ -41,7 +41,7 @@ export default async function UnderTwentyCollection() {
         ) : products.length ? (
           <>
             <p className="mb-5 text-sm text-black/65">{products.length} useful find{products.length === 1 ? '' : 's'}</p>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 xl:grid-cols-4">
+            <div className="hf-product-grid">
               {products.map((product) => <ProductCard key={product.id} product={product} />)}
             </div>
           </>

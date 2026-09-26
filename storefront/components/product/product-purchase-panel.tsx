@@ -246,7 +246,7 @@ export function ProductPurchasePanel({ product, variations = [], dark = false }:
 
   const labelClass = dark ? 'text-white/62' : 'text-black/52'
   const optionIdle = dark ? 'border-white/15 bg-white/[.04] text-white/78 hover:bg-white/[.08]' : 'border-black/10 bg-white text-black/68 hover:border-[#557562]/45 hover:bg-[#fbfcfa]'
-  const optionActive = dark ? 'border-[#a8c6b0] bg-[#dce8df] text-[#172018]' : 'border-[#557562] bg-[#e4ede7] text-[#294b3a] shadow-[0_5px_16px_rgba(53,95,74,.08)]'
+  const optionActive = dark ? 'border-[#a8c6b0] bg-[#dce8df] text-[#172018]' : 'border-[#557562] bg-[#e4ede7] text-[#294b3a] '
 
   async function handleAdd() {
     if (!canAdd) return
@@ -356,14 +356,14 @@ export function ProductPurchasePanel({ product, variations = [], dark = false }:
     <div ref={panelRef} className="space-y-6" id="purchase-panel">
       <div
         aria-live="polite"
-        className={`rounded-[var(--hf-radius-md)] border p-4 sm:p-5 ${dark ? 'border-white/10 bg-white/[.045]' : 'border-black/[.065] bg-white shadow-[0_12px_34px_rgba(34,48,39,.045)]'}`}
+        className={`hf-price-block ${dark ? 'text-white' : 'text-[var(--hf-ink)]'}`}
       >
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className={`text-[11px] font-semibold uppercase tracking-[.16em] ${labelClass}`}>{selectedVariation ? 'Selected price' : 'Price'}</p>
             <p className="mt-1.5 text-[2.15rem] font-semibold leading-none tracking-[-.04em]">{displayPrice}</p>
           </div>
-          <span className={`rounded-full px-3 py-1.5 text-[11px] font-semibold ${isInStock ? (dark ? 'bg-[#a8c6b0]/15 text-[#cfe1d3]' : 'bg-[#e4ede7] text-[#355f4a]') : (dark ? 'bg-white/10 text-white/65' : 'bg-black/5 text-black/50')}`}>
+          <span className={`hf-availability ${isInStock ? (dark ? 'text-[#cfe1d3]' : 'text-[var(--hf-brand)]') : (dark ? 'text-white/65' : 'text-[var(--hf-ink-soft)]')}`}>
             {isInStock ? 'Available to order' : 'Out of stock'}
           </span>
         </div>
@@ -385,7 +385,7 @@ export function ProductPurchasePanel({ product, variations = [], dark = false }:
               const forces = Array.from(new Map(colourForce.slice().sort((a, b) => a.forceGrams - b.forceGrams).map((entry) => [entry.force, entry])).values()).map((entry) => entry.force)
 
               return (
-                <div key={attribute.name} className={`space-y-5 rounded-[var(--hf-radius-md)] border p-4 sm:p-5 ${dark ? 'border-white/10 bg-white/[.025]' : 'border-black/[.06] bg-[#fbfcfa]'}`}>
+                <div key={attribute.name} className="hf-purchase-options-group space-y-5">
                   <div className="flex items-center justify-between gap-4">
                     <p className={`text-sm font-semibold ${dark ? 'text-white/86' : 'text-[#172018]'}`}>Choose your option</p>
                     {!selections[attribute.name] && <span className={`text-xs ${labelClass}`}>Colour + force</span>}
@@ -450,7 +450,7 @@ export function ProductPurchasePanel({ product, variations = [], dark = false }:
               const current = compoundSelections[attribute.name] || {}
               const dimensions: CompoundDimension[] = ['pack', 'capacity', 'colour']
               return (
-                <div key={attribute.name} className={`space-y-5 rounded-[var(--hf-radius-md)] border p-4 sm:p-5 ${dark ? 'border-white/10 bg-white/[.025]' : 'border-black/[.06] bg-[#fbfcfa]'}`}>
+                <div key={attribute.name} className="hf-purchase-options-group space-y-5">
                   <div className="flex items-center justify-between gap-4">
                     <p className={`text-sm font-semibold ${dark ? 'text-white/86' : 'text-[#172018]'}`}>Choose your option</p>
                     {!selections[attribute.name] && <span className={`text-xs ${labelClass}`}>3 choices</span>}
@@ -523,30 +523,30 @@ export function ProductPurchasePanel({ product, variations = [], dark = false }:
             <button type="button" className="grid size-12 place-items-center disabled:opacity-35" disabled={quantity >= maximum} onClick={() => setQuantity((value) => Math.min(maximum, value + step))} aria-label="Increase quantity"><PlusIcon className="size-4" /></button>
           </div>
 
-          <button type="button" disabled={!canAdd} onClick={() => void handleAdd()} className={`inline-flex h-14 items-center justify-center gap-2 rounded-[var(--hf-radius-pill)] px-7 font-semibold shadow-[0_12px_28px_rgba(53,95,74,.16)] transition disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none ${dark ? 'bg-[#dce8df] text-[#172018] hover:bg-white' : 'bg-[var(--hf-brand)] text-white hover:bg-[var(--hf-brand-hover)]'}`}>
+          <button type="button" disabled={!canAdd} onClick={() => void handleAdd()} className={`inline-flex h-14 items-center justify-center gap-2 rounded-[var(--hf-radius-pill)] px-7 font-semibold  transition disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none ${dark ? 'bg-[#dce8df] text-[#172018] hover:bg-white' : 'bg-[var(--hf-brand)] text-white hover:bg-[var(--hf-brand-hover)]'}`}>
             <ShoppingBagIcon className="size-4.5" />
             {loading ? 'Adding…' : !isInStock ? 'Out of stock' : variableAttributes.length && !allSelected ? 'Choose options' : 'Add to cart'}
           </button>
         </div>
       </div>
 
-      <div className={`grid gap-2 border-t pt-4 text-xs leading-5 sm:grid-cols-3 ${dark ? 'border-white/10' : 'border-black/[.07]'}`}>
-        <div className={`flex items-start gap-2.5 rounded-[var(--hf-radius-sm)] p-3 ${dark ? 'bg-white/[.035] text-white/60' : 'bg-[#f7f8f5] text-black/52'}`}>
+      <div className={`hf-purchase-service ${dark ? 'text-white/75' : 'text-[var(--hf-ink-soft)]'}`}>
+        <div className={`flex items-start gap-2.5 ${dark ? 'bg-white/[.035] text-white/60' : 'text-[var(--hf-ink-soft)]'}`}>
           <TruckIcon className="mt-0.5 size-4 shrink-0" />
           <span><strong className={dark ? 'text-white/82' : 'text-black/70'}>Delivery</strong><br />Free UK · around 14 days</span>
         </div>
-        <Link href="/returns" className={`flex items-start gap-2.5 rounded-[var(--hf-radius-sm)] p-3 transition hover:underline ${dark ? 'bg-white/[.035] text-white/60' : 'bg-[#f7f8f5] text-black/52'}`}>
+        <Link href="/returns" className={`flex items-start gap-2.5 transition hover:underline ${dark ? 'bg-white/[.035] text-white/60' : 'text-[var(--hf-ink-soft)]'}`}>
           <ArrowUturnLeftIcon className="mt-0.5 size-4 shrink-0" />
           <span><strong className={dark ? 'text-white/82' : 'text-black/70'}>Returns</strong><br />Free 14-day returns</span>
         </Link>
-        <div className={`flex items-start gap-2.5 rounded-[var(--hf-radius-sm)] p-3 ${dark ? 'bg-white/[.035] text-white/60' : 'bg-[#f7f8f5] text-black/52'}`}>
+        <div className={`flex items-start gap-2.5 ${dark ? 'bg-white/[.035] text-white/60' : 'text-[var(--hf-ink-soft)]'}`}>
           <ShieldCheckIcon className="mt-0.5 size-4 shrink-0" />
           <span><strong className={dark ? 'text-white/82' : 'text-black/70'}>Payment</strong><br />Secure card checkout</span>
         </div>
       </div>
 
       {mounted && showSticky && createPortal(
-        <div className="fixed inset-x-0 bottom-0 z-[140] border-t border-black/10 bg-[#fbfaf7]/96 p-3 shadow-[0_-12px_36px_rgba(20,30,24,.08)] backdrop-blur-xl lg:hidden" style={{ paddingBottom: 'max(.75rem, env(safe-area-inset-bottom))' }}>
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-black/10 bg-[#fbfaf7]/96 p-3 shadow-[0_-12px_36px_rgba(20,30,24,.08)] backdrop-blur-xl lg:hidden" style={{ paddingBottom: 'max(.75rem, env(safe-area-inset-bottom))' }}>
           <div className="mx-auto flex max-w-xl items-center gap-3">
             <div className="min-w-0 flex-1"><p className="text-sm font-semibold text-[#172018]">{displayPrice}</p><p className="truncate text-[11px] text-black/55">{selectionSummary || (variableAttributes.length ? 'Choose product options' : 'Free UK delivery')}</p></div>
             <button type="button" disabled={!isPurchasable || !isInStock || loading || (allSelected && !selectionIsValid)} onClick={handleStickyAction} className="inline-flex h-12 shrink-0 items-center gap-2 rounded-[var(--hf-radius-pill)] bg-[var(--hf-brand)] px-5 text-sm font-semibold text-white disabled:opacity-45"><ShoppingBagIcon className="size-4" />{loading ? 'Adding…' : variableAttributes.length && !allSelected ? 'Choose options' : !isInStock ? 'Out of stock' : 'Add to cart'}</button>

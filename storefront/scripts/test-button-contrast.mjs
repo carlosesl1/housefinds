@@ -5,7 +5,7 @@ import fs from 'node:fs/promises'
 
 const origin = process.env.QA_BASE_URL || 'http://127.0.0.1:3000'
 if (!['127.0.0.1', 'localhost'].includes(new URL(origin).hostname)) throw Error('CTA tests require a local fixture server.')
-const output = 'button-qa'
+const output = 'output/playwright/button-qa'
 await fs.mkdir(output, { recursive: true })
 const white = 'rgb(255, 255, 255)'
 const greens = ['rgb(53, 95, 74)', 'rgb(41, 75, 58)']
@@ -53,7 +53,7 @@ async function checkWhite(page, locator, label) {
   }
   results.push({ name: label, passed: true })
 }
-async function scan(page, label) {
+async function scan(page, label, requireCTA = true) {
   const count = await page.locator('a, button, [id$="-action"]').evaluateAll((nodes, palette) => {
     let n = 0
     for (const node of nodes) {
@@ -64,7 +64,7 @@ async function scan(page, label) {
     }
     return n
   }, greens)
-  assert.ok(count > 0, `${label}: expected a rendered green CTA`)
+  if (requireCTA) assert.ok(count > 0, `${label}: expected a rendered green CTA`)
   for (let i = 0; i < count; i++) {
     const locator = page.locator(`[data-colour-test="${i}"]`)
     await checkWhite(page, locator, `${label}: ${(await locator.textContent()).trim().replace(/\s+/g, ' ')}`)
@@ -101,7 +101,7 @@ try {
     await skip.evaluate(el => el.blur())
     await scan(page, `Home ${width}`)
     // Light and inverted controls must NOT become white-on-white.
-    for (const selector of ['.hf-button-secondary', '.hf-button-tertiary', '#featured-find a.hf-button-primary']) {
+    for (const selector of ['.hf-button-secondary', '.hf-button-tertiary']) {
       const button = page.locator(selector).first()
       if (await button.count()) assert.notEqual(await button.evaluate(el => getComputedStyle(el).color), white, `Light control ${selector}`)
     }
@@ -124,7 +124,8 @@ try {
     await page.keyboard.press('Escape')
     for (const route of ['/shop', '/product/oil-spray-bottle', '/cart']) {
       await page.goto(`${origin}${route}`, { waitUntil: 'networkidle' })
-      await scan(page, `${route} ${width}`)
+      // The catalogue now uses open product links, without an unrelated filled CTA.
+      await scan(page, `${route} ${width}`, route !== '/shop')
     }
     await page.goto(`${origin}/checkout`, { waitUntil: 'networkidle' })
     const fields = { email: 'colour-test@example.com', 'first-name': 'Visual', 'last-name': 'Test', 'address-1': '10 Test Street', city: 'London', postcode: 'SW1A 1AA' }

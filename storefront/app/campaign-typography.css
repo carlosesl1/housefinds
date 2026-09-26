@@ -1,37 +1,21 @@
-/* Functional UI and editorial storytelling are intentionally different layers. */
 :root {
   --hf-font-ui: var(--font-hf-ui, ui-sans-serif);
   --hf-font-editorial: Georgia;
 }
 body { font-family: var(--hf-font-ui), -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; }
-/* Resolve this alias where next/font's page-scoped variable exists, not at root.
-   Lora needs a smaller optical scale than the former Cormorant treatment.
-   Scale real font sizes (including every clamp bound), never transform the UI. */
 .hf-editorial-scope { --hf-font-editorial: var(--font-hf-editorial, Georgia); --hf-editorial-scale: .9; }
 .hf-editorial-title,
-.hf-editorial-home .hf-display,
-.hf-editorial-home .hf-section-title {
+.hf-serif {
   font-family: var(--hf-font-editorial), Georgia, serif;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: -.035em;
-  line-height: 1.05;
+  line-height: 1.12;
   text-wrap: balance;
 }
-/* The hero's implicit grid must be allowed to shrink on narrow screens;
-   otherwise its search/form min-content width can push the title off-screen. */
-.hf-editorial-home > section:first-child > .hf-container > div { min-width: 0; }
-.hf-editorial-home .hf-display {
-  min-width: 0;
-  max-width: min(15ch, 100%);
-  font-size: calc(clamp(3.6rem, 6.1vw, 6.1rem) * var(--hf-editorial-scale, 1));
-}
-.hf-editorial-home .hf-section-title {
-  font-size: calc(clamp(2.65rem, 4.1vw, 4.5rem) * var(--hf-editorial-scale, 1));
-}
-.hf-editorial-collection-title {
-  font-size: calc(clamp(2.5rem, 5vw, 4.5rem) * var(--hf-editorial-scale, 1));
-}
-@media (max-width: 640px) {
-  .hf-editorial-home .hf-display { font-size: calc(clamp(3.2rem, 13.4vw, 4.6rem) * var(--hf-editorial-scale, 1)); }
-  .hf-editorial-home .hf-section-title { font-size: calc(clamp(2.4rem, 10vw, 3.25rem) * var(--hf-editorial-scale, 1)); }
+.hf-editorial-home .hf-display,
+.hf-editorial-home .hf-section-title { font-family: var(--hf-font-ui), Arial, sans-serif; font-weight: 600; letter-spacing: -.045em; line-height: 1.1; text-wrap: balance; }
+.hf-editorial-home .hf-section-title { font-size: clamp(28px, 2.8vw, 40px); }
+.hf-editorial-collection-title { font-size: calc(clamp(2.5rem, 4vw, 3.5rem) * var(--hf-editorial-scale, 1)); }
+@media (max-width: 767px) {
+  .hf-editorial-home .hf-section-title { font-size: 28px; }
 }

@@ -22,25 +22,25 @@ export function ProductReviewHighlights({ products, reviews }: { products: WooPr
   if (visible.length < 2) return null
 
   return (
-    <section className="bg-[#172018] px-6 py-24 text-white lg:px-10 lg:py-32">
-      <div className="mx-auto max-w-[1500px]">
-        <div className="grid gap-10 lg:grid-cols-[.7fr_1.3fr] lg:gap-16">
+    <section className="hf-feedback hf-section">
+      <div className="hf-container">
+        <div className="grid gap-8 lg:grid-cols-[.8fr_1.2fr] lg:gap-16">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[.28em] text-[#a8c6b0]">Product feedback</p>
-            <h2 className="mt-5 text-[clamp(3.4rem,5vw,6rem)] font-semibold leading-[.9] tracking-[-.06em]">Real experiences<br /><span className="text-[#9bb6a3]">with the products.</span></h2>
-            <p className="mt-6 max-w-md text-sm leading-7 text-white/48">Feedback may include reviews of the same product collected on third-party marketplaces as well as reviews submitted directly to Housefinds.</p>
+            <p className="hf-eyebrow">Product feedback</p>
+            <h2 className="hf-section-title mt-4">Real experiences<br /><span>with the products.</span></h2>
+            <p className="hf-section-intro">Feedback may include reviews of the same product collected on third-party marketplaces as well as reviews submitted directly to Housefinds.</p>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-6">
             {visible.map(({ review, product }) => (
-              <Link key={review.id} href={`/product/${storefrontProductSlug(product!)}#reviews`} className="flex min-h-[330px] flex-col justify-between rounded-[28px] border border-white/10 bg-white/[.055] p-6 transition hover:-translate-y-1 hover:bg-white/[.08]">
+              <Link key={review.id} href={`/product/${storefrontProductSlug(product!)}#reviews`} className="border-t border-[var(--hf-border-strong)] pt-5">
                 <div>
                   <div className="tracking-[.08em] text-[#d5b074]">{'★'.repeat(Math.max(0, Math.min(5, Math.round(review.rating))))}</div>
-                  <p className="mt-5 line-clamp-6 text-[15px] leading-7 text-white/72">“{stripHtml(review.review)}”</p>
+                  <p className="mt-3 line-clamp-6 text-[15px] leading-7 text-[var(--hf-ink)]">“{stripHtml(review.review)}”</p>
                 </div>
-                <div className="mt-8 border-t border-white/10 pt-5">
-                  <p className="text-sm font-semibold text-white/90">{reviewer(review.reviewer)}</p>
-                  <p className="mt-1 line-clamp-1 text-xs text-white/38">{displayProductName(product!.name)}</p>
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  <p className="text-xs font-semibold">{reviewer(review.reviewer)}</p>
+                  <p className="line-clamp-1 text-xs text-[var(--hf-ink-soft)]">· {displayProductName(product!.name)}</p>
                 </div>
               </Link>
             ))}

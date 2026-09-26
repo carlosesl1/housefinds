@@ -5,6 +5,7 @@ import { Lora } from 'next/font/google'
 export const editorialFont = Lora({
   subsets: ['latin'],
   weight: ['500', '600'],
+  style: ['normal', 'italic'],
   display: 'swap',
   preload: true,
   variable: '--font-hf-editorial',

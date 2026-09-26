@@ -90,7 +90,7 @@ export function ProductGallery({ images, productName, video }: { images: Storefr
     move(dx > 0 ? -1 : 1)
   }
 
-  const arrowClass = 'grid size-11 shrink-0 place-items-center rounded-full border border-black/10 bg-white text-[var(--hf-ink)] shadow-sm transition hover:bg-[var(--hf-brand-soft)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--hf-brand)] motion-reduce:transition-none'
+  const arrowClass = 'grid size-11 shrink-0 place-items-center rounded-[var(--hf-radius-sm)] border border-black/15 bg-white text-[var(--hf-ink)] transition hover:bg-[var(--hf-brand-soft)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--hf-brand)] motion-reduce:transition-none'
 
   function player(isExpanded: boolean) {
     if (!current || current.kind !== 'video') return null
@@ -125,11 +125,11 @@ export function ProductGallery({ images, productName, video }: { images: Storefr
 
   return (
     <>
-      <div className="relative aspect-square overflow-hidden rounded-[var(--hf-radius-lg)] border border-black/[.07] bg-[#efede7] sm:aspect-[4/3]" style={{ touchAction: 'pan-y pinch-zoom' }} onTouchStart={current.kind === 'image' ? onTouchStart : undefined} onTouchEnd={current.kind === 'image' ? onTouchEnd : undefined} onTouchCancel={() => { touchStart.current = null }}>
+      <div className="hf-gallery-stage relative aspect-square overflow-hidden bg-[var(--hf-surface-soft)] sm:aspect-[4/3]" style={{ touchAction: 'pan-y pinch-zoom' }} onTouchStart={current.kind === 'image' ? onTouchStart : undefined} onTouchEnd={current.kind === 'image' ? onTouchEnd : undefined} onTouchCancel={() => { touchStart.current = null }}>
         {current.kind === 'image' ? <>
           <Image key={current.key} src={current.image.src} alt={current.image.alt || `${productName} — ${current.label.toLowerCase()}`} fill priority={active === 0} sizes="(max-width:1023px) calc(100vw - 40px), (max-width:1599px) 52vw, 780px" className="object-contain p-2 sm:p-4" />
           <button ref={openerRef} type="button" onClick={() => { if (suppressClick.current) { suppressClick.current = false; return }; setExpanded(true) }} className="absolute inset-0 z-10 rounded-[var(--hf-radius-lg)] focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[var(--hf-brand)]" aria-label={`Enlarge ${productName}: ${current.label}`}>
-            <span className="absolute right-3 top-3 grid size-11 place-items-center rounded-full border border-black/10 bg-white/95 shadow-sm"><ArrowsPointingOutIcon className="size-5" aria-hidden="true" /></span>
+            <span className="absolute right-3 top-3 grid size-11 place-items-center rounded-[var(--hf-radius-sm)] border border-black/15 bg-white"><ArrowsPointingOutIcon className="size-5" aria-hidden="true" /></span>
           </button>
         </> : player(false)}
       </div>

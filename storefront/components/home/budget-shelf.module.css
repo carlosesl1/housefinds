@@ -1,0 +1,36 @@
+.shelf { padding-block: 0 42px; }
+.layout { display: grid; grid-template-columns: .9fr 3fr; gap: 32px; align-items: stretch; }
+.heading { background: var(--hf-surface-sage); border-radius: 5px; padding: 27px 25px; display: flex; flex-direction: column; align-items: start; }
+.heading > p:first-child { color: var(--hf-brand); font-family: var(--hf-font-editorial), Georgia, serif; font-size: 14px; }
+.heading h2 { font-size: clamp(27px,2.5vw,36px); font-weight: 600; letter-spacing: -.045em; line-height: 1.1; margin-top: 22px; }
+.heading h2 span { color: var(--hf-brand); white-space: nowrap; }
+.heading .description { color: var(--hf-ink-soft); font-size: 12px; line-height: 1.7; margin-top: 18px; max-width: 29ch; }
+.heading a { margin-top: auto; padding-top: 18px; border-bottom: 1px solid var(--hf-brand); font-size: 12px; }
+.products { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 22px; }
+.products :global(.hf-card-media) { aspect-ratio: 1.12; background: var(--hf-surface-soft); }
+.products :global(.hf-card-content) { padding-top: 13px; }
+.products :global(.hf-card-action) { border: 0; padding-inline: 0; border-radius: 0; border-bottom: 1px solid var(--hf-border-strong); background: transparent; margin-top: 8px; }
+.products :global(.hf-card-action:hover) { background: transparent; color: var(--hf-brand); border-color: var(--hf-brand); }
+@media(max-width: 1100px) {
+  .layout { grid-template-columns: 1fr; gap: 24px; }
+  .heading { display: grid; grid-template-columns: 1fr 1fr; column-gap: 32px; align-items: end; }
+  .heading > p:first-child { grid-column: 1; }
+  .heading h2 { grid-column: 1; grid-row: 2 / span 2; margin-top: 12px; }
+  .heading .description { grid-column: 2; grid-row: 2; max-width: none; margin-top: 0; }
+  .heading a { grid-column: 2; grid-row: 3; width: fit-content; margin-top: 10px; padding-top: 0; }
+}
+@media(max-width: 767px) {
+  .shelf { padding-bottom: 30px; }
+  .layout { width: 100%; gap: 20px; }
+  .heading { display: block; padding: 23px; margin-inline: 20px; }
+  .heading > p:first-child { font-size: 13px; }
+  .heading h2 { font-size: 29px; margin-top: 12px; }
+  .heading h2 br { display: none; }
+  .heading h2 span { display: block; margin-top: 3px; }
+  .heading .description { font-size: 12px; max-width: 38ch; margin-top: 12px; }
+  .heading a { margin-top: 10px; }
+  .products { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 63%; overflow-x: auto; gap: 20px; padding: 4px 20px 14px; scroll-snap-type: x proximity; scrollbar-width: thin; scrollbar-color: var(--hf-brand-muted) transparent; }
+  .products > article { scroll-snap-align: start; scroll-margin-inline-start: 20px; }
+  .products :global(.hf-card-content h3), .products :global(.hf-card-price) { font-size: 14px; }
+  .products :global(.hf-card-action) { font-size: 12px; }
+}
