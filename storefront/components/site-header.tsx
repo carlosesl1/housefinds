@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { FormEvent, useEffect, useMemo, useState } from 'react'
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { Bars3Icon, MagnifyingGlassIcon, XMarkIcon, ArrowRightIcon } from '@heroicons/react/24/outline'
 import { CartButton } from '@/components/cart/cart-button'
@@ -32,6 +32,41 @@ export function SiteHeader() {
   const pathname = usePathname()
   const router = useRouter()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const menuToggleRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    const update = () => setScrolled(window.scrollY > 48)
+    update()
+    window.addEventListener('scroll', update, { passive: true })
+    return () => window.removeEventListener('scroll', update)
+  }, [])
+
+  useEffect(() => {
+    if (!menuOpen) return
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    menuRef.current?.querySelector<HTMLButtonElement>('button')?.focus()
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { event.preventDefault(); setMenuOpen(false); return }
+      if (event.key !== 'Tab' || !menuRef.current) return
+      const items = [...menuRef.current.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), input:not([disabled])')]
+      const first = items[0], last = items[items.length - 1]
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus() }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus() }
+    }
+    const desktop = window.matchMedia('(min-width: 1024px)')
+    const closeOnDesktop = () => { if (desktop.matches) setMenuOpen(false) }
+    window.addEventListener('keydown', onKeyDown)
+    desktop.addEventListener('change', closeOnDesktop)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', onKeyDown)
+      desktop.removeEventListener('change', closeOnDesktop)
+      menuToggleRef.current?.focus()
+    }
+  }, [menuOpen])
   const [query, setQuery] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
@@ -93,8 +128,10 @@ export function SiteHeader() {
   }
 
   return (
-    <header className="sticky top-0 z-50 border-b border-black/[.06] bg-[#fbfaf7]/94 backdrop-blur-2xl">
-      <div className="mx-auto flex h-[76px] max-w-[1600px] items-center gap-7 px-5 lg:px-10">
+    <header className={`hf-site-header${scrolled ? ' is-scrolled' : ''}`}>
+      <div className="hf-service-line"><div className="hf-container"><p>Free UK delivery · current estimate around 14 days</p><Link href="/returns">Free 14-day returns on eligible orders</Link></div></div>
+      <div className="hf-header-frame">
+      <div className="hf-container hf-header-main">
         <Link href="/" className="flex shrink-0 items-center" aria-label="Housefinds home">
           <Image
             src="/housefinds-logo.svg"
@@ -106,33 +143,22 @@ export function SiteHeader() {
           />
         </Link>
 
-        <nav className="hidden items-center gap-5 text-[13px] font-semibold lg:flex" aria-label="Shop navigation">
-          {navItems.map((item) => {
-            const active = isActive(item.href)
-            return (
-              <Link key={item.href} href={item.href} className={`relative whitespace-nowrap py-2 transition ${active ? 'text-[#294b3a]' : 'text-black/55 hover:text-black'}`}>
-                {item.label}
-                {active && <span className="absolute inset-x-0 -bottom-1 mx-auto h-0.5 w-5 rounded-full bg-[#557562]" />}
-              </Link>
-            )
-          })}
-        </nav>
 
-        <div className="ml-auto flex items-center gap-2">
-          <form onSubmit={submitSearch} className="relative hidden xl:block" role="search">
-            <label className="flex h-11 min-w-[340px] items-center gap-3 rounded-full border border-black/[.05] bg-black/[.035] px-4 transition focus-within:border-[#557562]/40 focus-within:bg-white focus-within:ring-4 focus-within:ring-[#557562]/10">
-              <MagnifyingGlassIcon className="size-[18px] shrink-0 text-black/45" />
+
+          <form onSubmit={submitSearch} className="hf-header-search relative" role="search">
+            <label className="flex h-11 items-center gap-3 px-4 transition">
               <span className="sr-only">Search products</span>
-              <input value={query} onChange={(event) => setQuery(event.target.value)} onFocus={() => setSearchOpen(true)} onBlur={() => window.setTimeout(() => setSearchOpen(false), 120)} autoComplete="off" placeholder="Search products…" className="min-w-0 flex-1 bg-transparent text-sm text-black outline-none placeholder:text-black/38" />
+              <input value={query} onChange={(event) => setQuery(event.target.value)} onFocus={() => setSearchOpen(true)} onBlur={(event) => { const form = event.currentTarget.form; window.setTimeout(() => { if (!form?.contains(document.activeElement)) setSearchOpen(false) }, 0) }} onKeyDown={(event) => { if (event.key === 'Escape') setSearchOpen(false) }} autoComplete="off" placeholder="Search products…" className="min-w-0 flex-1 bg-transparent text-sm text-black outline-none placeholder:text-black/38" />
             </label>
+            <button type="submit" className="hf-search-submit" aria-label="Submit product search"><MagnifyingGlassIcon className="size-5" aria-hidden="true" /></button>
 
             {searchOpen && (
-              <div className="absolute right-0 top-[52px] w-[440px] overflow-hidden rounded-[var(--hf-radius-lg)] border border-black/[.07] bg-white shadow-[var(--hf-shadow-float)]" onMouseDown={(event) => event.preventDefault()}>
+              <div className="hf-search-results absolute right-0 top-[52px] overflow-hidden rounded-[var(--hf-radius-md)] border border-black/[.07] bg-white shadow-[var(--hf-shadow-float)]" onMouseDown={(event) => event.preventDefault()}>
                 {query.trim().length < 2 ? (
                   <div className="p-5">
                     <p className="text-[10px] font-semibold uppercase tracking-[.22em] text-black/35">Popular searches</p>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      {popularSearches.map((value) => <button key={value} type="button" onClick={() => choosePopularSearch(value)} className="hf-button-tertiary !min-h-9 px-3 py-2 text-xs">{value}</button>)}
+                      {popularSearches.map((value) => <button key={value} type="button" onClick={() => choosePopularSearch(value)} className="hf-button-tertiary !min-h-11 px-3 py-2 text-xs">{value}</button>)}
                     </div>
                     <Link href="/shop" onClick={closeSearch} className="hf-button-tertiary mt-5 w-full !justify-between">Browse all products <ArrowRightIcon className="size-4" /></Link>
                   </div>
@@ -152,7 +178,7 @@ export function SiteHeader() {
                         <div className="px-5 pb-2 pt-4 text-[10px] font-semibold uppercase tracking-[.22em] text-black/35">Suggested products</div>
                         <div className="divide-y divide-black/[.05]">
                           {suggestions.map((suggestion) => (
-                            <Link key={suggestion.id} href={`/product/${suggestion.slug}`} onClick={closeSearch} className="grid grid-cols-[58px_1fr_auto] items-center gap-3 px-4 py-3 transition hover:bg-[#f5f6f2]">
+                            <Link key={suggestion.id} href={`/product/${suggestion.slug}`} onClick={closeSearch} className="hf-search-suggestion grid grid-cols-[58px_1fr_auto] items-center gap-3 px-4 py-3 transition hover:bg-[#f5f6f2]">
                               <div className="relative aspect-square overflow-hidden rounded-xl bg-[#efeee8]">{suggestion.image && <Image src={suggestion.image} alt="" fill sizes="58px" className="object-cover" />}</div>
                               <div className="min-w-0"><p className="truncate text-sm font-semibold text-[#172018]">{suggestion.name}</p><p className="mt-0.5 truncate text-xs text-black/40">{suggestion.tagline}</p></div>
                               <span className="text-sm font-semibold text-[#172018]">{suggestion.price}</span>
@@ -172,21 +198,33 @@ export function SiteHeader() {
             )}
           </form>
 
-          <Link href="/search" className="hf-icon-button !size-10 !border-transparent !bg-transparent !shadow-none hover:!bg-black/5 xl:hidden" aria-label="Search"><MagnifyingGlassIcon className="size-5" /></Link>
+        <div className="hf-header-actions ml-auto flex items-center gap-2">
           <CartButton />
-          <button type="button" onClick={() => setMenuOpen((value) => !value)} className="hf-icon-button !size-10 !shadow-none lg:hidden" aria-expanded={menuOpen} aria-label={menuOpen ? 'Close menu' : 'Open menu'}>{menuOpen ? <XMarkIcon className="size-5" /> : <Bars3Icon className="size-5" />}</button>
+          <button ref={menuToggleRef} type="button" aria-controls="mobile-menu" onClick={() => setMenuOpen((value) => !value)} className="hf-icon-button !shadow-none lg:hidden" aria-expanded={menuOpen} aria-label={menuOpen ? 'Close menu' : 'Open menu'}>{menuOpen ? <XMarkIcon className="size-5" /> : <Bars3Icon className="size-5" />}</button>
         </div>
+        <nav className="hf-header-nav" aria-label="Shop navigation">
+          {navItems.map((item) => (
+            <Link key={item.href} href={item.href} className={`relative whitespace-nowrap py-2 transition ${isActive(item.href) ? 'text-[#294b3a]' : 'text-[var(--hf-ink-soft)] hover:text-black'}`} aria-current={pathname === item.href ? 'page' : undefined}>
+              {item.label}
+            </Link>
+          ))}
+          <Link href="/collections/under-20" className="hf-header-budget">Finds under £20 <ArrowRightIcon className="size-3.5" aria-hidden="true" /></Link>
+        </nav>
+      </div>
+
       </div>
 
       {menuOpen && (
-        <div className="border-t border-black/[.06] bg-[#fbfaf7] px-5 pb-6 pt-4 lg:hidden">
+        <div ref={menuRef} id="mobile-menu" className="hf-mobile-menu" role="dialog" aria-modal="true" aria-labelledby="mobile-menu-title">
+          <div className="hf-mobile-menu-heading"><h2 id="mobile-menu-title">Find your useful bit.</h2><button className="hf-icon-button" type="button" aria-label="Close navigation" onClick={() => setMenuOpen(false)}><XMarkIcon className="size-5" /></button></div>
           <form onSubmit={submitSearch} role="search">
             <label className="flex h-12 items-center gap-3 rounded-[var(--hf-radius-md)] border border-black/10 bg-white px-4 focus-within:border-[#557562]/45 focus-within:ring-4 focus-within:ring-[#557562]/10"><MagnifyingGlassIcon className="size-[18px] text-black/45" /><span className="sr-only">Search products</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search products…" className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-black/35" /></label>
           </form>
-          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">{popularSearches.slice(0, 4).map((value) => <button key={value} type="button" onClick={() => { setMenuOpen(false); choosePopularSearch(value) }} className="hf-button-tertiary !min-h-9 shrink-0 px-3 py-2 text-xs">{value}</button>)}</div>
+          <div className="mt-3 grid grid-cols-2 gap-2">{popularSearches.slice(0, 4).map((value) => <button key={value} type="button" onClick={() => { setMenuOpen(false); choosePopularSearch(value) }} className="hf-button-tertiary !min-h-11 px-3 py-2 text-xs">{value}</button>)}</div>
 
           <nav className="mt-4 grid" aria-label="Mobile shop navigation">
             {navItems.map((item) => <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)} className={`border-b border-black/[.05] py-4 text-base font-semibold ${isActive(item.href) ? 'text-[#355f4a]' : 'text-[#172018]'}`}>{item.label}</Link>)}
+            <Link href="/collections/under-20" onClick={() => setMenuOpen(false)} className="border-b border-black/[.05] py-4 text-base text-[var(--hf-brand)]">Finds under £20</Link>
           </nav>
 
           <div className="mt-5 border-t border-black/[.07] pt-4">

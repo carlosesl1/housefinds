@@ -1,10 +1,14 @@
-name: Brand button contrast QA
+name: Storefront visual and contrast QA
 on:
+  pull_request:
+    branches: [headless-storefront]
+    paths:
+      - 'storefront/**'
+      - '.github/workflows/button-contrast-qa.yml'
   push:
     branches: [fix/brand-button-contrast-20260924, headless-storefront]
     paths:
-      - 'storefront/app/globals.css'
-      - 'storefront/scripts/test-button-contrast.mjs'
+      - 'storefront/**'
       - '.github/workflows/button-contrast-qa.yml'
 permissions:
   contents: read
@@ -29,10 +33,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: npm install --no-audit --no-fund
+      - run: npm ci --no-audit --no-fund
       - run: npm install --no-save --package-lock=false playwright@1.55.1
       - run: npx playwright install --with-deps chromium
-      - name: Build, preserve editorial layout and check CTA colours
+      - name: Build, check responsive merchandising and CTA colours
         run: |
           node scripts/editorial-fixtures.mjs > /tmp/hf-button-fixtures.log 2>&1 &
           FIXTURE_PID=$!
@@ -50,7 +54,7 @@ jobs:
         with:
           name: brand-button-contrast-qa
           path: |
-            storefront/button-qa/
-            storefront/editorial-qa/results.json
+            storefront/output/playwright/button-qa/
+            storefront/output/playwright/editorial-qa/
           if-no-files-found: ignore
           retention-days: 3

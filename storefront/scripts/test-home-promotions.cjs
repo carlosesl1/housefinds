@@ -140,16 +140,15 @@ test('Existing desktop scene masters stay below 80 KB together', () => {
   const total = ['kitchen', 'storage', 'budget'].reduce((sum, id) => sum + fs.statSync(path.join(root, `public/home/banners/${id}-scene.webp`)).size, 0)
   assert.ok(total < 80000)
 })
-test('No repeated benefit rows in mobile presentation', () => {
+test('Category discoveries retain purpose without repeated benefit rows', () => {
   const tree = EditorialBanners({ products: fixtures })
-  assert.match(text(tree), /For everyday cooking/); assert.match(text(tree), /More room at home/)
-  assert.doesNotMatch(text(tree), /A more organised home/)
-  const css = read('components/home/editorial-banners.module.css')
-  assert.match(css, /max-width: 767px[\s\S]*\.benefits \{ display: none;/)
+  assert.match(text(tree), /Practical prep finds for easier everyday cooking/)
+  assert.match(text(tree), /Practical storage and organisation/)
+  assert.doesNotMatch(text(tree), /For everyday cooking|More room at home|A more organised home/)
 })
-test('Layering, reduced motion, focus and store tokens remain', () => {
+test('Image containment, reduced motion, focus and store tokens remain', () => {
   const css = read('components/home/editorial-banners.module.css')
-  for (const s of ['var(--hf-font-editorial)', 'mask-image', 'prefers-reduced-motion', 'focus-visible', 'var(--hf-radius-lg)']) assert.ok(css.includes(s))
+  for (const s of ['var(--hf-font-editorial)', 'object-fit', 'prefers-reduced-motion', 'focus-visible', 'var(--hf-border-strong)']) assert.ok(css.includes(s))
   assert.doesNotMatch(css, /rotate\(|!important/)
 })
 test('Editorial font is page-scoped and preloaded, not in the root layout', () => {
@@ -167,17 +166,43 @@ test('Font alias resolves in the page scope; UI is not overwritten', () => {
   assert.match(css, /body \{ font-family: var\(--hf-font-ui\)/)
   assert.doesNotMatch(css, /(?:^|\n)(?:h1|h2|h3|button|input|header)\s*\{/)
 })
-test('Featured and destination headings share editorial class, prices do not', () => {
-  assert.match(read('components/home/featured-find.tsx'), /id="featured-find-title" className=\{`hf-editorial-title/)
+test('Featured find names the real product; destination keeps editorial type and prices use UI type', () => {
+  assert.match(read('components/home/featured-find.tsx'), /id="featured-find-title" className=\{styles.title\}>\{name\}/)
   assert.match(read('app/collections/under-20/page.tsx'), /<h1 className="hf-editorial-title/)
   assert.match(read('components/home/featured-find.module.css'), /\.price \{[^}]*font-family: var\(--hf-font-ui\)/)
   assert.match(read('components/home/featured-find.module.css'), /\.section \.eyebrow \{ color: var\(--featured-muted\)/)
 })
-test('Promotions keep their approved in-section placement', () => {
+test('All discovery paths remain available after the composition redesign', () => {
   const source = read('app/page.tsx')
-  assert.match(source, /<Hero products=\{products\} \/>\s*<CategoryGrid/)
-  assert.match(source, /<CategoryGrid[^>]*>\s*<EditorialBanners[^>]*placement="curated"[^>]*\/>\s*<\/CategoryGrid>/)
-  assert.match(source, /showcaseProducts\.map[\s\S]*placement="discovery"[\s\S]*<\/section>/)
+  assert.match(source, /<Hero products=\{products\} \/>/)
+  assert.match(source, /<BudgetShelf products=\{budgetProducts\} \/>/)
+  assert.match(source, /<CategoryGrid products=\{products\}/)
+  assert.match(source, /<HomeSelection products=\{products\}/)
+  assert.match(source, /<HomeCampaigns products=\{products\} featuredProduct=\{featuredProduct\}/)
+  assert.match(source, /<HomeClosingBanner products=\{products\}/)
+})
+test('Interactive edits expose only matching products and real category destinations', () => {
+  const { getHomeEdits } = load(path.join(root, 'lib/storefront/home-edits.ts'))
+  const edits = getHomeEdits(fixtures)
+  assert.equal(edits.length, 2)
+  assert.deepEqual(Array.from(edits, edit => edit.slug), ['kitchen-tools', 'space-saving'])
+  for (const edit of edits) {
+    assert.equal(edit.href, `/shop?category=${edit.slug}`)
+    assert.equal(edit.count, 1)
+    assert.equal(edit.products.length, 1)
+    assert.equal(edit.products[0].id, edit.slug === 'kitchen-tools' ? 1 : 2)
+  }
+  assert.equal(getHomeEdits([]).length, 0)
+})
+
+test('Listing photography uses only existing product images, with safe fallback', () => {
+  const { merchandisingImages } = load(path.join(root, 'lib/storefront/merchandising-images.ts'))
+  const images = [{ id: 404, src: '/original.webp' }, { id: 406, src: '/real-alternate.webp' }]
+  const selected = merchandisingImages({ ...fixtures[0], id: 430, images })
+  assert.equal(selected[0], images[1])
+  assert.equal(selected.length, images.length)
+  assert.equal(images[0].id, 404)
+  assert.deepEqual(Array.from(merchandisingImages({ ...fixtures[0], id: 430, images: [images[0]] })), [images[0]])
 })
 for (const filename of ['components/home/editorial-banners.tsx', 'components/home/featured-find.tsx', 'app/page.tsx', 'app/layout.tsx', 'app/collections/under-20/page.tsx', 'lib/storefront/fonts.ts', 'lib/storefront/editorial-font.ts']) {
   test(`TSX syntax: ${filename}`, () => {

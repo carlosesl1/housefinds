@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
+import { editorialFont } from '@/lib/storefront/editorial-font'
 
 export function SiteShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -13,10 +14,10 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <>
+    <div className={`${editorialFont.variable} hf-editorial-scope`}>
       <SiteHeader />
       <div id="main-content" tabIndex={-1}>{children}</div>
       <SiteFooter />
-    </>
+    </div>
   )
 }
