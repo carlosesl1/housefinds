@@ -2,16 +2,16 @@
 
 ## Current result
 
-Stripe remains in test mode. Card decline, the hosted 3DS challenge, deliberate authentication failure and an immediate retry were exercised through localhost against WooCommerce 11.1.0 and Stripe Gateway 11.0.0. The successful challenge did **not** complete the WooCommerce order: the gateway requires its return handler after authentication. End-to-end 3DS completion, refund cleanup for order 495 and the public Vercel purchase are therefore still pending.
+Stripe remains in test mode. Card decline, the hosted 3DS challenge, deliberate authentication failure and an immediate retry were exercised through localhost against WooCommerce 11.1.0 and Stripe Gateway 11.0.0. Order 495 was ultimately paid through a deferred webhook at 02:25:10 UTC, approximately three minutes after the retry. The checkout's bounded wait had already expired. The payment succeeded, but immediate confirmation/receipt/cart recovery after 3DS still needs the prepared gateway-return bridge and another integration test. Public Vercel checkout remains unverified.
 
 | Order | Observed result | Cleanup |
 | --- | --- | --- |
 | 492 | Card ending 0002 declined; retry with 3220 exposed unhandled hosted authentication URL | Cancelled, no paid date or transaction ID |
 | 493 | Sanitized server diagnostics confirmed the gateway's hosted Stripe URL format | Cancelled without completing authentication |
 | 494 | 3DS displayed; deliberate Fail produced a failed Woo order, but the UI incorrectly stayed blocked | Cancelled, no paid date |
-| 495 | Failed 3DS; corrected UI permitted retry in the same tab; Complete accepted on the next challenge | Woo remains pending; finalize through gateway, then refund/restock if captured |
+| 495 | Failed 3DS; corrected UI permitted retry in the same tab; Complete accepted; deferred webhook marked processing | Fully refunded through Stripe test refund 496, with restock requested |
 
-All orders use a fictional customer, one product 452 / variation 456 (20 × 30cm), GBP 11.90 and free UK shipping. Each has a private test-only note forbidding DSers purchase or fulfilment. DSers payments remain manual. No real card, live charge or supplier purchase was used. Do not resubmit order 495's checkout or manually mark it paid to make the test pass.
+All orders use a fictional customer, one product 452 / variation 456 (20 × 30cm), GBP 11.90 and free UK shipping. Each has a private test-only note forbidding DSers purchase or fulfilment. DSers payments remain manual. Refund 496 reported `refunded_payment: true`. No real card, live charge or supplier purchase was used. Do not resubmit or refund order 495 again.
 
 ## Changes prepared
 
@@ -41,8 +41,8 @@ All orders use a fictional customer, one product 452 / variation 456 (20 × 30cm
 ## Continue after owner login
 
 1. Upload/replace the existing Housefinds Order Bridge with 0.4.0 in WordPress and confirm it remains active. Check wrong key/email rejection without changing an order.
-2. Finalize only test order 495 through the authenticated confirmation endpoint, verify the real gateway result, repeat confirmation to check idempotency, and refund/restock if captured. Never purchase or pay it in DSers.
-3. Run a fresh local challenge through automatic confirmation, inspect receipt and empty cart, then refund/restock and reconcile variation 456 stock (baseline 76).
+2. Verify that repeated authenticated confirmation of already-refunded order 495 leaves it refunded and performs no settlement. Never purchase or pay it in DSers.
+3. Run a fresh local challenge through automatic confirmation, inspect receipt and empty cart, verify idempotency, then refund/restock and reconcile variation 456 stock (baseline 76).
 4. Set Vercel production `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` to the same Woo test account's `pk_test_` key; keep secret keys on WooCommerce. Rebuild after the environment change.
 5. Publish only after installed-gateway validation; then repeat decline, 3DS and recovery at the public storefront and clean up those test orders.
 
