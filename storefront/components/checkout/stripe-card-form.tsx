@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { CreditCardIcon, LockClosedIcon } from '@heroicons/react/24/outline'
 import type { CheckoutAddress } from '@/store/cart'
 import { CHECKOUT_DRAFT_KEY, CHECKOUT_LIMIT_MINOR, PAYMENT_PENDING_KEY, isSafePaymentRedirect, paymentOutcomeIsUncertain } from '@/lib/storefront/checkout'
+import { paymentDetailsToRecord, stripeAuthenticationSecret, type CheckoutResponse } from '@/lib/storefront/stripe-response'
 
 type StripeError = { message?: string; type?: string; payment_intent?: { status?: string } }
 type StripeCardElement = {
@@ -23,8 +24,6 @@ type StripeInstance = {
   confirmCardPayment: (clientSecret: string) => Promise<{ paymentIntent?: { status: string }; error?: StripeError }>
 }
 declare global { interface Window { Stripe?: (publishableKey: string) => StripeInstance } }
-type PaymentDetails = Array<{ key?: string; value?: string }> | Record<string, unknown> | undefined
-type CheckoutResponse = { order_id?: number; status?: string; payment_result?: { payment_status?: string; payment_details?: PaymentDetails; redirect_url?: string } }
 let stripeScriptPromise: Promise<void> | null = null
 
 function loadStripeScript() {
@@ -43,11 +42,6 @@ function loadStripeScript() {
     if (isNew) document.head.appendChild(target)
   }).catch((error) => { stripeScriptPromise = null; throw error })
   return stripeScriptPromise
-}
-function paymentDetailsToRecord(details: PaymentDetails): Record<string, string> {
-  if (Array.isArray(details)) return Object.fromEntries(details.filter((entry) => entry?.key).map((entry) => [entry.key!, String(entry.value || '')]))
-  if (details && typeof details === 'object') return Object.fromEntries(Object.entries(details).map(([key, value]) => [key, String(value ?? '')]))
-  return {}
 }
 function errorDetails(text: string) {
   try { const data = JSON.parse(text); return { code: String(data.code || ''), message: typeof data.message === 'string' ? data.message : 'We could not complete checkout. Review your details and try again.' } }
@@ -113,11 +107,35 @@ export function StripeCardForm({ address, billingAddress, expectedTotal, expecte
   }, [activated, requiresPayment, publishableKey, loadAttempt])
   useEffect(() => { cardRef.current?.update({ disabled: disabled || processing || uncertain }) }, [disabled, processing, uncertain, ready])
 
+  async function readPaymentStatus(orderId: number, confirmPayment = false) {
+    const controller = new AbortController()
+    const timer = window.setTimeout(() => controller.abort(), 8_000)
+    try {
+      const response = await fetch('/api/checkout/status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, cache: 'no-store', signal: controller.signal, body: JSON.stringify({ order_id: orderId, ...(confirmPayment ? { confirm_payment: true } : {}) }) })
+      if (!response.ok) throw new Error('The order status could not be confirmed. Check your order before trying again.')
+      const result = await response.json() as { order_id?: number; status?: string; paid?: boolean }
+      if (result.order_id !== orderId) throw new Error('The payment could not be linked to this order.')
+      return result
+    } finally { clearTimeout(timer) }
+  }
+
+  async function waitForPaidOrder(orderId: number) {
+    setPhase('Waiting for payment confirmation…')
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      const result = await readPaymentStatus(orderId, attempt === 0)
+      if (result.paid === true) { finishConfirmed(); window.location.assign('/order-confirmation'); return }
+      if (['failed', 'cancelled'].includes(result.status || '')) throw new Error('Your payment was not completed. Try again or use another card.')
+      if (attempt < 7) await new Promise((resolve) => window.setTimeout(resolve, 1_500))
+    }
+    throw new Error('Payment confirmation is still pending. Check your order before trying again.')
+  }
+
   async function submitPayment() {
     if (busyRef.current || disabled || uncertain || invalidTotal || (requiresPayment && (!ready || !complete || !stripeRef.current || !cardRef.current))) return
     busyRef.current = true; setProcessing(true); setPaymentError(null); setPhase('Checking your payment details…'); onBusyChange?.(true)
     let submitted = false
     let knownFailure = false
+    let submittedOrderId: number | undefined
     try {
       const bill = billingAddress || address
       let paymentData: Array<{ key: string; value: string }> = []
@@ -162,10 +180,11 @@ export function StripeCardForm({ address, billingAddress, expectedTotal, expecte
         throw new Error(error.message)
       }
       const checkout = JSON.parse(text) as CheckoutResponse
+      submittedOrderId = checkout.order_id
       const result = checkout.payment_result || {}
       const details = paymentDetailsToRecord(result.payment_details)
       if (['failure', 'failed'].includes(result.payment_status || '')) { knownFailure = true; clearPending(); throw new Error('Your payment was not completed. Check your card details or try another card.') }
-      const secret = details.payment_intent_secret || details.client_secret
+      const secret = stripeAuthenticationSecret(checkout)
       if (secret && requiresPayment) {
         setPhase('Complete your bank’s security check…')
         const confirmation = await stripeRef.current!.confirmCardPayment(secret)
@@ -176,20 +195,28 @@ export function StripeCardForm({ address, billingAddress, expectedTotal, expecte
         }
         const status = confirmation.paymentIntent?.status
         if (!['succeeded', 'requires_capture', 'processing'].includes(status || '')) throw new Error('Your bank’s payment status still needs to be checked.')
-        if (status === 'succeeded' || status === 'requires_capture') finishConfirmed()
-        if (details.verification_endpoint) {
-          if (!isSafePaymentRedirect(details.verification_endpoint, window.location.origin)) throw new Error('The payment verification link could not be opened safely.')
-          window.location.assign(details.verification_endpoint); return
-        }
-        if (checkout.order_id) { window.location.assign('/order-confirmation'); return }
+        if (checkout.order_id) { await waitForPaidOrder(checkout.order_id); return }
+        throw new Error('The payment could not be linked to an order. Contact Housefinds before trying again.')
       }
-      if (checkout.order_id && (result.payment_status === 'success' || (!requiresPayment && ['processing', 'completed', 'on-hold'].includes(checkout.status || '')))) {
+      if (checkout.order_id && ['processing', 'completed'].includes(checkout.status || '')) {
         finishConfirmed(); window.location.assign('/order-confirmation'); return
       }
+      if (checkout.order_id && result.payment_status === 'success') { await waitForPaidOrder(checkout.order_id); return }
       const redirect = result.redirect_url || details.redirect
       if (redirect && isSafePaymentRedirect(redirect, window.location.origin)) { window.location.assign(redirect); return }
       throw new Error('We could not confirm the final order status. Please check the order before trying again.')
     } catch (error) {
+      // Some 3DS failures do not include an intent status in Stripe.js's error.
+      // Verify the order before allowing another attempt; never infer a decline
+      // from a network error or from payment_status="success" alone.
+      if (submitted && !knownFailure && submittedOrderId) {
+        try {
+          const status = await readPaymentStatus(submittedOrderId)
+          if (status.paid === true) { finishConfirmed(); window.location.assign('/order-confirmation'); return }
+          knownFailure = ['failed', 'cancelled'].includes(status.status || '')
+          if (knownFailure) clearPending()
+        } catch { /* Keep the uncertain-payment guard when verification fails. */ }
+      }
       if (submitted && !knownFailure) { setUncertain(true); setPaymentError(null) }
       else setPaymentError(error instanceof Error ? error.message : 'Payment could not be completed. Check your details and try again.')
       setProcessing(false); busyRef.current = false; onBusyChange?.(false)

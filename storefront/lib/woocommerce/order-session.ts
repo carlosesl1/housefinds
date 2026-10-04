@@ -11,6 +11,7 @@ export type LastOrderSession = {
   billing_email: string
   order_number?: string
   created_at: number
+  cart_token_hash?: string
 }
 
 type OrderItemData = { key?: string; value?: string; display_key?: string; display_value?: string }
@@ -82,6 +83,7 @@ export function decodeLastOrderSession(value?: string | null): LastOrderSession 
       billing_email: String(parsed.billing_email),
       order_number: parsed.order_number ? String(parsed.order_number) : undefined,
       created_at: Number(parsed.created_at),
+      cart_token_hash: typeof parsed.cart_token_hash === 'string' && /^[a-f0-9]{64}$/.test(parsed.cart_token_hash) ? parsed.cart_token_hash : undefined,
     }
   } catch {
     return null

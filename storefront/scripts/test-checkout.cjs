@@ -13,6 +13,7 @@ function moduleAt(file, imports = {}) {
   return module.exports
 }
 const helpers = moduleAt('lib/storefront/checkout.ts')
+const stripeResponse = moduleAt('lib/storefront/stripe-response.ts')
 const address = { ...helpers.EMPTY_ADDRESS, first_name: 'Checkout', last_name: 'Tester', email: 'checkout@example.com', address_1: '10 Test Street', city: 'London', postcode: 'SW1A 1AA' }
 function cartFixture() {
   return {
@@ -33,9 +34,74 @@ test('Drafts are basket-scoped and expire after thirty minutes', () => { const r
 test('Draft encoding drops payment secrets and unknown values', () => { const raw = helpers.encodeCheckoutDraft({ address: { ...address, card_number: 'sensitive', client_secret: 'secret' }, billing: address, sameBilling: true }, '1'); assert.equal(raw.includes('sensitive'), false); assert.equal(raw.includes('client_secret'), false) })
 test('Uncertain payment outcomes remain separate from known rejections', () => { assert.equal(helpers.paymentOutcomeIsUncertain(503, ''), true); assert.equal(helpers.paymentOutcomeIsUncertain(422, 'housefinds_checkout_failed'), false); assert.equal(helpers.paymentOutcomeIsUncertain(409, 'housefinds_total_changed'), false) })
 test('Payment redirects cannot use script, HTTP or embedded credentials', () => { assert.equal(helpers.isSafePaymentRedirect('javascript:alert(1)', 'https://example.com'), false); assert.equal(helpers.isSafePaymentRedirect('http://example.com', 'https://example.com'), false); assert.equal(helpers.isSafePaymentRedirect('https://user:secret@example.com', 'https://example.com'), false); assert.equal(helpers.isSafePaymentRedirect('/order-confirmation', 'https://example.com'), true) })
+
+test('Stripe authentication accepts gateway 11 and legacy responses, rejecting mismatched orders', () => {
+  const checkout = (redirect_url) => ({ order_id: 123, payment_result: { redirect_url } })
+  assert.equal(stripeResponse.stripeAuthenticationSecret(checkout('#wc-stripe-confirm-pi:123:pi_fixture_secret_fixture:nonce')), 'pi_fixture_secret_fixture')
+  assert.equal(stripeResponse.stripeAuthenticationSecret(checkout('#confirm-pi-pi_fixture_secret_fixture:https://example.com')), 'pi_fixture_secret_fixture')
+  assert.equal(stripeResponse.stripeAuthenticationSecret({ payment_result: { payment_details: [{ key: 'payment_intent_secret', value: 'pi_fixture_secret_fixture' }] } }), 'pi_fixture_secret_fixture')
+  assert.equal(stripeResponse.stripeAuthenticationSecret(checkout('/order-confirmation')), null)
+  assert.equal(stripeResponse.stripeAuthenticationSecret(checkout('https://hooks.stripe.com/3d_secure_2/hosted?payment_intent=pi_fixture&payment_intent_client_secret=pi_fixture_secret_fixture')), 'pi_fixture_secret_fixture')
+  for (const redirect of ['#wc-stripe-confirm-pi:456:pi_fixture_secret_fixture:nonce', '#wc-stripe-confirm-pi:123:invalid:nonce', '#wc-stripe-confirm-si:123:seti_fixture:nonce']) assert.throws(() => stripeResponse.stripeAuthenticationSecret(checkout(redirect)))
+})
+
+let statusSession, statusOrder, statusToken, statusThrows, confirmationCalls, confirmationFails
+const statusRoute = moduleAt('app/api/checkout/status/route.ts', {
+  'node:crypto': require('node:crypto'),
+  'next/headers': { cookies: async () => ({ get: () => statusToken ? { value: statusToken } : undefined }) },
+  'next/server': { NextResponse: { json: (data, options = {}) => ({ status: options.status || 200, body: data, headers: options.headers, cookies: { entries: [], set(...entry) { this.entries.push(entry) } } }) } },
+  '@/lib/woocommerce/cart-token': { CART_COOKIE: 'hf_cart' },
+  '@/lib/woocommerce/order-session': { getLastStoreOrder: async () => { if (statusThrows) throw Error('Woo unavailable'); return { session: statusSession, order: statusOrder } } },
+  '@/lib/woocommerce/transport': { commerceFetch: async (_url, options) => { confirmationCalls.push(JSON.parse(options.body)); if (!confirmationFails) statusOrder = { ...statusOrder, status: 'processing' }; return { ok: !confirmationFails } } },
+})
+function resetStatus() { confirmationCalls = []; confirmationFails = false; statusThrows = false; statusToken = 'cart-that-created-order'; statusSession = { order_id: 123, order_key: 'fixture-order-key', billing_email: 'fixture@example.com', cart_token_hash: require('node:crypto').createHash('sha256').update(statusToken).digest('hex') }; statusOrder = { id: 123, status: 'processing' } }
+const statusRequest = (id = 123) => ({ json: async () => ({ order_id: id }) })
+
+test('Authentication completion retires only the matching paid cart', async () => {
+  for (const status of ['processing', 'completed', 'pending', 'on-hold', 'failed', 'cancelled', 'refunded']) {
+    resetStatus(); statusOrder.status = status
+    const r = await statusRoute.POST(statusRequest())
+    const paid = ['processing', 'completed'].includes(status)
+    assert.equal(r.body.paid, paid); assert.equal(r.cookies.entries.length, paid ? 1 : 0)
+    assert.equal(r.headers['Cache-Control'], 'no-store, private')
+    if (paid) { assert.equal(r.cookies.entries[0][1], ''); assert.equal(r.cookies.entries[0][2].maxAge, 0) }
+  }
+  resetStatus(); statusToken = 'newer-cart'
+  assert.equal((await statusRoute.POST(statusRequest())).cookies.entries.length, 0)
+  resetStatus(); delete statusSession.cart_token_hash
+  assert.equal((await statusRoute.POST(statusRequest())).cookies.entries.length, 0)
+})
+
+test('Payment status rejects missing or mismatched sessions and unavailable Woo', async () => {
+  resetStatus(); assert.equal((await statusRoute.POST(statusRequest(456))).status, 404)
+  resetStatus(); statusOrder.id = 456; assert.equal((await statusRoute.POST(statusRequest())).status, 404)
+  resetStatus(); statusSession = null; assert.equal((await statusRoute.POST(statusRequest())).status, 404)
+  resetStatus(); statusOrder = null; assert.equal((await statusRoute.POST(statusRequest())).status, 404)
+  resetStatus(); statusThrows = true; assert.equal((await statusRoute.POST(statusRequest())).status, 503)
+  assert.equal((await statusRoute.POST({ json: async () => { throw Error('bad JSON') } })).status, 400)
+})
+
+test('3DS completion uses server session credentials and does not repeat settlement', async () => {
+  const request = { json: async () => ({ order_id: 123, confirm_payment: true, order_key: 'untrusted-browser-key' }) }
+  resetStatus(); statusOrder.status = 'pending'
+  const r = await statusRoute.POST(request)
+  assert.equal(r.body.paid, true)
+  assert.equal(confirmationCalls.length, 1)
+  assert.equal(confirmationCalls[0].order_key, 'fixture-order-key')
+  assert.equal(JSON.stringify(r.body).includes('fixture-order-key'), false)
+  assert.equal(r.cookies.entries.length, 1)
+  await statusRoute.POST(request)
+  assert.equal(confirmationCalls.length, 1)
+  resetStatus(); statusOrder.status = 'pending'; confirmationFails = true
+  const unavailable = await statusRoute.POST(request)
+  assert.equal(unavailable.status, 503); assert.equal(unavailable.cookies.entries.length, 0)
+  resetStatus(); statusOrder.status = 'cancelled'
+  await statusRoute.POST(request); assert.equal(confirmationCalls.length, 0)
+})
 let currentCart, upstreamCalls, upstreamStatus, upstreamText, upstreamThrows
 const fakeResponse = (data, options = {}) => ({ status: options.status || 200, body: data, cookies: { entries: [], set(...entry) { this.entries.push(entry) } } })
 const route = moduleAt('app/api/checkout/route.ts', {
+  'node:crypto': require('node:crypto'),
   'next/headers': { cookies: async () => ({ get: () => ({ value: 'fixture-token' }) }) },
   'next/server': { NextResponse: { json: fakeResponse } },
   '@/lib/woocommerce/cart-token': { CART_COOKIE: 'hf_cart', getCartToken: () => '' },
