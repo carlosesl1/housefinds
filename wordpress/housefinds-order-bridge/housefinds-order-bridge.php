@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Housefinds Order Bridge
  * Description: Exposes a minimal, privacy-conscious order tracking endpoint for the Housefinds headless storefront.
- * Version: 0.3.0
+ * Version: 0.4.0
  * Author: Housefinds
  */
 
@@ -19,6 +19,16 @@ final class Housefinds_Order_Bridge {
     }
 
     public static function register_routes() {
+        register_rest_route(self::NS, '/confirm-stripe-order', [
+            'methods' => 'POST',
+            'callback' => [__CLASS__, 'confirm_stripe_order'],
+            'permission_callback' => '__return_true',
+            'args' => [
+                'order_id' => ['required' => true, 'type' => 'integer', 'minimum' => 1],
+                'order_key' => ['required' => true, 'type' => 'string'],
+                'email' => ['required' => true, 'type' => 'string', 'sanitize_callback' => 'sanitize_email'],
+            ],
+        ]);
         register_rest_route(self::NS, self::ROUTE, [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'order_status'],
@@ -36,6 +46,63 @@ final class Housefinds_Order_Bridge {
                 ],
             ],
         ]);
+    }
+
+    public static function confirm_stripe_order(WP_REST_Request $request) {
+        if (!function_exists('wc_get_order') || !class_exists('WC_Stripe_Order_Helper')) {
+            return new WP_Error('housefinds_payment_unavailable', 'Payment confirmation is temporarily unavailable.', ['status' => 503]);
+        }
+        if (self::rate_limited()) {
+            return new WP_Error('housefinds_rate_limited', 'Please wait before checking this payment again.', ['status' => 429]);
+        }
+        $order = wc_get_order((int) $request->get_param('order_id'));
+        $key = (string) $request->get_param('order_key');
+        $email = strtolower(trim((string) $request->get_param('email')));
+        if (!$order || !$key || !is_email($email)
+            || !hash_equals((string) $order->get_order_key(), $key)
+            || strtolower((string) $order->get_billing_email()) !== $email
+            || $order->get_payment_method() !== 'stripe') {
+            return self::generic_not_found();
+        }
+
+        $reply = static function ($current_order) {
+            $response = new WP_REST_Response([
+                'order_id' => (int) $current_order->get_id(),
+                'status' => $current_order->get_status(),
+                'paid' => $current_order->is_paid(),
+            ]);
+            $response->header('Cache-Control', 'no-store, private');
+            return $response;
+        };
+        // Never revive a cancelled/refunded order or repeat settlement of a paid one.
+        if (!$order->has_status(['pending', 'failed'])) {
+            return $reply($order);
+        }
+        try {
+            $gateways = WC()->payment_gateways()->payment_gateways();
+            $gateway = $gateways['stripe'] ?? null;
+            if (!$gateway instanceof WC_Stripe_UPE_Payment_Gateway
+                || !is_callable([$gateway, 'get_intent_from_order'])
+                || !is_callable([$gateway, 'process_upe_redirect_payment'])) {
+                return new WP_Error('housefinds_payment_unavailable', 'Payment confirmation is temporarily unavailable.', ['status' => 503]);
+            }
+            $intent = $gateway->get_intent_from_order($order);
+            // Read Stripe through the installed gateway. Client claims cannot mark an order paid.
+            if (!is_object($intent) || !empty($intent->error) || ($intent->object ?? '') !== 'payment_intent') {
+                return new WP_Error('housefinds_payment_unavailable', 'Payment confirmation is temporarily unavailable.', ['status' => 503]);
+            }
+            if (($intent->status ?? '') !== 'succeeded') {
+                return $reply($order);
+            }
+            $helper = WC_Stripe_Order_Helper::get_instance();
+            $helper->validate_intent_for_order($order, $intent);
+            // This is the gateway's normal return handler: its lock, Stripe verification,
+            // stock/email hooks and duplicate-settlement guards remain authoritative.
+            $gateway->process_upe_redirect_payment($order->get_id(), $intent->id, false, false);
+            return $reply(wc_get_order($order->get_id()));
+        } catch (Throwable $error) {
+            return new WP_Error('housefinds_payment_unavailable', 'Payment confirmation is temporarily unavailable.', ['status' => 503]);
+        }
     }
 
     private static function client_key() {
