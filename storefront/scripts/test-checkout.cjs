@@ -55,8 +55,64 @@ test('Server refuses a changed delivery address without charging', async () => {
 test('Server keeps the £135 limit', async () => { resetRoute(); currentCart.totals.total_price = '13500'; const r = await route.POST(request()); assert.equal(r.body.code, 'housefinds_order_limit'); assert.equal(upstreamCalls.length, 0) })
 test('Server sends distinct billing and shipping and no client hints to Woo', async () => { resetRoute(); const billing = { ...address, address_1: 'Billing street' }; currentCart.billing_address = billing; const r = await route.POST(request({ billing_address: billing })); assert.equal(r.status, 200); assert.equal(upstreamCalls.length, 1); assert.equal(upstreamCalls[0].billing_address.address_1, 'Billing street'); assert.equal(upstreamCalls[0].shipping_address.address_1, address.address_1); assert.equal('expected_total' in upstreamCalls[0], false); assert.equal('order_key' in r.body, false); assert.ok(r.cookies.entries.some((entry) => entry[0] === 'hf_last_order')) })
 test('Zero-payment orders bypass Stripe payment data, using Woo totals', async () => { resetRoute(); currentCart.totals.total_price = '0'; currentCart.needs_payment = false; const r = await route.POST(request({ payment_method: undefined })); assert.equal(r.status, 200); assert.equal('payment_method' in upstreamCalls[0], false) })
+test('Paid checkout retires the purchased cart session; pending authentication keeps it', async () => {
+  for (const status of ['processing', 'completed', 'pending', 'on-hold', 'failed']) {
+    resetRoute()
+    upstreamText = JSON.stringify({ order_id: 123, order_key: 'private-order-key', status, payment_result: { payment_status: 'success' } })
+    const response = await route.POST(request())
+    const cartCookie = response.cookies.entries.find((entry) => entry[0] === 'hf_cart')
+    const paid = ['processing', 'completed'].includes(status)
+    assert.equal(cartCookie[1], paid ? '' : 'fixture-token')
+    assert.equal(cartCookie[2].maxAge === 0, paid)
+    assert.ok(response.cookies.entries.some((entry) => entry[0] === 'hf_last_order'))
+  }
+})
+
 test('Lost checkout responses never get automatically retried', async () => { resetRoute(); upstreamThrows = true; const r = await route.POST(request()); assert.equal(r.status, 503); assert.equal(r.body.code, 'housefinds_checkout_outcome_uncertain'); assert.equal(upstreamCalls.length, 1) })
 test('Malformed success responses are treated as uncertain', async () => { resetRoute(); upstreamText = '<html>upstream error</html>'; const r = await route.POST(request()); assert.equal(r.body.code, 'housefinds_checkout_outcome_uncertain') })
+test('Order confirmation renders keyed WooCommerce metadata, preserving options and hiding supplier fields', async () => {
+  let receiptOrder = { id: 123, status: 'processing', items: [{ id: 1, name: 'Kitchen board', quantity: 1, item_data: { 10: { key: 'color', value: '20 x 30cm', display_value: '<p>20 x 30cm</p>' }, 11: { key: 'Ships From', value: 'Supplier warehouse' } } }] }
+  const jsx = (type, props) => ({ type: typeof type === 'string' ? type : 'component', props })
+  const page = moduleAt('app/order-confirmation/page.tsx', {
+    'react/jsx-runtime': { jsx, jsxs: jsx }, 'next/image': {}, 'next/link': {}, '@heroicons/react/24/outline': {},
+    '@/lib/woocommerce/presentation': { displayProductName: (name) => name },
+    '@/lib/woocommerce/money': { formatMoney: (amount) => amount },
+    '@/lib/woocommerce/order-session': { getLastStoreOrder: async () => ({ session: { billing_email: 'qa@example.com' }, order: receiptOrder }), orderStatusCopy: () => ({ label: 'Order confirmed', detail: 'Paid' }) },
+    '@/lib/storefront/catalog': { isOperationalAttributeName: (name) => name === 'Ships From' },
+    '@/components/analytics/purchase-tracker': {},
+  })
+  for (const itemData of [receiptOrder.items[0].item_data, Object.values(receiptOrder.items[0].item_data)]) {
+    receiptOrder.items[0].item_data = itemData
+    const rendered = JSON.stringify(await page.default())
+    assert.ok(rendered.includes('20 x 30cm'))
+    assert.equal(rendered.includes('Supplier warehouse'), false)
+    assert.equal(rendered.includes('<p>'), false)
+    assert.equal(rendered.includes('Email sent'), false)
+  }
+  receiptOrder.items[0].variation = [{ attribute: 'Size', value: 'Selected size' }]
+  assert.ok(JSON.stringify(await page.default()).includes('Selected size'))
+  for (const status of ['pending', 'on-hold', 'failed', 'cancelled', 'refunded']) {
+    receiptOrder.status = status
+    const rendered = JSON.stringify(await page.default())
+    assert.equal(rendered.includes('1. We prepare your order'), false, status)
+  }
+})
+
+test('Refunded order lookup does not promise dispatch or a delivery estimate', () => {
+  const result = { order_number: '123', status: 'refunded', status_label: 'Refunded', delivery_estimate: 'around 14 days', items: [] }
+  let hook = 0
+  const jsx = (type, props) => typeof type === 'function' ? type(props) : { type: typeof type === 'string' ? type : 'component', props }
+  const form = moduleAt('components/order/order-lookup-form.tsx', {
+    'react': { useState: (initial) => [++hook === 5 ? result : initial, () => {}] },
+    'react/jsx-runtime': { jsx, jsxs: jsx }, '@heroicons/react/24/outline': {},
+  })
+  const rendered = JSON.stringify(form.OrderLookupForm())
+  assert.ok(rendered.includes('Refunded'))
+  assert.equal(rendered.includes('Preparing your order'), false)
+  assert.equal(rendered.includes('Current delivery estimate'), false)
+  assert.equal(rendered.includes('Carrier tracking is not linked yet'), false)
+})
+
 test('Checkout files have valid TS/TSX syntax and expected interaction guards', () => {
   for (const file of ['app/checkout/page.tsx', 'components/checkout/checkout-fields.tsx', 'components/checkout/checkout-summary.tsx', 'components/checkout/stripe-card-form.tsx', 'store/cart.ts']) {
     const output = ts.transpileModule(fs.readFileSync(path.join(root, file), 'utf8'), { fileName: file, reportDiagnostics: true, compilerOptions: { jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022 } }); assert.equal((output.diagnostics || []).filter((d) => d.category === ts.DiagnosticCategory.Error).length, 0, file)

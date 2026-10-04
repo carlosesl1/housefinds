@@ -36,15 +36,16 @@ function money(value?: string, currency = 'GBP') {
 function stageFor(result: LookupResult) {
   if (result.status === 'failed' || result.status === 'cancelled' || result.status === 'refunded') return 0
   if (result.tracking?.length) return 2
-  if (['processing', 'on-hold', 'completed'].includes(result.status)) return 1
+  if (['processing', 'completed'].includes(result.status)) return 1
   return 0
 }
 
 function TrackingResult({ result }: { result: LookupResult }) {
   const stage = stageFor(result)
+  const stopped = ['failed', 'cancelled', 'refunded'].includes(result.status)
   const steps = [
-    ['Order confirmed', 'We received your order.'],
-    ['Preparing your order', 'Your order is being prepared for dispatch.'],
+    ['Order received', 'We received your order.'],
+    ['Preparing your order', 'Payment and order details are confirmed before dispatch.'],
     ['Shipment information available', 'Carrier details appear here once they are linked to the order.'],
   ]
 
@@ -56,11 +57,11 @@ function TrackingResult({ result }: { result: LookupResult }) {
           <h3 className="text-3xl font-semibold tracking-[-.045em]">{result.status_label || 'Order status'}</h3>
           {result.total && <strong className="text-lg">{money(result.total, result.currency)}</strong>}
         </div>
-        {result.delivery_estimate && <p className="mt-3 text-sm text-white/58">Current delivery estimate: {result.delivery_estimate}. This is not a guaranteed arrival date.</p>}
+        {!stopped && result.delivery_estimate && <p className="mt-3 text-sm text-white/58">Current delivery estimate: {result.delivery_estimate}. This is not a guaranteed arrival date.</p>}
       </div>
 
       <div className="p-6 sm:p-7">
-        <div className="grid gap-3 sm:grid-cols-3">
+        {!stopped && <div className="grid gap-3 sm:grid-cols-3">
           {steps.map(([title, copy], index) => {
             const active = index <= stage
             return (
@@ -71,7 +72,7 @@ function TrackingResult({ result }: { result: LookupResult }) {
               </div>
             )
           })}
-        </div>
+        </div>}
 
         {result.tracking?.length ? (
           <div className="mt-6 rounded-2xl bg-[#f3f1eb] p-5">
@@ -85,9 +86,9 @@ function TrackingResult({ result }: { result: LookupResult }) {
               ))}
             </div>
           </div>
-        ) : (
+        ) : !stopped ? (
           <div className="mt-6 flex gap-3 rounded-2xl bg-[#f3f1eb] p-5 text-sm leading-6 text-black/50"><ClockIcon className="mt-0.5 size-5 shrink-0 text-[#557562]" /><p>Carrier tracking is not linked yet. This page will show it when shipment information becomes available to Housefinds.</p></div>
-        )}
+        ) : null}
 
         {result.items?.length ? (
           <div className="mt-7 border-t border-black/[.07] pt-6">

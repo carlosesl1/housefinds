@@ -14,7 +14,7 @@ export default async function TrackOrderPage() {
   const { session, order } = await getLastStoreOrder()
   const status = order ? orderStatusCopy(order.status) : null
   const orderNumber = order ? order.order_number || session?.order_number || String(order.id) : null
-  const activePreparing = Boolean(order && ['processing', 'on-hold', 'completed'].includes(order.status))
+  const activePreparing = Boolean(order && ['processing', 'completed'].includes(order.status))
   const showDeliveryEstimate = Boolean(order && !['failed', 'cancelled', 'refunded'].includes(order.status))
 
   return (
@@ -38,11 +38,11 @@ export default async function TrackOrderPage() {
             </div>
 
             <div className="p-7 sm:p-9">
-              <div className="grid gap-3 md:grid-cols-3">
+              {showDeliveryEstimate && <div className="grid gap-3 md:grid-cols-3">
                 <div className="rounded-2xl border border-[#b8cdbf] bg-[#edf3ee] p-5"><span className="grid size-9 place-items-center rounded-full bg-[var(--hf-brand)] text-white"><CheckCircleIcon className="size-5" /></span><p className="mt-4 font-semibold">Order received</p><p className="mt-1 text-xs leading-5 text-black/42">Your order has been created in Housefinds.</p></div>
                 <div className={`rounded-2xl border p-5 ${activePreparing ? 'border-[#b8cdbf] bg-[#edf3ee]' : 'border-black/[.07] bg-[#faf9f6]'}`}><span className={`grid size-9 place-items-center rounded-full ${activePreparing ? 'bg-[var(--hf-brand)] text-white' : 'bg-black/[.05] text-black/30'}`}>{activePreparing ? <CheckCircleIcon className="size-5" /> : <ClockIcon className="size-5" />}</span><p className="mt-4 font-semibold">Preparing your order</p><p className="mt-1 text-xs leading-5 text-black/42">Payment and order details are confirmed before dispatch.</p></div>
                 <div className="rounded-2xl border border-black/[.07] bg-[#faf9f6] p-5"><span className="grid size-9 place-items-center rounded-full bg-black/[.05] text-black/30"><TruckIcon className="size-5" /></span><p className="mt-4 font-semibold">Shipment tracking</p><p className="mt-1 text-xs leading-5 text-black/42">Carrier tracking will appear once it is linked to the order.</p></div>
-              </div>
+              </div>}
 
               <div className="mt-7 flex flex-col justify-between gap-4 border-t border-black/[.07] pt-6 sm:flex-row sm:items-center">
                 <div className="flex items-start gap-3 text-sm text-black/48"><EnvelopeIcon className="mt-0.5 size-5 shrink-0 text-[var(--hf-brand-muted)]" /><p>This browser remembers the latest order securely for easier tracking. Keep your order confirmation email as a backup.</p></div>
