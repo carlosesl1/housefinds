@@ -75,7 +75,10 @@ export async function POST(req: NextRequest) {
   let checkout: ResponseBody
   try { checkout = JSON.parse(text) as ResponseBody } catch { return failure('housefinds_checkout_outcome_uncertain', 'The final payment result could not be read. Check your order before trying again.', 503) }
   const response = NextResponse.json({ order_id: checkout.order_id, order_number: checkout.order_number, status: checkout.status, payment_result: checkout.payment_result }, { status: upstream.status, headers: { 'Cache-Control': 'no-store' } })
-  response.cookies.set(CART_COOKIE, getCartToken(upstream.headers) || token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: 60 * 60 * 24 * 30 })
+  // A paid Store API order can leave its token-backed cart populated. Start a new
+  // cart session only after WooCommerce confirms payment, never during pending/3DS.
+  const paidOrder = Boolean(checkout.order_id) && ['processing', 'completed'].includes(checkout.status || '')
+  response.cookies.set(CART_COOKIE, paidOrder ? '' : getCartToken(upstream.headers) || token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: paidOrder ? 0 : 60 * 60 * 24 * 30 })
   if (checkout.order_id && checkout.order_key && bill.email) {
     const session = { order_id: checkout.order_id, order_key: checkout.order_key, billing_email: bill.email, order_number: checkout.order_number, created_at: Date.now() }
     response.cookies.set(LAST_ORDER_COOKIE, Buffer.from(JSON.stringify(session), 'utf8').toString('base64url'), { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: 60 * 60 * 24 * 30 })

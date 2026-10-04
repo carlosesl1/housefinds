@@ -57,7 +57,7 @@ function sanitizeLookupResult(raw: RawLookupResult) {
         : {}
       const label = clean(entry.label || entry.attribute, 80)
       const value = clean(entry.value, 120)
-      if (!value || isOperationalAttributeName(label)) return []
+      if (!value || label.startsWith('_') || isOperationalAttributeName(label)) return []
       return [{ label, value }]
     })
 

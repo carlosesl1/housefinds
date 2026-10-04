@@ -13,6 +13,8 @@ export type LastOrderSession = {
   created_at: number
 }
 
+type OrderItemData = { key?: string; value?: string; display_key?: string; display_value?: string }
+
 export type WooStoreOrder = {
   id: number
   status: string
@@ -49,7 +51,7 @@ export type WooStoreOrder = {
     name: string
     images?: WooImage[]
     variation?: Array<{ attribute?: string; value?: string }>
-    item_data?: Array<{ key?: string; value?: string; display_key?: string; display_value?: string }>
+    item_data?: OrderItemData[] | Record<string, OrderItemData>
     totals?: {
       line_total?: string
       currency_code?: string

@@ -40,13 +40,14 @@ export default async function OrderConfirmationPage() {
     ? formatMoney(order.totals.total_price, order.totals.currency_minor_unit ?? 2, order.totals.currency_symbol || '£')
     : null
   const showDeliveryEstimate = !['failed', 'cancelled', 'refunded'].includes(order.status)
+  const isPaid = ['processing', 'completed'].includes(order.status)
   const shipping = order.shipping_address || {}
   const email = order.billing_address?.email || session.billing_email
   const orderNumber = order.order_number || session.order_number || String(order.id)
 
   return (
     <main className="bg-[var(--hf-surface-soft)] px-5 py-10 lg:px-8 lg:py-16">
-      {order.totals?.total_price && <PurchaseTracker transactionId={String(orderNumber)} total={order.totals.total_price} currency={order.totals.currency_code || 'GBP'} minorUnit={order.totals.currency_minor_unit ?? 2} items={(order.items || []).map((item) => ({ id: item.id, name: displayProductName(item.name), quantity: item.quantity, lineTotal: item.totals?.line_total }))} />}
+      {isPaid && order.totals?.total_price && <PurchaseTracker transactionId={String(orderNumber)} total={order.totals.total_price} currency={order.totals.currency_code || 'GBP'} minorUnit={order.totals.currency_minor_unit ?? 2} items={(order.items || []).map((item) => ({ id: item.id, name: displayProductName(item.name), quantity: item.quantity, lineTotal: item.totals?.line_total }))} />}
       <div className="mx-auto max-w-[1180px]">
         <section className="overflow-hidden rounded-[var(--hf-radius-lg)] border border-black/[.06] bg-white shadow-[0_28px_100px_rgba(34,45,37,.055)]">
           <div className="bg-[#172018] px-7 py-10 text-white sm:px-10 lg:px-14 lg:py-14">
@@ -70,8 +71,8 @@ export default async function OrderConfirmationPage() {
                 <div className="rounded-[var(--hf-radius-md)] bg-[#f3f1eb] p-6">
                   <EnvelopeIcon className="size-5 text-[#557562]" />
                   <p className="mt-4 text-xs font-semibold uppercase tracking-[.16em] text-black/38">Confirmation</p>
-                  <p className="mt-1 text-xl font-semibold tracking-[-.03em]">Email sent</p>
-                  <p className="mt-2 text-xs leading-5 text-black/42">Keep your confirmation at {maskedEmail(email)} for the order reference and updates.</p>
+                  <p className="mt-1 text-xl font-semibold tracking-[-.03em]">Order updates</p>
+                  <p className="mt-2 text-xs leading-5 text-black/42">Your checkout email is {maskedEmail(email)}. Use it with your order number to check updates or contact us.</p>
                 </div>
               </div>
 
@@ -84,9 +85,10 @@ export default async function OrderConfirmationPage() {
                       .filter((entry) => !isOperationalAttributeName(String(entry.attribute || '')))
                       .map((entry) => entry.value)
                       .filter(Boolean)
-                    const itemDataDetails = (item.item_data || [])
+                    // WooCommerce may key order metadata by its database ID instead of returning an array.
+                    const itemDataDetails = Object.values(item.item_data || {})
                       .filter((entry) => !isOperationalAttributeName(String(entry.display_key || entry.key || '')))
-                      .map((entry) => entry.display_value || entry.value)
+                      .map((entry) => String(entry.value || entry.display_value || '').replace(/<[^>]*>/g, '').trim())
                       .filter(Boolean)
                     const details = variationDetails.length ? variationDetails : itemDataDetails
                     return (
@@ -104,12 +106,12 @@ export default async function OrderConfirmationPage() {
             <aside className="border-t border-black/[.06] bg-[#faf9f5] p-7 sm:p-10 lg:border-l lg:border-t-0 lg:p-12">
               <div>
                 <TruckIcon className="size-6 text-[#557562]" />
-                <h2 className="mt-4 text-2xl font-semibold tracking-[-.04em]">What happens next</h2>
-                <ol className="mt-6 space-y-5 text-sm leading-6 text-black/52">
+                <h2 className="mt-4 text-2xl font-semibold tracking-[-.04em]">{isPaid ? 'What happens next' : 'Order status'}</h2>
+                {isPaid ? <ol className="mt-6 space-y-5 text-sm leading-6 text-black/52">
                   <li><strong className="block text-[#172018]">1. We prepare your order</strong>Housefinds prepares your order for dispatch.</li>
                   <li><strong className="block text-[#172018]">2. Dispatch update</strong>When shipment information becomes available, your order tracking can be updated.</li>
                   <li><strong className="block text-[#172018]">3. Delivery</strong>Standard UK delivery is free and currently estimated at around 14 days.</li>
-                </ol>
+                </ol> : <p className="mt-6 text-sm leading-6 text-black/52">{status.detail} Contact Housefinds if you need help with this order.</p>}
               </div>
 
               {(shipping.address_1 || shipping.city || shipping.postcode) && (
