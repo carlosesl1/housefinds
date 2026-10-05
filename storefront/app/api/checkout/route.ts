@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers'
+import { createHash } from 'node:crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { CART_COOKIE, getCartToken } from '@/lib/woocommerce/cart-token'
 import { CommerceConnectionError, commerceFetch } from '@/lib/woocommerce/transport'
@@ -80,7 +81,7 @@ export async function POST(req: NextRequest) {
   const paidOrder = Boolean(checkout.order_id) && ['processing', 'completed'].includes(checkout.status || '')
   response.cookies.set(CART_COOKIE, paidOrder ? '' : getCartToken(upstream.headers) || token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: paidOrder ? 0 : 60 * 60 * 24 * 30 })
   if (checkout.order_id && checkout.order_key && bill.email) {
-    const session = { order_id: checkout.order_id, order_key: checkout.order_key, billing_email: bill.email, order_number: checkout.order_number, created_at: Date.now() }
+    const session = { order_id: checkout.order_id, order_key: checkout.order_key, billing_email: bill.email, order_number: checkout.order_number, created_at: Date.now(), cart_token_hash: createHash('sha256').update(getCartToken(upstream.headers) || token).digest('hex') }
     response.cookies.set(LAST_ORDER_COOKIE, Buffer.from(JSON.stringify(session), 'utf8').toString('base64url'), { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: 60 * 60 * 24 * 30 })
   }
   return response
