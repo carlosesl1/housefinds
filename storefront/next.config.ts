@@ -14,6 +14,7 @@ const nextConfig: NextConfig = {
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 3600,
     remotePatterns: [
+      { protocol: 'https', hostname: 'backend.housefindsstore.com', pathname: '/wp-content/uploads/**' },
       { protocol: 'https', hostname: 'housefindsstore.com' },
       { protocol: 'https', hostname: '**.alicdn.com' },
       { protocol: 'https', hostname: '**.aliexpress-media.com' },

@@ -2,7 +2,7 @@ import 'server-only'
 import { cookies } from 'next/headers'
 import type { WooImage } from '@/lib/woocommerce/types'
 
-const WC_URL = (process.env.WOOCOMMERCE_URL || 'https://housefindsstore.com').replace(/\/$/, '')
+const WC_URL = (process.env.WOOCOMMERCE_URL || 'https://backend.housefindsstore.com').replace(/\/$/, '')
 export const LAST_ORDER_COOKIE = 'hf_last_order'
 
 export type LastOrderSession = {
