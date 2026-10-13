@@ -11,7 +11,9 @@ npm install
 npm run dev
 ```
 
-Default backend: `https://housefindsstore.com`.
+Default backend: `https://backend.housefindsstore.com`.
+
+Set `WOOCOMMERCE_URL=https://backend.housefindsstore.com` in the Vercel production environment and redeploy after changing it. This server-only URL must point to WordPress, not the public Next.js storefront. The image allowlist includes the backend's `/wp-content/uploads/` assets.
 
 ## Current milestone
 

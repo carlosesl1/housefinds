@@ -4,7 +4,7 @@ import { storefrontProductSlug } from './presentation'
 import { dedupeStoreProducts } from '@/lib/storefront/catalog'
 import { commerceFetch } from './transport'
 
-const WC_URL = (process.env.WOOCOMMERCE_URL || 'https://housefindsstore.com').replace(/\/$/, '')
+const WC_URL = (process.env.WOOCOMMERCE_URL || 'https://backend.housefindsstore.com').replace(/\/$/, '')
 const API = `${WC_URL}/wp-json/wc/store/v1`
 
 async function wooFetch<T>(path: string, init?: RequestInit & { revalidate?: number }): Promise<T> {
