@@ -5,7 +5,7 @@ import { CommerceConnectionError, commerceFetch } from '@/lib/woocommerce/transp
 import { displayProductName } from '@/lib/woocommerce/presentation'
 import { isOperationalAttributeName } from '@/lib/storefront/catalog'
 
-const WC_URL = (process.env.WOOCOMMERCE_URL || 'https://housefindsstore.com').replace(/\/$/, '')
+const WC_URL = (process.env.WOOCOMMERCE_URL || 'https://backend.housefindsstore.com').replace(/\/$/, '')
 const STORE_API = `${WC_URL}/wp-json/wc/store/v1`
 const CART_URL = `${STORE_API}/cart`
 const ALLOWED_CART_ACTIONS = new Set([

@@ -7,7 +7,7 @@ import type { WooCart } from '@/lib/woocommerce/types'
 import type { CheckoutAddress } from '@/store/cart'
 import { CHECKOUT_LIMIT_MINOR, checkoutCartRevision, customerFingerprint, deliveryIsReady, normaliseAddress, restoreCartAddresses, validateAddress } from '@/lib/storefront/checkout'
 
-const WC_URL = (process.env.WOOCOMMERCE_URL || 'https://housefindsstore.com').replace(/\/$/, '')
+const WC_URL = (process.env.WOOCOMMERCE_URL || 'https://backend.housefindsstore.com').replace(/\/$/, '')
 const CART_URL = `${WC_URL}/wp-json/wc/store/v1/cart`
 const CHECKOUT_URL = `${WC_URL}/wp-json/wc/store/v1/checkout`
 export const LAST_ORDER_COOKIE = 'hf_last_order'

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { displayProductName } from '@/lib/woocommerce/presentation'
 import { isOperationalAttributeName } from '@/lib/storefront/catalog'
 
-const WC_URL = (process.env.WOOCOMMERCE_URL || 'https://housefindsstore.com').replace(/\/$/, '')
+const WC_URL = (process.env.WOOCOMMERCE_URL || 'https://backend.housefindsstore.com').replace(/\/$/, '')
 const LOOKUP_URL = `${WC_URL}/wp-json/housefinds/v1/order-status`
 
 type RawLookupResult = {

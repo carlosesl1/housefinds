@@ -5,7 +5,7 @@ import { CART_COOKIE } from '@/lib/woocommerce/cart-token'
 import { getLastStoreOrder } from '@/lib/woocommerce/order-session'
 import { commerceFetch } from '@/lib/woocommerce/transport'
 
-const WC_URL = (process.env.WOOCOMMERCE_URL || 'https://housefindsstore.com').replace(/\/$/, '')
+const WC_URL = (process.env.WOOCOMMERCE_URL || 'https://backend.housefindsstore.com').replace(/\/$/, '')
 
 export async function POST(req: NextRequest) {
   const headers = { 'Cache-Control': 'no-store, private' }
