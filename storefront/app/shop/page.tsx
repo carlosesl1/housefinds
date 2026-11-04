@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { ArrowRightIcon, ArrowPathIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, CreditCardIcon, MagnifyingGlassIcon, TruckIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { ArrowRightIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { editorialFont } from '@/lib/storefront/editorial-font'
 import { getProducts } from '@/lib/woocommerce/client'
 import { ProductCard } from '@/components/product/product-card'
@@ -54,17 +54,11 @@ export default async function ShopPage({ searchParams }: { searchParams: SearchP
         <Link prefetch={false} href="/">Home</Link><ChevronRightIcon aria-hidden="true" />
         {category ? <><Link prefetch={false} href="/shop">Shop</Link><ChevronRightIcon aria-hidden="true" /><span aria-current="page">{category.title}</span></> : <span aria-current="page">Shop all</span>}
       </nav>
-      <CategoryBanner category={category} products={filterProductsByStoreCategory(allProducts, category?.slug)} unavailable={unavailable} />
-      <nav className={styles.benefits} aria-label="Shopping benefits">
-        <Link prefetch={false} href="/shipping"><TruckIcon aria-hidden="true" /><span><strong>Free UK delivery</strong><small>Estimated around 14 days</small></span></Link>
-        <Link prefetch={false} href="/returns"><ArrowPathIcon aria-hidden="true" /><span><strong>Free 14-day returns</strong><small>On eligible orders</small></span></Link>
-        <Link prefetch={false} href="/faq"><CreditCardIcon aria-hidden="true" /><span><strong>Secure card checkout</strong><small>Pay by card with Stripe</small></span></Link>
-      </nav>
+      <CategoryBanner category={category} products={filterProductsByStoreCategory(allProducts, category?.slug)} />
       {unavailable ? <section className={styles.empty} role="status">
         <h2>The collection is taking a little longer to load.</h2><p>Please try again in a moment. You can still get help with an existing order.</p>
         <div><Link prefetch={false} href={shopHref(state)} className="hf-button-primary">Try again</Link><Link prefetch={false} href="/contact" className="hf-button-secondary">Contact us</Link></div>
       </section> : <>
-        <FindYourFit categories={STORE_CATEGORIES.filter(item => filterProductsByStoreCategory(allProducts, item.slug).length > 0).map(item => item.slug)} />
         <div className={styles.catalog} id="shop-results">
           <aside className={styles.sidebar} aria-label="Filter products">
             <CatalogFilters count={filterCount}>
@@ -87,10 +81,6 @@ export default async function ShopPage({ searchParams }: { searchParams: SearchP
             <div className={styles.help}><p>A little help finding it?</p><span>We’re here for product questions, delivery and returns.</span><Link prefetch={false} href="/contact">Ask Housefinds <ArrowRightIcon aria-hidden="true" /></Link></div>
           </aside>
           <section className={styles.results} aria-labelledby="shop-products-heading">
-            <form action="/shop#shop-results" className={styles.search} role="search" aria-label="Search this collection">
-              {Object.entries(state).filter(([key, value]) => key !== 'q' && value).map(([key, value]) => <input key={key} type="hidden" name={key} value={value} />)}
-              <MagnifyingGlassIcon aria-hidden="true" /><label className="sr-only" htmlFor="collection-search">Search this collection</label><input id="collection-search" type="search" name="q" defaultValue={q} key={q} maxLength={120} placeholder={category ? `Search ${category.title.toLowerCase()}…` : 'Find something useful: storage, cooking, lighting…'} /><button type="submit">Search</button>
-            </form>
             <div className={styles.toolbar}>
               <div><h2 id="shop-products-heading">{q ? `Results for “${q}”` : category?.title || 'Explore all finds'}</h2><p>{products.length} product{products.length === 1 ? '' : 's'}{filterCount ? ' matching your choices' : ' for a more useful home'}</p></div>
               <details key={shopHref(state)} className={styles.sort}>
@@ -102,13 +92,17 @@ export default async function ShopPage({ searchParams }: { searchParams: SearchP
               {[category && { label: category.title, update: { category: '' } }, price && { label: price.label, update: { price: '' } }, q && { label: `Search: ${q}`, update: { q: '' } }, inStock && { label: 'In stock', update: { stock: '' } }].filter(item => !!item).map(item => item && <Link prefetch={false} key={item.label} href={href(item.update)} aria-label={`Remove filter: ${item.label}`}>{item.label}<XMarkIcon aria-hidden="true" /></Link>)}
               <Link prefetch={false} href={clearHref} className={styles.clear}>Clear all</Link>
             </div>}
-            {products.length ? <div className={styles.productGrid}>{products.map(product => <ProductCard key={product.id} product={product} quickAdd />)}</div> : <div className={styles.empty}>
+            {products.length ? <div className={styles.productGrid}>
+              {products.slice(0, 3).map(product => <ProductCard key={product.id} product={product} quickAdd />)}
+              {!filterCount && <FindYourFit categories={STORE_CATEGORIES.filter(item => filterProductsByStoreCategory(allProducts, item.slug).length > 0).map(item => item.slug)} />}
+              {products.slice(3).map(product => <ProductCard key={product.id} product={product} quickAdd />)}
+            </div> : <div className={styles.empty}>
               <MagnifyingGlassIcon className={styles.emptyIcon} aria-hidden="true" /><h3>No finds for this combination yet.</h3><p>Try a wider budget or a simpler search, such as “storage” or “kitchen”.</p><div><Link prefetch={false} href={href({ price: '', q: '', stock: '' })} className="hf-button-primary hf-button-sm">{category ? 'View this category' : 'Reset search'}</Link><Link prefetch={false} href={clearHref} className="hf-button-secondary hf-button-sm">Browse all finds</Link></div>
             </div>}
           </section>
         </div>
         {otherCategories.length > 0 && <section className={styles.discover} aria-labelledby="discover-title">
-          <div className={styles.discoverHeading}><p className="hf-eyebrow">A different place to start</p><h2 id="discover-title">More ways to make home work.</h2></div>
+          <div className={styles.discoverHeading}><p className="hf-eyebrow">A different place to start</p><h2 id="discover-title">More ways <span className="hf-accent">to make home work.</span></h2></div>
           <div className={styles.discoverGrid}>{otherCategories.map(item => <Link prefetch={false} key={item.slug} href={`/shop?category=${item.slug}`}><span>{item.shortTitle}</span><h3>{item.title}</h3><p>{item.copy}</p><span className={styles.discoverAction}>Explore {filterProductsByStoreCategory(allProducts, item.slug).length} finds <ArrowRightIcon aria-hidden="true" /></span></Link>)}</div>
         </section>}
       </>}

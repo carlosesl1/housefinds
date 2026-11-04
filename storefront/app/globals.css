@@ -72,7 +72,8 @@ summary::-webkit-details-marker { display: none; }
 .hf-text-link:hover { text-decoration: underline; }
 @media (max-width: 767px) {
   .hf-container { width: calc(100% - 40px); }
-  html { scroll-padding-top: 132px; }
+  /* The sticky header collapses to one row on scroll; a larger value scrolls the page while typing in its search. */
+  html { scroll-padding-top: 64px; }
 }
 @media (min-width: 1024px) {
   header .hf-icon-button[aria-label="Open menu"], header .hf-icon-button[aria-label="Close menu"] { display: none; }

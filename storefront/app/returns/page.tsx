@@ -15,7 +15,7 @@ export default function ReturnsPage() {
         <div className="mt-10 grid gap-12 lg:grid-cols-[.85fr_1.15fr] lg:gap-20">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[.28em] text-[var(--hf-brand-muted)]">Housefinds returns & support</p>
-            <h1 className="mt-4 text-[clamp(3.8rem,6vw,6.8rem)] font-semibold leading-[.88] tracking-[-.065em]">If something is not right,<br /><span className="text-[var(--hf-brand-muted)]">we make it right.</span></h1>
+            <h1 className="mt-4 text-[clamp(3.8rem,6vw,6.8rem)] font-semibold leading-[.88] tracking-[-.065em]">If something is not right,<br /><span className="hf-accent">we make it right.</span></h1>
             <p className="mt-6 max-w-xl text-lg leading-8 text-black/50">UK orders include free 14-day change-of-mind returns on eligible items. If a product arrives damaged, faulty or incorrect, contact Housefinds and we will help arrange the appropriate resolution.</p>
 
             <div className="mt-8 rounded-[var(--hf-radius-lg)] bg-[#e6eee8] p-6">

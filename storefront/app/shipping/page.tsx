@@ -14,7 +14,7 @@ export default function ShippingPage() {
 
         <div className="mt-10 max-w-4xl">
           <p className="text-[11px] font-semibold uppercase tracking-[.28em] text-[var(--hf-brand-muted)]">Shipping & delivery</p>
-          <h1 className="mt-4 text-[clamp(3.8rem,6vw,7rem)] font-semibold leading-[.88] tracking-[-.065em]">Free UK delivery.<br /><span className="text-[var(--hf-brand-muted)]">No surprise shipping fee.</span></h1>
+          <h1 className="mt-4 text-[clamp(3.8rem,6vw,7rem)] font-semibold leading-[.88] tracking-[-.065em]">Free UK delivery.<br /><span className="hf-accent">No surprise shipping fee.</span></h1>
           <p className="mt-6 max-w-2xl text-lg leading-8 text-black/50">Housefinds currently delivers to the United Kingdom. Standard delivery is free, and our current estimate is around 14 days from order confirmation. Any updated delivery information is shown with the order as it progresses.</p>
         </div>
 

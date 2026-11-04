@@ -116,7 +116,6 @@ export function ProductGallery({ images, productName, video }: { images: Storefr
           <Image src={item.kind === 'image' ? item.image.thumbnail || item.image.src : item.video.poster} alt="" fill sizes="76px" className="object-contain" />
           {item.kind === 'video' && <span className="absolute inset-0 grid place-items-center bg-black/15"><PlayIcon className="size-7 rounded-full bg-white p-1.5 text-[var(--hf-brand)]" aria-hidden="true" /></span>}
         </span>
-        <span className="mt-1 block truncate text-[10px] font-medium leading-4 text-[var(--hf-ink)]">{item.label}</span>
       </button>
     ))
   }
@@ -135,7 +134,7 @@ export function ProductGallery({ images, productName, video }: { images: Storefr
       </div>
       {media.length > 1 && <>
         <div className="mt-3 flex items-center justify-between gap-3">
-          <p className="text-xs leading-5 text-black/65" aria-live="polite" aria-atomic="true">{current.label} · {active + 1} of {media.length}</p>
+          <p className="text-xs leading-5 text-black/65" aria-live="polite" aria-atomic="true">{current.kind === 'video' ? 'Video · ' : ''}{active + 1} of {media.length}</p>
           <div className="flex gap-2">
             <button type="button" onClick={() => move(-1)} className={arrowClass} aria-label="Previous product image or video"><ChevronLeftIcon className="size-4" aria-hidden="true" /></button>
             <button type="button" onClick={() => move(1)} className={arrowClass} aria-label="Next product image or video"><ChevronRightIcon className="size-4" aria-hidden="true" /></button>
@@ -152,7 +151,7 @@ export function ProductGallery({ images, productName, video }: { images: Storefr
         }} className="fixed inset-0 m-0 h-[100dvh] max-h-none w-screen max-w-none bg-[#111713]/98 p-3 text-white backdrop:bg-black/80 sm:p-6">
           <div className="mx-auto flex h-full max-w-[1440px] flex-col">
             <div className="flex items-center justify-between gap-4 pb-4">
-              <div className="min-w-0"><p className="truncate text-sm font-semibold">{productName}</p><p className="mt-1 text-xs text-white/75" aria-live="polite">{current.label} · {active + 1} of {media.length}</p></div>
+              <div className="min-w-0"><p className="truncate text-sm font-semibold">{productName}</p><p className="mt-1 text-xs text-white/75" aria-live="polite">{current.kind === 'video' ? 'Video · ' : ''}{active + 1} of {media.length}</p></div>
               <button type="button" autoFocus onClick={closeViewer} className="grid size-12 shrink-0 place-items-center rounded-full border border-white/30 bg-white/10 focus-visible:outline-2 focus-visible:outline-white" aria-label="Close image viewer"><XMarkIcon className="size-6" aria-hidden="true" /></button>
             </div>
             <div className="relative min-h-0 flex-1 overflow-hidden rounded-[var(--hf-radius-lg)] bg-black/20" style={{ touchAction: 'pan-y pinch-zoom' }} onTouchStart={current.kind === 'image' ? onTouchStart : undefined} onTouchEnd={current.kind === 'image' ? onTouchEnd : undefined} onTouchCancel={() => { touchStart.current = null }}>

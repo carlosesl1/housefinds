@@ -49,6 +49,9 @@ function distinctTerms(attribute: WooProduct['attributes'][number]) {
 
 function optionUnit(label: string) {
   const normalized = label.trim().toLocaleLowerCase()
+  // Woo can merge several choices into one attribute: its term count is combinations, not one kind of option.
+  if (/[,&]|\band\b/.test(normalized)) return 'options'
+  if (normalized === 'pack' || normalized === 'set') return 'pack sizes'
   if (normalized === 'colour' || normalized === 'color') return 'colours'
   if (normalized === 'size') return 'sizes'
   if (normalized === 'capacity') return 'capacities'
@@ -88,7 +91,7 @@ function priceMaximumBelowTen(product: WooProduct) {
 /** A badge is returned only when its factual condition is known from Woo data. */
 export function cardBadge(product: WooProduct) {
   if (!product.is_in_stock) return 'Out of stock'
-  if (product.type === 'variable' || product.has_options || Boolean(product.variations?.length)) return 'Options available'
+  if (cardHasOptions(product)) return undefined
   if (priceMaximumBelowTen(product)) return 'Under £10'
   return undefined
 }

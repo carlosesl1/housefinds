@@ -1,5 +1,7 @@
 # Category discovery improvements
 
+Updated by `design-review-2026-11-03.md`: the benefits row and the scoped search field left `/shop`, and the finder moved below the first products.
+
 The supplied category-page reference informed the `/shop` layout: contextual category imagery, visible delivery/returns/payment information, a two-choice finder, scoped search, desktop sidebar/mobile collapsible filters, clear sorting, factual card labels and category discovery links.
 
 The existing Housefinds palette, real WooCommerce catalogue, GBP pricing and UK operating conditions remain the source of truth. Search, category, budget, availability and ordering compose through URL parameters. Search terms with support intent use the existing customer-care search; internal search results are noindex. Empty selections offer recovery paths.

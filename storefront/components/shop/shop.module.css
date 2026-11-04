@@ -2,15 +2,7 @@
 .breadcrumb { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; font-size: 11px; color: var(--hf-ink-soft); margin-bottom: 20px; }
 .breadcrumb svg { width: 12px; height: 12px; }
 .breadcrumb a:hover { text-decoration: underline; text-underline-offset: 3px; }
-.benefits { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); padding: 18px 0; border-bottom: 1px solid var(--hf-border); }
-.benefits a { display: flex; justify-content: center; align-items: center; gap: 14px; min-height: 44px; padding: 0 16px; }
-.benefits a + a { border-left: 1px solid var(--hf-border); }
-.benefits svg { width: 23px; height: 23px; flex-shrink: 0; color: var(--hf-brand); }
-.benefits strong, .benefits small { display: block; }
-.benefits strong { font-size: 12px; font-weight: 600; }
-.benefits small { font-size: 10px; color: var(--hf-ink-soft); margin-top: 3px; }
-.benefits a:hover strong { text-decoration: underline; text-underline-offset: 4px; }
-.finder { margin-top: 20px; border: 1px solid #dbe3d8; border-radius: 6px; background: #f1f3ec; }
+.finder { grid-column: 1 / -1; border: 1px solid #dbe3d8; border-radius: 6px; background: #f1f3ec; }
 .finder > summary { display: flex; align-items: center; list-style: none; gap: 14px; cursor: pointer; padding: 15px 20px; min-height: 74px; }
 .finderIcon { width: 33px; height: 33px; display: grid; place-items: center; border: 1px solid #a1b29f; border-radius: 50%; color: var(--hf-brand); font-family: Georgia, serif; font-size: 21px; flex-shrink: 0; }
 .finder strong { font-size: 13px; font-weight: 600; display: block; }
@@ -58,14 +50,7 @@
 .help a { display: flex; gap: 12px; align-items: center; min-height: 44px; color: var(--hf-brand); font-size: 11px; font-weight: 600; }
 .help svg { width: 14px; }
 .results { min-width: 0; }
-.search { display: flex; align-items: center; border: 1px solid var(--hf-border-strong); background: white; border-radius: 5px; min-height: 46px; gap: 12px; padding-left: 14px; }
-.search:focus-within { outline: 2px solid var(--hf-brand); outline-offset: 2px; }
-.search > svg { width: 18px; height: 18px; color: var(--hf-brand); flex-shrink: 0; }
-.search input[type=search] { min-width: 0; width: 100%; height: 44px; font-size: 12px; border: 0; background: transparent; outline: 0; }
-.search input::placeholder { color: #5e685e; }
-.search button { min-height: 44px; padding: 0 20px; background: var(--hf-brand); color: white; font-size: 12px; font-weight: 600; border-radius: 0 4px 4px 0; }
-.search button:hover { background: var(--hf-brand-hover); }
-.toolbar { display: flex; justify-content: space-between; align-items: center; gap: 18px; padding: 22px 0; }
+.toolbar { display: flex; justify-content: space-between; align-items: center; gap: 18px; padding: 0 0 20px; }
 .toolbar h2 { font-size: 19px; line-height: 1.35; font-weight: 600; letter-spacing: -.035em; overflow-wrap: anywhere; }
 .toolbar p { font-size: 11px; color: var(--hf-ink-soft); margin-top: 5px; }
 .sort { position: relative; flex-shrink: 0; font-size: 11px; }
@@ -78,8 +63,7 @@
 .applied { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: -5px 0 20px; }
 .applied > a:not(.clear) { min-height: 36px; max-width: 100%; display: flex; align-items: center; gap: 10px; font-size: 11px; background: var(--hf-brand-soft); color: var(--hf-brand); padding: 7px 10px; border-radius: 3px; overflow-wrap: anywhere; }
 .applied svg { width: 13px; height: 13px; flex-shrink: 0; }
-.productGrid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 34px 22px; }
-.productGrid :global(.hf-card-media) { aspect-ratio: 1.05; }
+.productGrid { display: grid; grid-auto-flow: row dense; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 34px 22px; }
 .productGrid :global(.hf-card-description) { min-height: 3.3em; }
 .empty { padding: 48px 24px; text-align: center; background: var(--hf-surface-soft); border-radius: 6px; }
 .empty h2, .empty h3 { font-size: 22px; line-height: 1.35; font-weight: 500; letter-spacing: -.035em; }
@@ -87,7 +71,7 @@
 .empty > div { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; }
 .emptyIcon { width: 28px; height: 28px; margin: 0 auto 18px; color: var(--hf-brand); }
 .discover { margin-top: 60px; border-top: 1px solid var(--hf-border-strong); padding-top: 32px; }
-.discoverHeading h2 { font-family: var(--hf-font-editorial), Georgia, serif; font-size: clamp(25px,2.4vw,34px); line-height: 1.25; letter-spacing: -.03em; margin-top: 9px; }
+.discoverHeading h2 { font-size: clamp(25px,2.4vw,34px); font-weight: 600; line-height: 1.2; letter-spacing: -.045em; margin-top: 9px; }
 .discoverGrid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); margin-top: 25px; gap: 22px; }
 .discoverGrid > a { display: flex; flex-direction: column; padding: 23px; background: #eeeee7; border-radius: 4px; transition: background 180ms ease; }
 .discoverGrid > a:hover { background: var(--hf-brand-soft); }
@@ -108,22 +92,12 @@
   .filterBody nav { border: 0; padding: 8px 0; }
   .filterOption { min-height: 44px; }
   .help { display: none; }
-  .benefits a { padding: 0 8px; gap: 8px; }
-  .benefits svg { width: 20px; }
-  .benefits strong { font-size: 10px; }
-  .benefits small { font-size: 9px; }
   .discoverGrid { gap: 12px; }
   .discoverGrid > a { padding: 18px; }
 }
 @media (max-width: 640px) {
   .page { padding-top: 14px; }
   .breadcrumb { margin-bottom: 14px; }
-  .benefits { padding: 16px 0; gap: 0; }
-  .benefits a { flex-direction: column; justify-content: flex-start; text-align: center; gap: 8px; padding: 0 6px; }
-  .benefits strong { font-size: 10px; line-height: 1.5; }
-  .benefits small { font-size: 9px; line-height: 1.5; margin-top: 3px; }
-  .benefits svg { width: 22px; height: 22px; }
-  .finder { margin-top: 16px; }
   .finder > summary { padding: 13px; gap: 10px; }
   .finder strong { font-size: 12px; }
   .finder small { max-width: 24ch; font-size: 10px; line-height: 1.6; }
@@ -137,13 +111,9 @@
   .filterBody { grid-template-columns: 1fr 1fr; column-gap: 22px; }
   .filterBody h2 { font-size: 11px; }
   .filterOption { font-size: 11px; gap: 7px; }
-  .toolbar { align-items: flex-start; flex-direction: column; gap: 12px; padding: 20px 0; }
-  .toolbar h2 { font-size: 21px; }
-  .sort, .sort summary, .sort nav { width: 100%; }
-  .sort summary { justify-content: space-between; }
-  .search { gap: 8px; padding-left: 10px; }
-  .search button { padding-inline: 12px; }
-  .search input[type=search] { font-size: 16px; }
+  .toolbar { gap: 12px; padding-bottom: 14px; }
+  .toolbar h2 { font-size: 16px; }
+  .sort summary { gap: 10px; }
   .productGrid { gap: 26px 13px; }
   .productGrid :global(.hf-card-content h3) { font-size: 13px; }
   .productGrid :global(.hf-card-description) { font-size: 11px; }

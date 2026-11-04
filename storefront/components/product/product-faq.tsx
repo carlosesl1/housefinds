@@ -20,7 +20,7 @@ export function ProductFAQ({ product }: { product: WooProduct }) {
       <div className="hf-container grid gap-8 lg:grid-cols-[.65fr_1.35fr] lg:gap-14">
         <div>
           <p className="hf-eyebrow text-[var(--hf-brand)]">Product questions</p>
-          <h2 className="mt-4 max-w-sm text-[clamp(1.9rem,3vw,3rem)] font-semibold leading-[1.08] tracking-[-.04em]">A few helpful answers.</h2>
+          <h2 className="mt-4 max-w-sm text-[clamp(1.9rem,3vw,3rem)] font-semibold leading-[1.08] tracking-[-.04em]">A few <span className="hf-accent">helpful answers.</span></h2>
           <p className="mt-4 max-w-sm text-sm leading-6 text-black/65">Need help with a size, option or order? Ask us before you choose.</p>
           <a href={`mailto:contact@housefindsstore.com?subject=${encodeURIComponent(`Product question: ${product.id}`)}`} className="hf-button-tertiary mt-5">Ask Housefinds</a>
         </div>

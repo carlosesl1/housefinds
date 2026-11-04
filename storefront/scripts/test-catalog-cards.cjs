@@ -64,7 +64,7 @@ test('Under £10 requires GBP and every displayed price bound below the threshol
   assert.equal(cards.cardBadge(product({ prices: prices({ price_range: { min_amount: '200', max_amount: '1000' } }) })), undefined)
   assert.equal(cards.cardBadge(product({ prices: prices({ currency_code: 'USD' }) })), undefined)
   assert.equal(cards.cardBadge(product({ is_in_stock: false })), 'Out of stock')
-  assert.equal(cards.cardBadge(product({ type: 'variable' })), 'Options available')
+  assert.equal(cards.cardBadge(product({ type: 'variable' })), undefined)
   assert.equal(cards.cardBadge(product({ prices: prices({ price: '' }) })), undefined)
 })
 
@@ -75,6 +75,8 @@ test('Option summaries use visible attributes and omit supplier fields', () => {
     { id: 3, name: 'Ships From', has_variations: true, terms: [term(6, 'China'), term(7, 'UK')] },
   ] }))
   assert.equal(summary, '3 colours / 2 sizes')
+  assert.equal(cards.cardOptionSummary(product({ attributes: [{ id: 6, name: 'Pack, capacity & colour', has_variations: true, terms: [term(1, 'A'), term(2, 'B')] }] })), '2 options')
+  assert.equal(cards.cardOptionSummary(product({ attributes: [{ id: 7, name: 'Pack', has_variations: true, terms: [term(1, '1 pack'), term(2, '2 pack')] }] })), '2 pack sizes')
   assert.equal(cards.cardOptionSummary(product({ attributes: [{ id: 5, name: 'Material', has_variations: false, terms: [term(8, 'Steel'), term(9, 'Plastic')] }] })), undefined)
 })
 
