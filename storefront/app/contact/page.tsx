@@ -13,7 +13,7 @@ export default function ContactPage() {
         <div className="grid gap-12 lg:grid-cols-[.9fr_1.1fr] lg:gap-20">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[.28em] text-[var(--hf-brand-muted)]">Customer support</p>
-            <h1 className="mt-4 text-[clamp(3.8rem,6vw,6.8rem)] font-semibold leading-[.88] tracking-[-.065em]">Tell us what<br /><span className="text-[var(--hf-brand-muted)]">you need help with.</span></h1>
+            <h1 className="mt-4 text-[clamp(3.8rem,6vw,6.8rem)] font-semibold leading-[.88] tracking-[-.065em]">Tell us what<br /><span className="hf-accent">you need help with.</span></h1>
             <p className="mt-6 max-w-xl text-lg leading-8 text-black/50">Questions about an order, delivery, a return or a product? Contact Housefinds directly and include the useful details so we can understand the issue quickly.</p>
 
             <a href="mailto:contact@housefindsstore.com" className="mt-8 inline-flex items-center gap-3 rounded-full bg-[var(--hf-brand)] px-6 py-3.5 text-sm font-semibold text-white">

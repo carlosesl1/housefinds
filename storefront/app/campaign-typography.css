@@ -12,6 +12,13 @@ body { font-family: var(--hf-font-ui), -apple-system, BlinkMacSystemFont, "Segoe
   line-height: 1.12;
   text-wrap: balance;
 }
+.hf-accent {
+  color: var(--hf-brand);
+  font-family: var(--hf-font-editorial), Georgia, serif;
+  font-style: italic;
+  font-weight: 500;
+  letter-spacing: -.045em;
+}
 .hf-editorial-home .hf-display,
 .hf-editorial-home .hf-section-title { font-family: var(--hf-font-ui), Arial, sans-serif; font-weight: 600; letter-spacing: -.045em; line-height: 1.1; text-wrap: balance; }
 .hf-editorial-home .hf-section-title { font-size: clamp(28px, 2.8vw, 40px); }

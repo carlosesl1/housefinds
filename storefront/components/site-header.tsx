@@ -35,6 +35,8 @@ export function SiteHeader() {
   const [scrolled, setScrolled] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const menuToggleRef = useRef<HTMLButtonElement>(null)
+  const searchToggleRef = useRef<HTMLButtonElement>(null)
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const update = () => setScrolled(window.scrollY > 48)
@@ -64,15 +66,22 @@ export function SiteHeader() {
       document.body.style.overflow = previousOverflow
       window.removeEventListener('keydown', onKeyDown)
       desktop.removeEventListener('change', closeOnDesktop)
-      menuToggleRef.current?.focus()
+      menuToggleRef.current?.focus({ preventScroll: true })
     }
   }, [menuOpen])
   const [query, setQuery] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
+  const [searchExpanded, setSearchExpanded] = useState(false)
+  const searchVisible = searchOpen || searchExpanded
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
   const [suggestionLoading, setSuggestionLoading] = useState(false)
   const supportIntent = useMemo(() => isSupportIntent(query), [query])
   const helpSuggestions = useMemo(() => query.trim().length >= 2 ? searchHelp(query).slice(0, 3) : [], [query])
+
+  useEffect(() => {
+    // The global scroll-padding would otherwise scroll the page to reveal a field in the sticky header.
+    if (searchExpanded) searchInputRef.current?.focus({ preventScroll: true })
+  }, [searchExpanded])
 
   useEffect(() => {
     const q = query.trim()
@@ -101,23 +110,28 @@ export function SiteHeader() {
     }
   }, [query, supportIntent])
 
+  const hideHeaderSearch = () => {
+    setSearchOpen(false)
+    setSearchExpanded(false)
+  }
+
   const submitSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const q = query.trim()
     if (!q) return
     setMenuOpen(false)
-    setSearchOpen(false)
+    hideHeaderSearch()
     router.push(`/search?q=${encodeURIComponent(q)}`)
   }
 
   const choosePopularSearch = (value: string) => {
     setQuery(value)
-    setSearchOpen(false)
+    hideHeaderSearch()
     router.push(`/search?q=${encodeURIComponent(value)}`)
   }
 
   const closeSearch = () => {
-    setSearchOpen(false)
+    hideHeaderSearch()
     setQuery('')
   }
 
@@ -128,7 +142,7 @@ export function SiteHeader() {
   }
 
   return (
-    <header className={`hf-site-header${scrolled ? ' is-scrolled' : ''}`}>
+    <header className={`hf-site-header${scrolled ? ' is-scrolled' : ''}${searchVisible ? ' is-search-open' : ''}`}>
       <div className="hf-service-line"><div className="hf-container"><p>Free UK delivery · current estimate around 14 days</p><Link href="/returns">Free 14-day returns on eligible orders</Link></div></div>
       <div className="hf-header-frame">
       <div className="hf-container hf-header-main">
@@ -148,7 +162,7 @@ export function SiteHeader() {
           <form onSubmit={submitSearch} className="hf-header-search relative" role="search">
             <label className="flex h-11 items-center gap-3 px-4 transition">
               <span className="sr-only">Search products</span>
-              <input value={query} onChange={(event) => setQuery(event.target.value)} onFocus={() => setSearchOpen(true)} onBlur={(event) => { const form = event.currentTarget.form; window.setTimeout(() => { if (!form?.contains(document.activeElement)) setSearchOpen(false) }, 0) }} onKeyDown={(event) => { if (event.key === 'Escape') setSearchOpen(false) }} autoComplete="off" placeholder="Search products…" className="min-w-0 flex-1 bg-transparent text-sm text-black outline-none placeholder:text-black/38" />
+              <input ref={searchInputRef} value={query} onChange={(event) => setQuery(event.target.value)} onFocus={() => setSearchOpen(true)} onBlur={(event) => { const form = event.currentTarget.form; window.setTimeout(() => { if (!form?.contains(document.activeElement)) hideHeaderSearch() }, 0) }} onKeyDown={(event) => { if (event.key !== 'Escape') return; hideHeaderSearch(); if (scrolled) searchToggleRef.current?.focus({ preventScroll: true }) }} autoComplete="off" placeholder="Search products…" className="min-w-0 flex-1 bg-transparent text-sm text-black outline-none placeholder:text-black/38" />
             </label>
             <button type="submit" className="hf-search-submit" aria-label="Submit product search"><MagnifyingGlassIcon className="size-5" aria-hidden="true" /></button>
 
@@ -199,12 +213,13 @@ export function SiteHeader() {
           </form>
 
         <div className="hf-header-actions ml-auto flex items-center gap-2">
+          <button ref={searchToggleRef} type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => { if (searchVisible) { searchInputRef.current?.blur(); hideHeaderSearch() } else setSearchExpanded(true) }} className="hf-icon-button hf-search-toggle !shadow-none" aria-expanded={searchVisible} aria-label={searchVisible ? 'Close product search' : 'Open product search'}><MagnifyingGlassIcon className="size-5" aria-hidden="true" /></button>
           <CartButton />
           <button ref={menuToggleRef} type="button" aria-controls="mobile-menu" onClick={() => setMenuOpen((value) => !value)} className="hf-icon-button !shadow-none lg:hidden" aria-expanded={menuOpen} aria-label={menuOpen ? 'Close menu' : 'Open menu'}>{menuOpen ? <XMarkIcon className="size-5" /> : <Bars3Icon className="size-5" />}</button>
         </div>
         <nav className="hf-header-nav" aria-label="Shop navigation">
           {navItems.map((item) => (
-            <Link key={item.href} href={item.href} className={`relative whitespace-nowrap py-2 transition ${isActive(item.href) ? 'text-[#294b3a]' : 'text-[var(--hf-ink-soft)] hover:text-black'}`} aria-current={pathname === item.href ? 'page' : undefined}>
+            <Link prefetch={false} key={item.href} href={item.href} className={`relative whitespace-nowrap py-2 transition ${isActive(item.href) ? 'text-[#294b3a]' : 'text-[var(--hf-ink-soft)] hover:text-black'}`} aria-current={pathname === item.href ? 'page' : undefined}>
               {item.label}
             </Link>
           ))}
@@ -216,14 +231,14 @@ export function SiteHeader() {
 
       {menuOpen && (
         <div ref={menuRef} id="mobile-menu" className="hf-mobile-menu" role="dialog" aria-modal="true" aria-labelledby="mobile-menu-title">
-          <div className="hf-mobile-menu-heading"><h2 id="mobile-menu-title">Find your useful bit.</h2><button className="hf-icon-button" type="button" aria-label="Close navigation" onClick={() => setMenuOpen(false)}><XMarkIcon className="size-5" /></button></div>
+          <div className="hf-mobile-menu-heading"><h2 id="mobile-menu-title">Find your <span className="hf-accent">useful bit.</span></h2><button className="hf-icon-button" type="button" aria-label="Close navigation" onClick={() => setMenuOpen(false)}><XMarkIcon className="size-5" /></button></div>
           <form onSubmit={submitSearch} role="search">
             <label className="flex h-12 items-center gap-3 rounded-[var(--hf-radius-md)] border border-black/10 bg-white px-4 focus-within:border-[#557562]/45 focus-within:ring-4 focus-within:ring-[#557562]/10"><MagnifyingGlassIcon className="size-[18px] text-black/45" /><span className="sr-only">Search products</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search products…" className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-black/35" /></label>
           </form>
           <div className="mt-3 grid grid-cols-2 gap-2">{popularSearches.slice(0, 4).map((value) => <button key={value} type="button" onClick={() => { setMenuOpen(false); choosePopularSearch(value) }} className="hf-button-tertiary !min-h-11 px-3 py-2 text-xs">{value}</button>)}</div>
 
           <nav className="mt-4 grid" aria-label="Mobile shop navigation">
-            {navItems.map((item) => <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)} className={`border-b border-black/[.05] py-4 text-base font-semibold ${isActive(item.href) ? 'text-[#355f4a]' : 'text-[#172018]'}`}>{item.label}</Link>)}
+            {navItems.map((item) => <Link prefetch={false} key={item.href} href={item.href} onClick={() => setMenuOpen(false)} className={`border-b border-black/[.05] py-4 text-base font-semibold ${isActive(item.href) ? 'text-[#355f4a]' : 'text-[#172018]'}`}>{item.label}</Link>)}
             <Link href="/collections/under-20" onClick={() => setMenuOpen(false)} className="border-b border-black/[.05] py-4 text-base text-[var(--hf-brand)]">Finds under £20</Link>
           </nav>
 

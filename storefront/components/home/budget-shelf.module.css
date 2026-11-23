@@ -1,16 +1,13 @@
 .shelf { padding-block: 0 42px; }
-.layout { display: grid; grid-template-columns: .9fr 3fr; gap: 32px; align-items: stretch; }
-.heading { background: var(--hf-surface-sage); border-radius: 5px; padding: 27px 25px; display: flex; flex-direction: column; align-items: start; }
+.layout { display: grid; grid-template-columns: .9fr 3fr; gap: 32px; align-items: start; }
+.heading { display: flex; flex-direction: column; align-items: start; padding-top: 2px; }
 .heading > p:first-child { color: var(--hf-brand); font-family: var(--hf-font-editorial), Georgia, serif; font-size: 14px; }
-.heading h2 { font-size: clamp(27px,2.5vw,36px); font-weight: 600; letter-spacing: -.045em; line-height: 1.1; margin-top: 22px; }
-.heading h2 span { color: var(--hf-brand); white-space: nowrap; }
+.heading h2 { font-size: clamp(27px,2.5vw,36px); font-weight: 600; letter-spacing: -.045em; line-height: 1.1; margin-top: 12px; }
+.heading h2 span { white-space: nowrap; }
 .heading .description { color: var(--hf-ink-soft); font-size: 12px; line-height: 1.7; margin-top: 18px; max-width: 29ch; }
-.heading a { margin-top: auto; padding-top: 18px; border-bottom: 1px solid var(--hf-brand); font-size: 12px; }
+.heading a { margin-top: 14px; border-bottom: 1px solid var(--hf-brand); font-size: 12px; }
 .products { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 22px; }
-.products :global(.hf-card-media) { aspect-ratio: 1.12; background: var(--hf-surface-soft); }
 .products :global(.hf-card-content) { padding-top: 13px; }
-.products :global(.hf-card-action) { border: 0; padding-inline: 0; border-radius: 0; border-bottom: 1px solid var(--hf-border-strong); background: transparent; margin-top: 8px; }
-.products :global(.hf-card-action:hover) { background: transparent; color: var(--hf-brand); border-color: var(--hf-brand); }
 @media(max-width: 1100px) {
   .layout { grid-template-columns: 1fr; gap: 24px; }
   .heading { display: grid; grid-template-columns: 1fr 1fr; column-gap: 32px; align-items: end; }
@@ -22,7 +19,7 @@
 @media(max-width: 767px) {
   .shelf { padding-bottom: 30px; }
   .layout { width: 100%; gap: 20px; }
-  .heading { display: block; padding: 23px; margin-inline: 20px; }
+  .heading { display: block; padding: 0; margin-inline: 20px; }
   .heading > p:first-child { font-size: 13px; }
   .heading h2 { font-size: 29px; margin-top: 12px; }
   .heading h2 br { display: none; }

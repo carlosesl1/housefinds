@@ -18,7 +18,7 @@ export function SiteFooter() {
           <p className={styles.description}>A UK-focused edit of useful home products, chosen for everyday life.</p>
           <a href="mailto:contact@housefindsstore.com">contact@housefindsstore.com</a>
         </div>
-        {groups.map(group => <nav key={group.title} aria-label={`Footer ${group.title.toLowerCase()}`}><h2>{group.title}</h2><ul>{group.links.map(([label,href]) => <li key={href}><Link href={href}>{label}</Link></li>)}</ul></nav>)}
+        {groups.map(group => <nav key={group.title} aria-label={`Footer ${group.title.toLowerCase()}`}><h2>{group.title}</h2><ul>{group.links.map(([label,href]) => <li key={href}><Link prefetch={href.startsWith('/shop') ? false : undefined} href={href}>{label}</Link></li>)}</ul></nav>)}
       </div>
       <div className={styles.service}><p>Free standard UK delivery · Estimated around 14 days</p><p>Free 14-day returns on eligible orders · Secure card checkout</p></div>
       <div className={styles.bottom}><span>© 2026 Housefinds. All rights reserved.</span><div><Link href="/privacy-policy">Privacy</Link><Link href="/terms">Terms</Link></div></div>

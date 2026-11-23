@@ -32,6 +32,7 @@ export function DefaultProduct({ product, variations = [], reviews = [], related
   const hasDetails = facts.length > 0 || optionRows.length > 0 || Boolean(content?.included || content?.care)
   const highlights = content?.highlights || story.benefits.slice(0, 3)
   const detailImage = images[1] || images[0]
+  const [headlineLead, ...headlineRest] = story.headline.split(/(?<=\.)\s+/)
 
   return (
     <main className="hf-product-page bg-[var(--hf-background)]">
@@ -79,7 +80,7 @@ export function DefaultProduct({ product, variations = [], reviews = [], related
         <div className={`hf-container grid gap-8 ${detailImage ? 'lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-14' : ''}`}>
           <div>
             <p className="hf-eyebrow text-[var(--hf-brand)]">Made for everyday life</p>
-            <h2 className="mt-4 max-w-xl text-[clamp(1.9rem,3vw,3rem)] font-semibold leading-[1.08] tracking-[-.04em]">{story.headline}</h2>
+            <h2 className="mt-4 max-w-xl text-[clamp(1.9rem,3vw,3rem)] font-semibold leading-[1.08] tracking-[-.04em]">{headlineLead}{headlineRest.length > 0 && <> <span className="hf-accent">{headlineRest.join(' ')}</span></>}</h2>
             <p className="mt-5 max-w-xl text-base leading-7 text-black/65">{product.id === 399 ? 'A compact pull-cord closer for everyday internal doors that are regularly left open.' : story.intro}</p>
               <ul className="mt-4 grid gap-2" aria-label="Product highlights">
                 {highlights.map((benefit) => <li key={benefit} className="flex items-start gap-2.5 text-sm leading-6 text-[var(--hf-ink)]">
@@ -115,7 +116,7 @@ export function DefaultProduct({ product, variations = [], reviews = [], related
 
       {hasDetails && <section id="product-details" className="scroll-mt-24 border-b border-black/[.06] py-12 lg:py-16">
         <div className="hf-container grid gap-8 lg:grid-cols-[.65fr_1.35fr] lg:gap-14">
-          <div><p className="hf-eyebrow text-[var(--hf-brand)]">Details & care</p><h2 className="mt-4 text-[clamp(1.9rem,3vw,3rem)] font-semibold leading-[1.08] tracking-[-.04em]">The useful details.<br />All in one place.</h2><p className="mt-4 max-w-sm text-sm leading-6 text-black/65">Materials, listed options and care information for this product.</p></div>
+          <div><p className="hf-eyebrow text-[var(--hf-brand)]">Details & care</p><h2 className="mt-4 text-[clamp(1.9rem,3vw,3rem)] font-semibold leading-[1.08] tracking-[-.04em]">The useful details.<br /><span className="hf-accent">All in one place.</span></h2><p className="mt-4 max-w-sm text-sm leading-6 text-black/65">Materials, listed options and care information for this product.</p></div>
           <div className="min-w-0 space-y-4">
             <dl className="divide-y divide-black/[.1] border-y border-black/[.1]">
               {facts.map((fact) => <div key={fact.label} className="grid gap-2 px-5 py-4 sm:grid-cols-[170px_1fr]"><dt className="text-sm font-semibold text-[var(--hf-ink)]">{fact.label}</dt><dd className="text-sm leading-6 text-black/65">{fact.value}</dd></div>)}

@@ -181,6 +181,18 @@ test('All discovery paths remain available after the composition redesign', () =
   assert.match(source, /<HomeCampaigns products=\{products\} featuredProduct=\{featuredProduct\}/)
   assert.match(source, /<HomeClosingBanner products=\{products\}/)
 })
+test('Home sections lead with different products and repeat only to fill a shelf', () => {
+  const { planHomeProducts } = load(path.join(root, 'lib/storefront/home-products.ts'))
+  const names = ['Cutting Board', 'Oil Spray', 'Door Closer', 'Toothbrush Holder', 'Shoe Washing Bag', 'Spoon Scale', 'LED Bar', 'Shoe Rack', 'Mosquito Racket', 'Bath Mat']
+  const catalogue = names.map((name, index) => product({ id: index + 1, name, slug: name.toLowerCase().replace(/ /g, '-') }))
+  const plan = planHomeProducts(catalogue)
+  assert.equal(plan.featuredProduct.name, 'Spoon Scale')
+  assert.deepEqual(Array.from(plan.leadProducts, item => item.name), ['Door Closer', 'Toothbrush Holder', 'Shoe Washing Bag', 'LED Bar'])
+  assert.deepEqual(Array.from(plan.budgetProducts.slice(0, 3), item => item.name), ['Shoe Rack', 'Mosquito Racket', 'Bath Mat'])
+  assert.equal(new Set(Array.from(plan.budgetProducts, item => item.id)).size, catalogue.length)
+  assert.equal(planHomeProducts([catalogue[1]]).leadProducts.length, 1)
+  assert.equal(planHomeProducts([]).leadProducts.length, 0)
+})
 test('Interactive edits expose only matching products and real category destinations', () => {
   const { getHomeEdits } = load(path.join(root, 'lib/storefront/home-edits.ts'))
   const edits = getHomeEdits(fixtures)

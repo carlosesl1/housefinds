@@ -40,8 +40,8 @@ export default function CartPage() {
       <main className="hf-cart-page hf-container">
         <div className="hf-cart-empty">
           <p className="text-[11px] font-semibold uppercase tracking-[.28em] text-[var(--hf-brand-muted)]">Your cart</p>
-          <h1 className="mt-4 text-[clamp(3.8rem,7vw,6rem)] font-semibold leading-[.9] tracking-[-.065em] text-[var(--hf-ink)]">Nothing here yet.</h1>
-          <p className="mx-auto mt-5 max-w-lg text-lg leading-8 text-[var(--hf-ink-soft)]">Browse the collection and add the useful finds you want to compare or order.</p>
+          <h1 className="mt-4 text-[clamp(3.8rem,7vw,6rem)] font-semibold leading-[.9] tracking-[-.065em] text-[var(--hf-ink)]">Nothing <span className="hf-accent">here yet.</span></h1>
+          <p className="mt-5 max-w-lg text-lg leading-8 text-[var(--hf-ink-soft)]">Browse the collection and add the useful finds you want to compare or order.</p>
           <Link href="/shop" className="hf-button-primary mt-8">Browse products <ArrowRightIcon className="size-4" /></Link>
         </div>
       </main>
@@ -56,9 +56,9 @@ export default function CartPage() {
         <div className="mt-8 flex flex-col justify-between gap-5 border-b border-black/[.07] pb-8 sm:flex-row sm:items-end">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[.28em] text-[var(--hf-brand-muted)]">Review your basket</p>
-            <h1 className="mt-3 text-[clamp(3.8rem,6vw,6.4rem)] font-semibold leading-[.9] tracking-[-.065em] text-[var(--hf-ink)]">Your cart.</h1>
+            <h1 className="mt-3 text-[clamp(3.8rem,6vw,6.4rem)] font-semibold leading-[.9] tracking-[-.065em] text-[var(--hf-ink)]">Your <span className="hf-accent">cart.</span></h1>
           </div>
-          <p className="text-sm text-[var(--hf-ink-soft)]">{cart.items_count} item{cart.items_count === 1 ? '' : 's'} · Free UK delivery</p>
+          <p className="text-sm text-[var(--hf-ink-soft)]">{cart.items_count} item{cart.items_count === 1 ? '' : 's'}</p>
         </div>
 
         {error && (

@@ -1,305 +1,111 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
+import { ArrowRightIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { editorialFont } from '@/lib/storefront/editorial-font'
-import {
-  AdjustmentsHorizontalIcon,
-  BarsArrowDownIcon,
-  CheckIcon,
-  ChevronDownIcon,
-  ChevronRightIcon,
-  TagIcon,
-  XMarkIcon,
-} from '@heroicons/react/24/outline'
 import { getProducts } from '@/lib/woocommerce/client'
 import { ProductCard } from '@/components/product/product-card'
+import { FindYourFit } from '@/components/shop/find-your-fit'
+import { CatalogFilters } from '@/components/shop/catalog-filters'
+import { CategoryBanner } from '@/components/shop/category-banner'
 import { STORE_CATEGORIES, filterProductsByStoreCategory, getStoreCategory } from '@/lib/storefront/categories'
 import { dedupeStoreProducts } from '@/lib/storefront/catalog'
-import type { WooProduct } from '@/lib/woocommerce/types'
+import { isSupportIntent } from '@/lib/storefront/help'
+import { SHOP_PRICES, SHOP_SORTS, filterShopPrice, searchShopProducts, shopHref, shopSortQuery, type ShopState } from '@/lib/storefront/shop'
+import styles from '@/components/shop/shop.module.css'
 
-export const metadata = { title: 'Shop' }
+type SearchParams = Promise<Record<string, string | string[] | undefined>>
 
-type ShopSearchParams = { category?: string; sort?: string; price?: string }
-
-const sorts = [
-  { value: 'recommended', label: 'Recommended' },
-  { value: 'new', label: 'Newest' },
-  { value: 'popular', label: 'Popular' },
-  { value: 'price-low', label: 'Price: low to high' },
-  { value: 'price-high', label: 'Price: high to low' },
-]
-
-const priceFilters = [
-  { value: 'under-10', label: 'Under £10' },
-  { value: '10-20', label: '£10–£20' },
-  { value: '20-plus', label: '£20+' },
-]
-
-function sortQuery(sort: string) {
-  if (sort === 'new') return { orderby: 'date', order: 'desc' as const }
-  if (sort === 'popular') return { orderby: 'popularity', order: 'desc' as const }
-  if (sort === 'price-low') return { orderby: 'price', order: 'asc' as const }
-  if (sort === 'price-high') return { orderby: 'price', order: 'desc' as const }
-  return { orderby: 'menu_order', order: 'asc' as const }
-}
-
-function productPriceBounds(product: WooProduct) {
-  const divisor = Math.pow(10, product.prices.currency_minor_unit)
-  const range = product.prices.price_range
-  if (range) return { min: Number(range.min_amount) / divisor, max: Number(range.max_amount) / divisor }
-  const price = Number(product.prices.price) / divisor
-  return { min: price, max: price }
-}
-
-function filterByPrice(products: WooProduct[], filter?: string) {
-  if (!filter) return products
-  return products.filter((product) => {
-    const { min, max } = productPriceBounds(product)
-    if (filter === 'under-10') return min < 10
-    if (filter === '10-20') return max >= 10 && min < 20
-    if (filter === '20-plus') return max >= 20
-    return true
-  })
-}
-
-export default async function ShopPage({ searchParams }: { searchParams: Promise<ShopSearchParams> }) {
+export async function generateMetadata({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams
-  const activeSort = sorts.some((item) => item.value === params.sort) ? params.sort || 'recommended' : 'recommended'
-  const activePrice = priceFilters.some((item) => item.value === params.price) ? params.price : undefined
-  const activeCategory = getStoreCategory(params.category)
-  const activeCategorySlug = activeCategory?.slug
-  const activePriceMeta = priceFilters.find((item) => item.value === activePrice)
-  const activeSortMeta = sorts.find((item) => item.value === activeSort) || sorts[0]
-  const query = sortQuery(activeSort)
-  let catalogUnavailable = false
-  const allProducts = dedupeStoreProducts(await getProducts({ per_page: 100, ...query }).catch(() => {
-    catalogUnavailable = true
-    return []
-  }))
-  const categoryScopedProducts = filterProductsByStoreCategory(allProducts, activeCategorySlug)
-  const products = filterByPrice(categoryScopedProducts, activePrice)
-  const hasFilters = Boolean(activeCategory || activePrice)
-  const activeFilterCount = Number(Boolean(activeCategory)) + Number(Boolean(activePrice))
-
-  const categoryCounts = new Map(
-    STORE_CATEGORIES.map((category) => [
-      category.slug,
-      filterByPrice(filterProductsByStoreCategory(allProducts, category.slug), activePrice).length,
-    ]),
-  )
-  const allCategoryCount = filterByPrice(allProducts, activePrice).length
-  const priceCounts = new Map(
-    priceFilters.map((filter) => [filter.value, filterByPrice(categoryScopedProducts, filter.value).length]),
-  )
-
-  const makeHref = (next: { category?: string; sort?: string; price?: string }) => {
-    const url = new URLSearchParams()
-    const category = next.category === undefined ? activeCategorySlug : next.category
-    const sort = next.sort === undefined ? activeSort : next.sort
-    const price = next.price === undefined ? activePrice : next.price
-    if (category) url.set('category', category)
-    if (sort && sort !== 'recommended') url.set('sort', sort)
-    if (price) url.set('price', price)
-    const queryString = url.toString()
-    return `/shop${queryString ? `?${queryString}` : ''}`
+  const category = getStoreCategory(typeof params.category === 'string' ? params.category : '')
+  return {
+    title: category?.title || 'Shop',
+    description: category?.copy || 'Find useful products for your home. Explore kitchen tools, space-saving ideas and everyday helpers, with free UK delivery.',
+    ...(params.q ? { robots: { index: false, follow: true } } : {}),
   }
+}
 
-  const clearFiltersHref = makeHref({ category: '', price: '' })
+export default async function ShopPage({ searchParams }: { searchParams: SearchParams }) {
+  const raw = await searchParams
+  const param = (name: string) => typeof raw[name] === 'string' ? raw[name] as string : ''
+  const sort = SHOP_SORTS.find(item => item.value === param('sort')) || SHOP_SORTS[0]
+  const price = SHOP_PRICES.find(item => item.value === param('price'))
+  const category = getStoreCategory(param('category'))
+  const q = param('q').trim().slice(0, 120)
+  const inStock = param('stock') === 'in-stock'
+  if (isSupportIntent(q)) redirect(`/search?q=${encodeURIComponent(q)}`)
+  const state: ShopState = { category: category?.slug, price: price?.value, sort: sort.value, q, stock: inStock ? 'in-stock' : '' }
+  const href = (updates: ShopState = {}) => `${shopHref(state, updates)}#shop-results`
+  const clearHref = href({ category: '', price: '', q: '', stock: '' })
+  let unavailable = false
+  const allProducts = dedupeStoreProducts(await getProducts({ per_page: 100, ...shopSortQuery(sort.value) }).catch(() => { unavailable = true; return [] }))
+  const searched = searchShopProducts(allProducts, q, sort.value)
+  const available = inStock ? searched.filter(product => product.is_in_stock && product.is_purchasable) : searched
+  const scoped = filterProductsByStoreCategory(available, category?.slug)
+  const products = filterShopPrice(scoped, price?.value)
+  const categoryCounts = new Map(STORE_CATEGORIES.map(item => [item.slug, filterShopPrice(filterProductsByStoreCategory(available, item.slug), price?.value).length]))
+  const priceCounts = new Map(SHOP_PRICES.map(item => [item.value, filterShopPrice(scoped, item.value).length]))
+  const filterCount = Number(Boolean(category)) + Number(Boolean(price)) + Number(Boolean(q)) + Number(inStock)
+  const otherCategories = STORE_CATEGORIES.filter(item => item.slug !== category?.slug && filterProductsByStoreCategory(allProducts, item.slug).length > 0).slice(0, 3)
 
-  return (
-    <main className={`${editorialFont.variable} hf-editorial-scope hf-catalog`}>
-      <div className="hf-container">
-        <nav className="flex items-center gap-2 text-sm text-black/55" aria-label="Breadcrumb">
-          <Link href="/" className="hover:text-black">Home</Link><ChevronRightIcon className="size-3.5" />
-          <span className="text-black/65">Shop</span>
-          {activeCategory && <><ChevronRightIcon className="size-3.5" /><span className="text-black/65">{activeCategory.title}</span></>}
-        </nav>
-
-        <div className="hf-catalog-heading">
-          <h1 className="hf-serif">
-            {activeCategory ? activeCategory.title : 'Clever finds'}<br />
-            <span className="text-[#557562]">for everyday living.</span>
-          </h1>
-          <p className="hf-catalog-description">
-            {activeCategory?.copy || 'Browse useful home products by category, narrow the results and open any product for full details before adding it to your cart.'}
-          </p>
-        </div>
-
-        {!catalogUnavailable && <nav className="hf-catalog-categories" aria-label="Browse categories">
-          <Link href={makeHref({ category: '' })} aria-current={!activeCategory ? 'page' : undefined}>All finds <span>{allCategoryCount}</span></Link>
-          {STORE_CATEGORIES.map((category) => <Link key={category.slug} href={makeHref({ category: category.slug })} aria-current={activeCategorySlug === category.slug ? 'page' : undefined}>{category.title}<span>{categoryCounts.get(category.slug) || 0}</span></Link>)}
-        </nav>}
-
-        {catalogUnavailable && (
-          <section className="mt-10 rounded-[var(--hf-radius-lg)] border border-amber-200 bg-amber-50 p-6 sm:p-8" role="status">
-            <p className="hf-eyebrow text-amber-700">Collection reconnecting</p>
-            <h2 className="mt-3 text-2xl font-semibold tracking-[-.035em] text-amber-950">The product catalogue is taking longer than usual to respond.</h2>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-amber-900/75">Your cart is separate. Refresh this page in a moment, or use customer support if you were checking an existing order.</p>
-            <div className="mt-5 flex flex-wrap gap-2"><Link href="/shop" className="hf-button-primary hf-button-sm">Try again</Link><Link href="/track-order" className="hf-button-secondary hf-button-sm">Track an order</Link></div>
-          </section>
-        )}
-
-        {!catalogUnavailable && <section className="hf-catalog-filters" aria-label="Product filters and sorting">
-          <div className="hf-filter-bar">
-            <div className="hf-filter-controls">
-              <div className="flex flex-wrap items-center gap-2.5">
-                <span className="mr-1 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-[var(--hf-ink)]">
-                  <AdjustmentsHorizontalIcon className="size-[18px] text-[var(--hf-brand-muted)]" />
-                  Filter
-                  {activeFilterCount > 0 && (
-                    <span className="grid size-6 place-items-center rounded-full bg-[var(--hf-brand)] text-[11px] font-bold text-white">
-                      {activeFilterCount}
-                    </span>
-                  )}
-                </span>
-
-                <details key={`category-${makeHref({})}`} name="catalog-filters" className="group relative">
-                  <summary className={`flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-[var(--hf-radius-pill)] border px-4 text-sm transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--hf-brand-muted)] ${activeCategory ? 'border-[#557562]/45 bg-[#e4ede7] text-[#294b3a]' : 'border-black/10 bg-white text-black/62 hover:border-black/20'}`}>
-                    <span className="font-semibold">Category</span>
-                    {activeCategory && <span className="hf-filter-active-value max-w-[150px] truncate">· {activeCategory.title}</span>}
-                    <ChevronDownIcon className="size-3.5 transition-transform group-open:rotate-180" />
-                  </summary>
-                  <div className="absolute left-0 top-[calc(100%+8px)] z-40 w-[min(300px,calc(100vw-2.5rem))] overflow-hidden rounded-[var(--hf-radius-md)] border border-black/[.08] bg-white p-2 shadow-[var(--hf-shadow-float)]">
-                    <div className="px-3 pb-2 pt-2">
-                      <p className="text-[10px] font-bold uppercase tracking-[.18em] text-black/52">Choose a category</p>
-                    </div>
-                    <div className="space-y-1">
-                      <Link href={makeHref({ category: '' })} className={`flex min-h-11 items-center justify-between gap-3 rounded-[var(--hf-radius-sm)] px-3 text-sm transition ${!activeCategory ? 'bg-[var(--hf-brand-soft)] font-semibold text-[var(--hf-brand)]' : 'text-black/62 hover:bg-black/[.035]'}`}>
-                        <span className="flex items-center gap-2.5">
-                          <span className={`grid size-5 place-items-center rounded-full border ${!activeCategory ? 'border-[var(--hf-brand-muted)] bg-white' : 'border-black/10'}`}>
-                            {!activeCategory && <CheckIcon className="size-3.5" />}
-                          </span>
-                          All products
-                        </span>
-                        <span className="text-xs tabular-nums text-black/52">{allCategoryCount}</span>
-                      </Link>
-                      {STORE_CATEGORIES.map((category) => {
-                        const selected = activeCategory?.slug === category.slug
-                        return (
-                          <Link key={category.slug} href={makeHref({ category: category.slug })} className={`flex min-h-11 items-center justify-between gap-3 rounded-[var(--hf-radius-sm)] px-3 text-sm transition ${selected ? 'bg-[var(--hf-brand-soft)] font-semibold text-[var(--hf-brand)]' : 'text-black/62 hover:bg-black/[.035]'}`}>
-                            <span className="flex min-w-0 items-center gap-2.5">
-                              <span className={`grid size-5 shrink-0 place-items-center rounded-full border ${selected ? 'border-[var(--hf-brand-muted)] bg-white' : 'border-black/10'}`}>
-                                {selected && <CheckIcon className="size-3.5" />}
-                              </span>
-                              <span className="truncate">{category.title}</span>
-                            </span>
-                            <span className="text-xs tabular-nums text-black/52">{categoryCounts.get(category.slug) || 0}</span>
-                          </Link>
-                        )
-                      })}
-                    </div>
-                  </div>
-                </details>
-
-                <details key={`price-${makeHref({})}`} name="catalog-filters" className="group relative">
-                  <summary className={`flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-[var(--hf-radius-pill)] border px-4 text-sm transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--hf-brand-muted)] ${activePriceMeta ? 'border-[#557562]/45 bg-[#e4ede7] text-[#294b3a]' : 'border-black/10 bg-white text-black/62 hover:border-black/20'}`}>
-                    <TagIcon className="size-4" />
-                    <span className="font-semibold">Price</span>
-                    {activePriceMeta && <span className="hf-filter-active-value">· {activePriceMeta.label}</span>}
-                    <ChevronDownIcon className="size-3.5 transition-transform group-open:rotate-180" />
-                  </summary>
-                  <div className="absolute left-0 top-[calc(100%+8px)] z-40 w-[min(270px,calc(100vw-2.5rem))] overflow-hidden rounded-[var(--hf-radius-md)] border border-black/[.08] bg-white p-2 shadow-[var(--hf-shadow-float)]">
-                    <div className="px-3 pb-2 pt-2">
-                      <p className="text-[10px] font-bold uppercase tracking-[.18em] text-black/52">Price range</p>
-                    </div>
-                    <div className="space-y-1">
-                      <Link href={makeHref({ price: '' })} className={`flex min-h-11 items-center justify-between gap-3 rounded-[var(--hf-radius-sm)] px-3 text-sm transition ${!activePrice ? 'bg-[var(--hf-brand-soft)] font-semibold text-[var(--hf-brand)]' : 'text-black/62 hover:bg-black/[.035]'}`}>
-                        <span className="flex items-center gap-2.5">
-                          <span className={`grid size-5 place-items-center rounded-full border ${!activePrice ? 'border-[var(--hf-brand-muted)] bg-white' : 'border-black/10'}`}>
-                            {!activePrice && <CheckIcon className="size-3.5" />}
-                          </span>
-                          Any price
-                        </span>
-                        <span className="text-xs tabular-nums text-black/52">{categoryScopedProducts.length}</span>
-                      </Link>
-                      {priceFilters.map((item) => {
-                        const selected = activePrice === item.value
-                        return (
-                          <Link key={item.value} href={makeHref({ price: selected ? '' : item.value })} className={`flex min-h-11 items-center justify-between gap-3 rounded-[var(--hf-radius-sm)] px-3 text-sm transition ${selected ? 'bg-[var(--hf-brand-soft)] font-semibold text-[var(--hf-brand)]' : 'text-black/62 hover:bg-black/[.035]'}`}>
-                            <span className="flex items-center gap-2.5">
-                              <span className={`grid size-5 place-items-center rounded-full border ${selected ? 'border-[var(--hf-brand-muted)] bg-white' : 'border-black/10'}`}>
-                                {selected && <CheckIcon className="size-3.5" />}
-                              </span>
-                              {item.label}
-                            </span>
-                            <span className="text-xs tabular-nums text-black/52">{priceCounts.get(item.value) || 0}</span>
-                          </Link>
-                        )
-                      })}
-                    </div>
-                  </div>
-                </details>
-              </div>
-
-              <details key={`sort-${makeHref({})}`} name="catalog-filters" className="group relative w-full sm:w-auto">
-                <summary className="flex min-h-11 w-full cursor-pointer list-none items-center justify-between gap-3 rounded-[var(--hf-radius-pill)] border border-black/10 bg-[#f8f8f4] px-4 text-sm text-black/62 transition hover:border-black/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--hf-brand-muted)] sm:w-auto sm:min-w-[220px]">
-                  <span className="flex items-center gap-2 font-semibold text-[var(--hf-ink)]"><BarsArrowDownIcon className="size-[18px] text-[var(--hf-brand-muted)]" /> Sort</span>
-                  <span className="ml-auto">{activeSortMeta.label}</span>
-                  <ChevronDownIcon className="size-3.5 transition-transform group-open:rotate-180" />
-                </summary>
-                <div className="absolute right-0 top-[calc(100%+8px)] z-40 w-full min-w-[min(270px,calc(100vw-2.5rem))] overflow-hidden rounded-[var(--hf-radius-md)] border border-black/[.08] bg-white p-2 shadow-[var(--hf-shadow-float)] sm:w-[290px]">
-                  <div className="px-3 pb-2 pt-2">
-                    <p className="text-[10px] font-bold uppercase tracking-[.18em] text-black/52">Sort products</p>
-                  </div>
-                  <div className="space-y-1">
-                    {sorts.map((item) => {
-                      const selected = activeSort === item.value
-                      return (
-                        <Link key={item.value} href={makeHref({ sort: item.value })} className={`flex min-h-11 items-center justify-between rounded-[var(--hf-radius-sm)] px-3 text-sm transition ${selected ? 'bg-[var(--hf-brand-soft)] font-semibold text-[var(--hf-brand)]' : 'text-black/62 hover:bg-black/[.035]'}`}>
-                          <span>{item.label}</span>
-                          {selected && <CheckIcon className="size-4" />}
-                        </Link>
-                      )
-                    })}
-                  </div>
-                </div>
+  return <main className={`${editorialFont.variable} hf-editorial-scope ${styles.page}`}>
+    <div className="hf-container">
+      <nav className={styles.breadcrumb} aria-label="Breadcrumb">
+        <Link prefetch={false} href="/">Home</Link><ChevronRightIcon aria-hidden="true" />
+        {category ? <><Link prefetch={false} href="/shop">Shop</Link><ChevronRightIcon aria-hidden="true" /><span aria-current="page">{category.title}</span></> : <span aria-current="page">Shop all</span>}
+      </nav>
+      <CategoryBanner category={category} products={filterProductsByStoreCategory(allProducts, category?.slug)} />
+      {unavailable ? <section className={styles.empty} role="status">
+        <h2>The collection is taking a little longer to load.</h2><p>Please try again in a moment. You can still get help with an existing order.</p>
+        <div><Link prefetch={false} href={shopHref(state)} className="hf-button-primary">Try again</Link><Link prefetch={false} href="/contact" className="hf-button-secondary">Contact us</Link></div>
+      </section> : <>
+        <div className={styles.catalog} id="shop-results">
+          <aside className={styles.sidebar} aria-label="Filter products">
+            <CatalogFilters count={filterCount}>
+                <nav aria-label="Filter by category"><h2>Shop by category</h2>
+                  {[{ slug: '', title: 'All finds' }, ...STORE_CATEGORIES].map(item => {
+                    const selected = (category?.slug || '') === item.slug
+                    return <Link prefetch={false} key={item.slug} href={href({ category: item.slug })} aria-current={selected ? 'true' : undefined} className={styles.filterOption}><span className={styles.check}>{selected && <CheckIcon aria-hidden="true" />}</span><span>{item.title}</span><small>{item.slug ? categoryCounts.get(item.slug) : filterShopPrice(available, price?.value).length}</small></Link>
+                  })}
+                </nav>
+                <nav aria-label="Filter by price"><h2>Your budget</h2>
+                  {[{ value: '', label: 'Any price' }, ...SHOP_PRICES].map(item => {
+                    const selected = (price?.value || '') === item.value
+                    return <Link prefetch={false} key={item.value} href={href({ price: item.value })} aria-current={selected ? 'true' : undefined} className={styles.filterOption}><span className={styles.check}>{selected && <CheckIcon aria-hidden="true" />}</span><span>{item.label}</span><small>{item.value ? priceCounts.get(item.value) : scoped.length}</small></Link>
+                  })}
+                  <p className={styles.filterNote}>Products with options may span more than one price range.</p>
+                </nav>
+                <nav aria-label="Filter by availability"><h2>Availability</h2><Link prefetch={false} href={href({ stock: inStock ? '' : 'in-stock' })} aria-current={inStock ? 'true' : undefined} className={styles.filterOption}><span className={styles.check}>{inStock && <CheckIcon aria-hidden="true" />}</span><span>In stock only</span></Link></nav>
+                {filterCount > 0 && <Link prefetch={false} className={styles.clear} href={clearHref}>Clear all filters <XMarkIcon aria-hidden="true" /></Link>}
+            </CatalogFilters>
+            <div className={styles.help}><p>A little help finding it?</p><span>We’re here for product questions, delivery and returns.</span><Link prefetch={false} href="/contact">Ask Housefinds <ArrowRightIcon aria-hidden="true" /></Link></div>
+          </aside>
+          <section className={styles.results} aria-labelledby="shop-products-heading">
+            <div className={styles.toolbar}>
+              <div><h2 id="shop-products-heading">{q ? `Results for “${q}”` : category?.title || 'Explore all finds'}</h2><p>{products.length} product{products.length === 1 ? '' : 's'}{filterCount ? ' matching your choices' : ' for a more useful home'}</p></div>
+              <details key={shopHref(state)} className={styles.sort}>
+                <summary><span>Sort: <strong>{sort.label}</strong></span><ChevronDownIcon aria-hidden="true" /></summary>
+                <nav aria-label="Sort products">{SHOP_SORTS.map(item => <Link prefetch={false} key={item.value} href={href({ sort: item.value })} aria-current={sort.value === item.value ? 'true' : undefined}>{item.label}{sort.value === item.value && <CheckIcon aria-hidden="true" />}</Link>)}</nav>
               </details>
             </div>
-
-            {hasFilters && (
-              <div className="flex flex-wrap items-center gap-2 border-t border-black/[.06] bg-[#fafbf8] px-4 py-3 sm:px-5">
-                <span className="mr-1 text-xs font-semibold uppercase tracking-[.12em] text-black/36">Applied</span>
-                {activeCategory && (
-                  <Link href={makeHref({ category: '' })} className="inline-flex min-h-11 items-center gap-2 rounded-[var(--hf-radius-pill)] border border-[#557562]/30 bg-white px-3 text-xs font-semibold text-[#294b3a] transition hover:border-[#557562]/55 hover:bg-[#f2f6f2]">
-                    {activeCategory.title}<XMarkIcon className="size-3.5" />
-                  </Link>
-                )}
-                {activePriceMeta && (
-                  <Link href={makeHref({ price: '' })} className="inline-flex min-h-11 items-center gap-2 rounded-[var(--hf-radius-pill)] border border-[#557562]/30 bg-white px-3 text-xs font-semibold text-[#294b3a] transition hover:border-[#557562]/55 hover:bg-[#f2f6f2]">
-                    {activePriceMeta.label}<XMarkIcon className="size-3.5" />
-                  </Link>
-                )}
-                <Link href={clearFiltersHref} className="ml-auto inline-flex min-h-11 items-center rounded-[var(--hf-radius-pill)] px-3 text-xs font-semibold text-black/55 transition hover:bg-black/[.04] hover:text-black">
-                  Clear all
-                </Link>
-              </div>
-            )}
-          </div>
-
-          <div className="hf-catalog-count">
-            <div>
-              <p className="text-sm font-semibold text-[var(--hf-ink)]">
-                {products.length} product{products.length === 1 ? '' : 's'}
-              </p>
-              {hasFilters && <p className="mt-1 text-xs text-black/52">Filtered from the Housefinds collection.</p>}
-            </div>
-            <p className="hidden text-xs text-black/52 sm:block">Sorted by <strong className="font-semibold text-black/55">{activeSortMeta.label}</strong></p>
-          </div>
-        </section>}
-
-        {!catalogUnavailable && (products.length > 0 ? (
-          <section className="mt-8" aria-labelledby="shop-products-heading">
-            <h2 id="shop-products-heading" className="sr-only">Products</h2>
-            <div className="hf-product-grid">
-              {products.map((product) => <ProductCard key={product.id} product={product} />)}
-            </div>
+            {filterCount > 0 && <div className={styles.applied} aria-label="Applied filters">
+              {[category && { label: category.title, update: { category: '' } }, price && { label: price.label, update: { price: '' } }, q && { label: `Search: ${q}`, update: { q: '' } }, inStock && { label: 'In stock', update: { stock: '' } }].filter(item => !!item).map(item => item && <Link prefetch={false} key={item.label} href={href(item.update)} aria-label={`Remove filter: ${item.label}`}>{item.label}<XMarkIcon aria-hidden="true" /></Link>)}
+              <Link prefetch={false} href={clearHref} className={styles.clear}>Clear all</Link>
+            </div>}
+            {products.length ? <div className={styles.productGrid}>
+              {products.slice(0, 3).map(product => <ProductCard key={product.id} product={product} quickAdd />)}
+              {!filterCount && <FindYourFit categories={STORE_CATEGORIES.filter(item => filterProductsByStoreCategory(allProducts, item.slug).length > 0).map(item => item.slug)} />}
+              {products.slice(3).map(product => <ProductCard key={product.id} product={product} quickAdd />)}
+            </div> : <div className={styles.empty}>
+              <MagnifyingGlassIcon className={styles.emptyIcon} aria-hidden="true" /><h3>No finds for this combination yet.</h3><p>Try a wider budget or a simpler search, such as “storage” or “kitchen”.</p><div><Link prefetch={false} href={href({ price: '', q: '', stock: '' })} className="hf-button-primary hf-button-sm">{category ? 'View this category' : 'Reset search'}</Link><Link prefetch={false} href={clearHref} className="hf-button-secondary hf-button-sm">Browse all finds</Link></div>
+            </div>}
           </section>
-        ) : (
-          <div className="mt-12 rounded-[var(--hf-radius-lg)] bg-[#f0f1eb] p-10 text-center">
-            <h2 className="text-3xl font-semibold tracking-[-.04em]">No products match those filters.</h2>
-            <p className="mx-auto mt-3 max-w-lg text-black/58">Broaden the price range, remove a filter or search by the problem you are trying to solve.</p>
-            <div className="mt-6 flex justify-center gap-3"><Link href={clearFiltersHref} className="hf-button-primary hf-button-sm">Clear filters</Link><Link href="/search" className="hf-button-secondary hf-button-sm">Search</Link></div>
-          </div>
-        ))}
-      </div>
-    </main>
-  )
+        </div>
+        {otherCategories.length > 0 && <section className={styles.discover} aria-labelledby="discover-title">
+          <div className={styles.discoverHeading}><p className="hf-eyebrow">A different place to start</p><h2 id="discover-title">More ways <span className="hf-accent">to make home work.</span></h2></div>
+          <div className={styles.discoverGrid}>{otherCategories.map(item => <Link prefetch={false} key={item.slug} href={`/shop?category=${item.slug}`}><span>{item.shortTitle}</span><h3>{item.title}</h3><p>{item.copy}</p><span className={styles.discoverAction}>Explore {filterProductsByStoreCategory(allProducts, item.slug).length} finds <ArrowRightIcon aria-hidden="true" /></span></Link>)}</div>
+        </section>}
+      </>}
+    </div>
+  </main>
 }

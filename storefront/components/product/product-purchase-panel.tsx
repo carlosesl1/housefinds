@@ -196,6 +196,7 @@ export function ProductPurchasePanel({ product, variations = [], dark = false }:
   const seenPanel = useRef(false)
   const [showSticky, setShowSticky] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [choicesRequested, setChoicesRequested] = useState(false)
   const add = useCart((state) => state.add)
   const loading = useCart((state) => state.loading)
 
@@ -221,6 +222,17 @@ export function ProductPurchasePanel({ product, variations = [], dark = false }:
   const step = cartRules?.multiple_of && cartRules.multiple_of > 0 ? cartRules.multiple_of : 1
   const canAdd = isPurchasable && isInStock && allSelected && selectionIsValid && !loading
   const displayPrice = formatProductPrice(exactProduct)
+  const purchaseBlocked = !isPurchasable || !isInStock || loading || (allSelected && !selectionIsValid)
+  const missingChoices = variableAttributes.flatMap((attribute) => {
+    if (selections[attribute.name]) return []
+    const compound = compoundConfigs.get(attribute.name)
+    if (compound) return (['pack', 'capacity', 'colour'] as CompoundDimension[]).filter((dimension) => !compoundSelections[attribute.name]?.[dimension]).map(dimensionLabel)
+    if (colourForceConfigs.has(attribute.name)) {
+      const current = colourForceSelections[attribute.name] || {}
+      return [...(current.colour ? [] : ['Colour']), ...(current.force ? [] : ['Closing force'])]
+    }
+    return [storefrontAttributeName(attribute)]
+  })
 
   useEffect(() => setMounted(true), [])
 
@@ -268,9 +280,12 @@ export function ProductPurchasePanel({ product, variations = [], dark = false }:
     })
   }
 
-  function handleStickyAction() {
+  function handlePurchaseAction() {
     if (variableAttributes.length && !allSelected) {
-      document.getElementById('purchase-options')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      setChoicesRequested(true)
+      const options = document.getElementById('purchase-options')
+      options?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      options?.querySelector<HTMLButtonElement>('[data-choice-missing] button:not(:disabled)')?.focus({ preventScroll: true })
       return
     }
     void handleAdd()
@@ -370,7 +385,7 @@ export function ProductPurchasePanel({ product, variations = [], dark = false }:
         {allSelected && variations.length > 0 && !selectedVariation && <p className="mt-3 text-xs font-medium text-amber-700">Select another combination to see exact availability.</p>}
         {selectedVariation && !selectedVariation.is_in_stock && <p className="mt-3 text-xs font-semibold text-rose-700">This option is currently out of stock.</p>}
         {selectionSummary && <p className={`mt-3 text-xs font-medium ${dark ? 'text-white/58' : 'text-black/58'}`}>{selectionSummary}</p>}
-        <p className={`mt-3 flex items-center gap-2 text-xs leading-5 ${labelClass}`}><TruckIcon className="size-4 shrink-0" /> Free UK delivery · current estimate around 14 days.</p>
+        <Link href="/shipping" className={`mt-3 flex items-center gap-2 text-xs leading-5 hover:underline ${labelClass}`}><TruckIcon className="size-4 shrink-0" aria-hidden="true" /> Free UK delivery · current estimate around 14 days.</Link>
       </div>
 
       {variableAttributes.length > 0 && (
@@ -391,7 +406,7 @@ export function ProductPurchasePanel({ product, variations = [], dark = false }:
                     {!selections[attribute.name] && <span className={`text-xs ${labelClass}`}>Colour + force</span>}
                   </div>
 
-                  <div>
+                  <div data-choice-missing={current.colour ? undefined : true}>
                     <div className="flex items-center justify-between gap-4">
                       <span className={`text-xs font-semibold uppercase tracking-[.11em] ${labelClass}`}>Colour</span>
                       {current.colour && <span className={`text-xs ${labelClass}`}>{current.colour}</span>}
@@ -418,7 +433,7 @@ export function ProductPurchasePanel({ product, variations = [], dark = false }:
                     </div>
                   </div>
 
-                  <div>
+                  <div data-choice-missing={current.force ? undefined : true}>
                     <div className="flex items-center justify-between gap-4">
                       <span className={`text-xs font-semibold uppercase tracking-[.11em] ${labelClass}`}>Closing force</span>
                       {current.force && <span className={`text-xs ${labelClass}`}>{current.force}</span>}
@@ -459,7 +474,7 @@ export function ProductPurchasePanel({ product, variations = [], dark = false }:
                   {dimensions.map((dimension) => {
                     const values = Array.from(new Set(compound.map((entry) => entry[dimension])))
                     return (
-                      <div key={`${attribute.name}-${dimension}`}>
+                      <div key={`${attribute.name}-${dimension}`} data-choice-missing={current[dimension] ? undefined : true}>
                         <div className="flex items-center justify-between gap-4">
                           <span className={`text-xs font-semibold uppercase tracking-[.11em] ${labelClass}`}>{dimensionLabel(dimension)}</span>
                           {current[dimension] && <span className={`text-xs ${labelClass}`}>{dimensionValueLabel(dimension, current[dimension]!)}</span>}
@@ -490,7 +505,7 @@ export function ProductPurchasePanel({ product, variations = [], dark = false }:
             }
 
             return (
-              <div key={attribute.name}>
+              <div key={attribute.name} data-choice-missing={selections[attribute.name] ? undefined : true}>
                 <div className="flex items-center justify-between gap-4">
                   <label className={`text-sm font-semibold ${dark ? 'text-white/86' : 'text-[#172018]'}`}>{storefrontAttributeName(attribute)}</label>
                   {!selections[attribute.name] && <span className={`text-xs ${labelClass}`}>Choose one</span>}
@@ -512,6 +527,8 @@ export function ProductPurchasePanel({ product, variations = [], dark = false }:
         </div>
       )}
 
+      {choicesRequested && !allSelected && <p role="status" className={`text-sm font-medium ${dark ? 'text-white/86' : 'text-[var(--hf-brand)]'}`}>{missingChoices.length ? `Choose ${new Intl.ListFormat('en-GB').format(missingChoices).toLowerCase()} to continue.` : 'This combination is currently unavailable. Try another option.'}</p>}
+
       {allSelected && !selectionIsValid && <p className="rounded-[var(--hf-radius-sm)] border border-amber-300/60 bg-amber-50 px-4 py-3 text-sm text-amber-950">This combination is currently unavailable. Try another option.</p>}
 
       <div>
@@ -523,7 +540,7 @@ export function ProductPurchasePanel({ product, variations = [], dark = false }:
             <button type="button" className="grid size-12 place-items-center disabled:opacity-35" disabled={quantity >= maximum} onClick={() => setQuantity((value) => Math.min(maximum, value + step))} aria-label="Increase quantity"><PlusIcon className="size-4" /></button>
           </div>
 
-          <button type="button" disabled={!canAdd} onClick={() => void handleAdd()} className={`inline-flex h-14 items-center justify-center gap-2 rounded-[var(--hf-radius-pill)] px-7 font-semibold  transition disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none ${dark ? 'bg-[#dce8df] text-[#172018] hover:bg-white' : 'bg-[var(--hf-brand)] text-white hover:bg-[var(--hf-brand-hover)]'}`}>
+          <button type="button" disabled={purchaseBlocked} onClick={handlePurchaseAction} className={`inline-flex h-14 items-center justify-center gap-2 rounded-[var(--hf-radius-pill)] px-7 font-semibold  transition disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none ${dark ? 'bg-[#dce8df] text-[#172018] hover:bg-white' : 'bg-[var(--hf-brand)] text-white hover:bg-[var(--hf-brand-hover)]'}`}>
             <ShoppingBagIcon className="size-4.5" />
             {loading ? 'Adding…' : !isInStock ? 'Out of stock' : variableAttributes.length && !allSelected ? 'Choose options' : 'Add to cart'}
           </button>
@@ -531,10 +548,6 @@ export function ProductPurchasePanel({ product, variations = [], dark = false }:
       </div>
 
       <div className={`hf-purchase-service ${dark ? 'text-white/75' : 'text-[var(--hf-ink-soft)]'}`}>
-        <div className={`flex items-start gap-2.5 ${dark ? 'bg-white/[.035] text-white/60' : 'text-[var(--hf-ink-soft)]'}`}>
-          <TruckIcon className="mt-0.5 size-4 shrink-0" />
-          <span><strong className={dark ? 'text-white/82' : 'text-black/70'}>Delivery</strong><br />Free UK · around 14 days</span>
-        </div>
         <Link href="/returns" className={`flex items-start gap-2.5 transition hover:underline ${dark ? 'bg-white/[.035] text-white/60' : 'text-[var(--hf-ink-soft)]'}`}>
           <ArrowUturnLeftIcon className="mt-0.5 size-4 shrink-0" />
           <span><strong className={dark ? 'text-white/82' : 'text-black/70'}>Returns</strong><br />Free 14-day returns</span>
@@ -549,7 +562,7 @@ export function ProductPurchasePanel({ product, variations = [], dark = false }:
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-black/10 bg-[#fbfaf7]/96 p-3 shadow-[0_-12px_36px_rgba(20,30,24,.08)] backdrop-blur-xl lg:hidden" style={{ paddingBottom: 'max(.75rem, env(safe-area-inset-bottom))' }}>
           <div className="mx-auto flex max-w-xl items-center gap-3">
             <div className="min-w-0 flex-1"><p className="text-sm font-semibold text-[#172018]">{displayPrice}</p><p className="truncate text-[11px] text-black/55">{selectionSummary || (variableAttributes.length ? 'Choose product options' : 'Free UK delivery')}</p></div>
-            <button type="button" disabled={!isPurchasable || !isInStock || loading || (allSelected && !selectionIsValid)} onClick={handleStickyAction} className="inline-flex h-12 shrink-0 items-center gap-2 rounded-[var(--hf-radius-pill)] bg-[var(--hf-brand)] px-5 text-sm font-semibold text-white disabled:opacity-45"><ShoppingBagIcon className="size-4" />{loading ? 'Adding…' : variableAttributes.length && !allSelected ? 'Choose options' : !isInStock ? 'Out of stock' : 'Add to cart'}</button>
+            <button type="button" disabled={purchaseBlocked} onClick={handlePurchaseAction} className="inline-flex h-12 shrink-0 items-center gap-2 rounded-[var(--hf-radius-pill)] bg-[var(--hf-brand)] px-5 text-sm font-semibold text-white disabled:opacity-45"><ShoppingBagIcon className="size-4" />{loading ? 'Adding…' : variableAttributes.length && !allSelected ? 'Choose options' : !isInStock ? 'Out of stock' : 'Add to cart'}</button>
           </div>
         </div>,
         document.body,

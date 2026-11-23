@@ -13,7 +13,7 @@ export default function AboutPage() {
         <div className="mx-auto max-w-[1400px]">
           <p className="text-[11px] font-semibold uppercase tracking-[.28em] text-[var(--hf-brand-muted)]">About Housefinds</p>
           <div className="mt-5 grid gap-10 lg:grid-cols-[1.1fr_.9fr] lg:items-end">
-            <h1 className="text-[clamp(4rem,7vw,8rem)] font-semibold leading-[.86] tracking-[-.07em] text-[var(--hf-ink)]">Useful things.<br /><span className="text-[var(--hf-brand-muted)]">Less clutter.</span></h1>
+            <h1 className="text-[clamp(4rem,7vw,8rem)] font-semibold leading-[.86] tracking-[-.07em] text-[var(--hf-ink)]">Useful things.<br /><span className="hf-accent">Less clutter.</span></h1>
             <p className="max-w-xl text-xl leading-8 text-black/50">Housefinds is a curated home-products store focused on small practical upgrades: products that save a little time, make a space work better or solve an everyday annoyance.</p>
           </div>
         </div>

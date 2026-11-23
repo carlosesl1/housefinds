@@ -12,7 +12,7 @@ export function BudgetShelf({ products }: { products: WooProduct[] }) {
     <div className={`hf-container ${styles.layout}`}>
       <div className={styles.heading}>
         <p>A little goes a long way</p>
-        <h2 id="budget-title">Useful finds.<br /><span>Under £20.</span></h2>
+        <h2 id="budget-title">Useful finds.<br /><span className="hf-accent">Under £20.</span></h2>
         <p className={styles.description}>Little upgrades for everyday home life. Every option in this edit is below £20.</p>
         <Link href="/collections/under-20" className="hf-text-link">Explore the edit <ArrowRightIcon className="size-4" aria-hidden="true" /></Link>
       </div>

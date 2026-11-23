@@ -3,7 +3,6 @@
 .copy { position: relative; z-index: 2; width: 52%; padding-block: 48px 56px; }
 .intro { color: var(--hf-brand); font-family: var(--hf-font-editorial), Georgia, serif; font-size: 17px; margin-bottom: 23px; }
 .copy h1 { font-family: var(--hf-font-ui), Arial, sans-serif; font-size: clamp(40px,4.45vw,66px); font-weight: 650; letter-spacing: -.055em; line-height: 1.045; }
-.copy h1 span { color: var(--hf-brand); }
 .description { max-width: 37ch; margin-top: 22px; font-size: 15px; color: var(--hf-ink-soft); line-height: 1.7; }
 .actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 24px; margin-top: 27px; }
 .actions > a { font-size: 13px; }
@@ -12,7 +11,10 @@
 .visual::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg,#eff0e7 0%,#eff0e7b0 10%,transparent 30%); pointer-events: none; }
 .photo { object-fit: cover; object-position: right center; animation: scene-arrive 900ms ease both; }
 .artNote { position: absolute; top: 16px; right: 24px; z-index: 1; font-size: 9px; color: var(--hf-ink-soft); }
-.find { position: absolute; right: max(40px,calc((100vw - 1360px)/2)); bottom: 26px; z-index: 1; display: flex; justify-content: space-between; align-items: center; gap: 26px; min-height: 66px; padding: 12px 18px; background: var(--hf-background); border: 1px solid var(--hf-border); border-radius: 5px; transition: background 200ms ease; }
+.find { position: absolute; right: max(40px,calc((100vw - 1360px)/2)); bottom: 26px; z-index: 1; display: flex; align-items: center; gap: 14px; min-height: 66px; padding: 7px 18px 7px 7px; background: var(--hf-background); border: 1px solid var(--hf-border); border-radius: 5px; transition: background 200ms ease; }
+.findImage { position: relative; display: block; flex-shrink: 0; width: 52px; height: 52px; overflow: hidden; border-radius: 3px; background: var(--hf-surface-soft); }
+.findImage img { object-fit: cover; }
+.findName { margin-right: 12px; }
 .find small { display: block; font-size: 10px; color: var(--hf-ink-soft); margin-bottom: 3px; }
 .find strong { display: block; font-size: 12px; font-weight: 600; }
 .findPrice { display: flex; align-items: center; gap: 18px; font-size: 12px; font-weight: 600; color: var(--hf-brand); white-space: nowrap; }
@@ -32,7 +34,7 @@
   .description { max-width: 33ch; font-size: 14px; }
   .actions { gap: 8px 20px; }
   .actions > a { font-size: 12px; }
-  .find { right: 30px; gap: 16px; }
+  .find { right: 30px; }
 }
 @media(max-width: 767px) {
   .layout { width: 100%; display: flex; flex-direction: column; min-height: 0; }
@@ -49,9 +51,11 @@
   .visual::after { background: linear-gradient(180deg,#eff0e7,transparent 33%); }
   .photo { object-position: right center; }
   .artNote { font-size: 8px; top: 30px; right: 12px; }
-  .find { right: 20px; left: 20px; bottom: 12px; min-height: 54px; padding: 8px 12px; gap: 10px; }
+  .find { right: 20px; left: 20px; bottom: 12px; min-height: 54px; padding: 6px 12px 6px 6px; gap: 10px; }
+  .findImage { width: 42px; height: 42px; }
+  .findName { margin-right: auto; }
   .find small { font-size: 9px; }
   .find strong, .findPrice { font-size: 11px; }
-  .findPrice { gap: 12px; }
+  .findPrice { gap: 8px; }
 }
 @media(prefers-reduced-motion: reduce) { .photo { animation: none; } .find { transition: none; } }

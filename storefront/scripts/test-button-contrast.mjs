@@ -59,8 +59,9 @@ async function scan(page, label, requireCTA = true) {
     for (const node of nodes) {
       const box = node.getBoundingClientRect(), style = getComputedStyle(node)
       // A keyboard-only skip link has geometry but is clipped and non-interactive
-      // until focused. It is covered separately, not hovered while hidden.
-      if (box.width > 0 && box.height > 0 && style.opacity !== '0' && style.visibility !== 'hidden' && style.pointerEvents !== 'none' && palette.includes(style.backgroundColor)) node.setAttribute('data-colour-test', String(n++))
+      // until focused. It is covered separately, not hovered while hidden. Content of a
+      // closed <details> keeps its geometry but cannot be reached until it is opened.
+      if (node.checkVisibility() && box.width > 0 && box.height > 0 && style.opacity !== '0' && style.visibility !== 'hidden' && style.pointerEvents !== 'none' && palette.includes(style.backgroundColor)) node.setAttribute('data-colour-test', String(n++))
     }
     return n
   }, greens)

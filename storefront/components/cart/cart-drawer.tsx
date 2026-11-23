@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useRef } from 'react'
-import { XMarkIcon, MinusIcon, PlusIcon, ExclamationTriangleIcon, LockClosedIcon, ArrowPathIcon, TruckIcon } from '@heroicons/react/24/outline'
+import { XMarkIcon, MinusIcon, PlusIcon, ExclamationTriangleIcon, LockClosedIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
 import { useCart } from '@/store/cart'
 import { editorialFont } from '@/lib/storefront/editorial-font'
 import { formatMoney } from '@/lib/woocommerce/money'
@@ -49,7 +49,7 @@ export function CartDrawer() {
     return () => {
       document.body.style.overflow = previousOverflow
       window.removeEventListener('keydown', onKeyDown)
-      window.setTimeout(() => returnFocusRef.current?.focus(), 0)
+      window.setTimeout(() => returnFocusRef.current?.focus({ preventScroll: true }), 0)
     }
   }, [open, setOpen])
 
@@ -122,8 +122,6 @@ export function CartDrawer() {
           <Link href="/checkout" onClick={(event) => { if (checkoutDisabled) { event.preventDefault(); return }; setOpen(false) }} aria-disabled={checkoutDisabled} tabIndex={checkoutDisabled ? -1 : undefined} className={`mt-5 flex h-14 items-center justify-center gap-2 rounded-[var(--hf-radius-sm)] bg-[#355f4a] font-semibold text-white transition hover:bg-[#294b3a] ${checkoutDisabled ? 'pointer-events-none opacity-50' : ''}`}><LockClosedIcon className="size-4" /> Continue to checkout</Link>
           {cart?.items?.length ? <Link href="/cart" onClick={() => setOpen(false)} className="mt-2 flex h-11 items-center justify-center rounded-[var(--hf-radius-sm)] text-sm font-semibold text-[var(--hf-ink-soft)] transition hover:bg-black/[.035] hover:text-black">View full cart</Link> : null}
           <div className="mt-3 flex flex-wrap items-center justify-center gap-4 text-[11px] font-medium text-[var(--hf-ink-soft)]">
-            <span className="inline-flex items-center gap-1.5"><TruckIcon className="size-3.5" /> Free UK delivery</span>
-            <span className="inline-flex items-center gap-1.5"><LockClosedIcon className="size-3.5" /> Secure payment</span>
             <Link href="/returns" onClick={() => setOpen(false)} className="inline-flex items-center gap-1.5 hover:text-black"><ArrowPathIcon className="size-3.5" /> Free 14-day returns</Link>
           </div>
         </div>

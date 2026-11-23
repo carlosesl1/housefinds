@@ -61,7 +61,7 @@ export default function FAQPage() {
 
         <div className="mt-10 max-w-3xl">
           <p className="text-[11px] font-semibold uppercase tracking-[.28em] text-[var(--hf-brand-muted)]">Help centre</p>
-          <h1 className="mt-4 text-[clamp(3.8rem,6vw,6.8rem)] font-semibold leading-[.88] tracking-[-.065em]">Questions before<br /><span className="text-[var(--hf-brand-muted)]">or after you order.</span></h1>
+          <h1 className="mt-4 text-[clamp(3.8rem,6vw,6.8rem)] font-semibold leading-[.88] tracking-[-.065em]">Questions before<br /><span className="hf-accent">or after you order.</span></h1>
           <p className="mt-6 max-w-2xl text-lg leading-8 text-black/50">The useful details without making you hunt through fine print.</p>
         </div>
 
